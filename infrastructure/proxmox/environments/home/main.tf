@@ -36,81 +36,8 @@ provider "proxmox" {
 # -----------------------------------------------------------------------------
 
 locals {
-  environment = "home"
+  environment = var.environment
   common_tags = [local.environment, "terraform"]
-
-  # -------------------------------------------------------------------------
-  # Configuration des VMs
-  # Adaptez selon vos besoins et ressources disponibles sur le NUC
-  # -------------------------------------------------------------------------
-
-  vms = {
-    # Serveur Example Server
-    "my-server" = {
-      ip     = "192.168.1.110"
-      cores  = 2
-      memory = 2048
-      disk   = 15
-      docker = true
-      tags   = ["app", "example", "docker"]
-    }
-
-    # Serveur de développement
-    # "dev" = {
-    #   ip       = "192.168.1.11"
-    #   cores    = 2
-    #   memory   = 2048
-    #   disk     = 30
-    #   tags     = ["dev", "development"]
-    # }
-  }
-
-  # -------------------------------------------------------------------------
-  # Configuration des conteneurs LXC
-  # Plus légers que les VMs, idéal pour les services simples
-  # -------------------------------------------------------------------------
-
-  containers = {
-    # Reverse proxy / Load balancer
-    # "nginx" = {
-    #   ip      = "192.168.1.20"
-    #   cores   = 1
-    #   memory  = 512
-    #   disk    = 8
-    #   nesting = false
-    #   tags    = ["proxy", "nginx"]
-    # }
-
-    # Base de données
-    # "postgres" = {
-    #   ip      = "192.168.1.21"
-    #   cores   = 2
-    #   memory  = 2048
-    #   disk    = 20
-    #   nesting = false
-    #   tags    = ["database", "postgres"]
-    # }
-
-    # Cache Redis
-    # "redis" = {
-    #   ip      = "192.168.1.22"
-    #   cores   = 1
-    #   memory  = 1024
-    #   disk    = 8
-    #   nesting = false
-    #   tags    = ["cache", "redis"]
-    # }
-
-    # Pi-hole (DNS + Ad blocker)
-    # "pihole" = {
-    #   ip      = "192.168.1.23"
-    #   cores   = 1
-    #   memory  = 512
-    #   disk    = 8
-    #   nesting = false
-    #   tags    = ["dns", "pihole"]
-    # }
-  }
 }
 
 # -----------------------------------------------------------------------------
@@ -119,7 +46,7 @@ locals {
 
 module "vms" {
   source   = "../../modules/vm"
-  for_each = local.vms
+  for_each = var.vms
 
   name        = "${local.environment}-${each.key}"
   description = "${each.key} - Homelab"
@@ -149,7 +76,7 @@ module "vms" {
 
 module "containers" {
   source   = "../../modules/lxc"
-  for_each = local.containers
+  for_each = var.containers
 
   hostname         = "${local.environment}-${each.key}"
   description      = "${each.key} - Homelab"

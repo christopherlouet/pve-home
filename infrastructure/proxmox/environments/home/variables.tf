@@ -103,3 +103,33 @@ variable "environment" {
   type        = string
   default     = "home"
 }
+
+# -----------------------------------------------------------------------------
+# Configuration des VMs et Conteneurs
+# -----------------------------------------------------------------------------
+
+variable "vms" {
+  description = "Configuration des VMs a creer"
+  type = map(object({
+    ip     = string
+    cores  = number
+    memory = number
+    disk   = number
+    docker = optional(bool, false)
+    tags   = list(string)
+  }))
+  default = {}
+}
+
+variable "containers" {
+  description = "Configuration des conteneurs LXC a creer"
+  type = map(object({
+    ip      = string
+    cores   = number
+    memory  = number
+    disk    = number
+    nesting = optional(bool, false)
+    tags    = list(string)
+  }))
+  default = {}
+}
