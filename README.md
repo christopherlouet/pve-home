@@ -85,4 +85,4 @@ terraform apply
 
 ## Licence
 
-Usage personnel - Homelab
+Ce projet est sous licence [GPL-3.0](LICENSE).
