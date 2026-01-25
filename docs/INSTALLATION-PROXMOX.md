@@ -182,7 +182,8 @@ Pour que Terraform puisse gérer Proxmox, il faut créer un utilisateur dédié 
 pveum user add terraform@pve --comment "Terraform automation"
 
 # Créer un rôle avec les permissions nécessaires (PVE 9.x)
-pveum role add TerraformRole -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify SDN.Use VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.PowerMgmt User.Modify"
+# Inclut VM.GuestAgent.Audit pour la récupération d'infos via QEMU Guest Agent
+pveum role add TerraformRole -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify SDN.Use VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.GuestAgent.Audit VM.Migrate VM.PowerMgmt User.Modify"
 
 # Assigner le rôle à l'utilisateur sur tout le datacenter
 pveum aclmod / -user terraform@pve -role TerraformRole
@@ -198,7 +199,21 @@ Le format du token sera :
 terraform@pve!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
-## Étape 7 : Télécharger des templates
+## Étape 7 : Activer les snippets pour cloud-init
+
+Pour que Terraform puisse uploader des fichiers cloud-init personnalisés (installation Docker, etc.), il faut activer le content type "snippets" sur le storage local :
+
+```bash
+# Créer le répertoire snippets
+mkdir -p /var/lib/vz/snippets
+
+# Activer les snippets sur le storage local
+pvesm set local --content backup,iso,vztmpl,snippets
+```
+
+> **Note** : Sans cette configuration, Terraform ne pourra pas créer de VMs avec Docker pré-installé.
+
+## Étape 8 : Télécharger des templates
 
 ### Templates LXC (conteneurs)
 
@@ -249,7 +264,7 @@ qm set 9000 --agent enabled=1
 qm template 9000
 ```
 
-## Vérification
+## Étape 9 : Vérification
 
 ### Vérifier que tout fonctionne
 

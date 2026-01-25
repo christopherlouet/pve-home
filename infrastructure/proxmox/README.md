@@ -11,12 +11,13 @@ infrastructure/proxmox/
 ├── README.md                  # Ce fichier
 ├── modules/
 │   ├── vm/
-│   │   └── main.tf           # Module VM avec cloud-init
+│   │   └── main.tf           # Module VM avec cloud-init et Docker
 │   └── lxc/
 │       └── main.tf           # Module conteneur LXC
 └── environments/
     └── home/
         ├── main.tf           # Infrastructure homelab
+        ├── variables.tf      # Variables de l'environnement
         └── terraform.tfvars.example
 ```
 
@@ -97,6 +98,19 @@ terraform apply
   memory   = 2048
   disk     = 30
   tags     = ["web", "custom"]
+}
+```
+
+### VM avec Docker pré-installé
+
+```hcl
+"docker-server" = {
+  ip       = "192.168.1.20"
+  cores    = 4
+  memory   = 4096
+  disk     = 50
+  docker   = true  # Installe Docker + Docker Compose via cloud-init
+  tags     = ["docker", "server"]
 }
 ```
 
