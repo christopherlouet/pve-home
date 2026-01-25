@@ -152,9 +152,9 @@ variable "additional_packages" {
 # -----------------------------------------------------------------------------
 
 locals {
-  base_packages = var.install_qemu_agent ? ["qemu-guest-agent"] : []
+  base_packages   = var.install_qemu_agent ? ["qemu-guest-agent"] : []
   docker_packages = var.install_docker ? ["ca-certificates", "curl", "gnupg"] : []
-  all_packages = concat(local.base_packages, local.docker_packages, var.additional_packages)
+  all_packages    = concat(local.base_packages, local.docker_packages, var.additional_packages)
 
   docker_runcmd = var.install_docker ? [
     "install -m 0755 -d /etc/apt/keyrings",

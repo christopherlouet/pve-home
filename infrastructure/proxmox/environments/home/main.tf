@@ -47,12 +47,12 @@ locals {
   vms = {
     # Serveur Example Server
     "my-server" = {
-      ip       = "192.168.1.110"
-      cores    = 2
-      memory   = 2048
-      disk     = 15
-      docker   = true
-      tags     = ["app", "example", "docker"]
+      ip     = "192.168.1.110"
+      cores  = 2
+      memory = 2048
+      disk   = 15
+      docker = true
+      tags   = ["app", "example", "docker"]
     }
 
     # Serveur de développement
@@ -121,10 +121,10 @@ module "vms" {
   source   = "../../modules/vm"
   for_each = local.vms
 
-  name           = "${local.environment}-${each.key}"
-  description    = "${each.key} - Homelab"
-  target_node    = var.default_node
-  template_id    = var.vm_template_id
+  name        = "${local.environment}-${each.key}"
+  description = "${each.key} - Homelab"
+  target_node = var.default_node
+  template_id = var.vm_template_id
 
   cpu_cores    = each.value.cores
   memory_mb    = each.value.memory
