@@ -87,58 +87,68 @@ terraform apply
 
 ## Personnalisation
 
+La configuration des VMs et conteneurs est externalisée dans `terraform.tfvars`.
+
 ### Ajouter une VM
 
-Éditer `environments/home/main.tf` et ajouter dans `local.vms` :
+Éditer `environments/home/terraform.tfvars` et ajouter dans la variable `vms` :
 
 ```hcl
-"ma-nouvelle-vm" = {
-  ip       = "192.168.1.15"
-  cores    = 2
-  memory   = 2048
-  disk     = 30
-  tags     = ["web", "custom"]
+vms = {
+  "ma-nouvelle-vm" = {
+    ip     = "192.168.1.15"
+    cores  = 2
+    memory = 2048
+    disk   = 30
+    tags   = ["web", "custom"]
+  }
 }
 ```
 
 ### VM avec Docker pré-installé
 
 ```hcl
-"docker-server" = {
-  ip       = "192.168.1.20"
-  cores    = 4
-  memory   = 4096
-  disk     = 50
-  docker   = true  # Installe Docker + Docker Compose via cloud-init
-  tags     = ["docker", "server"]
+vms = {
+  "docker-server" = {
+    ip     = "192.168.1.20"
+    cores  = 4
+    memory = 4096
+    disk   = 50
+    docker = true  # Installe Docker + Docker Compose via cloud-init
+    tags   = ["docker", "server"]
+  }
 }
 ```
 
 ### Ajouter un conteneur LXC
 
-Éditer `environments/home/main.tf` et ajouter dans `local.containers` :
+Éditer `environments/home/terraform.tfvars` et ajouter dans la variable `containers` :
 
 ```hcl
-"mon-service" = {
-  ip      = "192.168.1.25"
-  cores   = 1
-  memory  = 512
-  disk    = 10
-  nesting = false
-  tags    = ["service"]
+containers = {
+  "mon-service" = {
+    ip      = "192.168.1.25"
+    cores   = 1
+    memory  = 512
+    disk    = 10
+    nesting = false
+    tags    = ["service"]
+  }
 }
 ```
 
 ### Conteneur avec Docker (nesting)
 
 ```hcl
-"docker-lxc" = {
-  ip      = "192.168.1.30"
-  cores   = 2
-  memory  = 2048
-  disk    = 30
-  nesting = true   # Active le support Docker
-  tags    = ["docker"]
+containers = {
+  "docker-lxc" = {
+    ip      = "192.168.1.30"
+    cores   = 2
+    memory  = 2048
+    disk    = 30
+    nesting = true   # Active le support Docker
+    tags    = ["docker"]
+  }
 }
 ```
 
