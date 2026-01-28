@@ -1,0 +1,127 @@
+# =============================================================================
+# Prometheus Alert Rules - Default
+# =============================================================================
+
+groups:
+  # ---------------------------------------------------------------------------
+  # Node Alerts - Host system monitoring
+  # ---------------------------------------------------------------------------
+  - name: node-alerts
+    rules:
+      - alert: HostDown
+        expr: up{job="node-exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Host {{ $labels.instance }} is down"
+          description: "Host {{ $labels.instance }} has been unreachable for more than 2 minutes."
+
+      - alert: HighCpuUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 85% (current: {{ $value | printf \"%.1f\" }}%)"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 85% (current: {{ $value | printf \"%.1f\" }}%)"
+
+      - alert: HighDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"})) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High disk usage on {{ $labels.instance }}"
+          description: "Disk usage on {{ $labels.mountpoint }} is above 85% (current: {{ $value | printf \"%.1f\" }}%)"
+
+      - alert: DiskAlmostFull
+        expr: (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"})) * 100 > 95
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk almost full on {{ $labels.instance }}"
+          description: "Disk usage on {{ $labels.mountpoint }} is above 95% (current: {{ $value | printf \"%.1f\" }}%)"
+
+  # ---------------------------------------------------------------------------
+  # Proxmox VE Alerts
+  # ---------------------------------------------------------------------------
+  - name: proxmox-alerts
+    rules:
+      - alert: ProxmoxNodeDown
+        expr: pve_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Proxmox node {{ $labels.node }} is down"
+          description: "Cannot reach Proxmox node {{ $labels.node }} for more than 2 minutes."
+
+      - alert: ProxmoxVMStopped
+        expr: pve_guest_info{status="stopped"} == 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "VM {{ $labels.name }} is stopped"
+          description: "VM {{ $labels.name }} on {{ $labels.node }} has been stopped for more than 10 minutes."
+
+      - alert: ProxmoxHighCpuUsage
+        expr: pve_cpu_usage_ratio * 100 > 90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on Proxmox {{ $labels.node }}"
+          description: "Proxmox node CPU usage is above 90% (current: {{ $value | printf \"%.1f\" }}%)"
+
+      - alert: ProxmoxHighMemoryUsage
+        expr: (pve_memory_usage_bytes / pve_memory_size_bytes) * 100 > 90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on Proxmox {{ $labels.node }}"
+          description: "Proxmox node memory usage is above 90% (current: {{ $value | printf \"%.1f\" }}%)"
+
+      - alert: ProxmoxStorageAlmostFull
+        expr: (pve_storage_usage_bytes / pve_storage_size_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Storage {{ $labels.storage }} almost full on {{ $labels.node }}"
+          description: "Storage usage is above 85% (current: {{ $value | printf \"%.1f\" }}%)"
+
+  # ---------------------------------------------------------------------------
+  # Prometheus self-monitoring
+  # ---------------------------------------------------------------------------
+  - name: prometheus-alerts
+    rules:
+      - alert: PrometheusTargetMissing
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus target missing: {{ $labels.job }}"
+          description: "Target {{ $labels.instance }} in job {{ $labels.job }} is down."
+
+      - alert: PrometheusConfigReloadFailed
+        expr: prometheus_config_last_reload_successful == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prometheus config reload failed"
+          description: "Prometheus configuration reload has failed."

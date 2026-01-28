@@ -111,12 +111,13 @@ variable "environment" {
 variable "vms" {
   description = "Configuration des VMs a creer"
   type = map(object({
-    ip     = string
-    cores  = number
-    memory = number
-    disk   = number
-    docker = optional(bool, false)
-    tags   = list(string)
+    ip            = string
+    cores         = number
+    memory        = number
+    disk          = number
+    docker        = optional(bool, false)
+    node_exporter = optional(bool, false)
+    tags          = list(string)
   }))
   default = {}
 }
@@ -132,4 +133,42 @@ variable "containers" {
     tags    = list(string)
   }))
   default = {}
+}
+
+# -----------------------------------------------------------------------------
+# Stack Monitoring (Prometheus + Grafana + Alertmanager)
+# -----------------------------------------------------------------------------
+
+variable "monitoring" {
+  description = "Configuration de la stack monitoring"
+  type = object({
+    enabled = optional(bool, false)
+    node    = optional(string, null)
+    vm = optional(object({
+      ip        = string
+      cores     = optional(number, 2)
+      memory    = optional(number, 4096)
+      disk      = optional(number, 30)
+      data_disk = optional(number, 50)
+    }), null)
+    proxmox_nodes = optional(list(object({
+      name = string
+      ip   = string
+    })), [])
+    pve_exporter = optional(object({
+      user        = optional(string, "prometheus@pve")
+      token_name  = optional(string, "prometheus")
+      token_value = string
+    }), null)
+    retention_days         = optional(number, 30)
+    grafana_admin_password = optional(string, "admin")
+    telegram = optional(object({
+      enabled   = optional(bool, false)
+      bot_token = optional(string, "")
+      chat_id   = optional(string, "")
+    }), { enabled = false })
+  })
+  default = {
+    enabled = false
+  }
 }
