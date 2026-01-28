@@ -78,14 +78,15 @@ vms = {
     disk   = 20
     tags   = ["web"]
   }
-  # Exemple de VM avec Docker
+  # Exemple de VM avec Docker et node_exporter pour monitoring
   # "docker-server" = {
-  #   ip     = "192.168.1.20"
-  #   cores  = 4
-  #   memory = 4096
-  #   disk   = 50
-  #   docker = true
-  #   tags   = ["docker", "server"]
+  #   ip            = "192.168.1.20"
+  #   cores         = 4
+  #   memory        = 4096
+  #   disk          = 50
+  #   docker        = true
+  #   node_exporter = true  # Activer pour exposer les metriques systeme
+  #   tags          = ["docker", "server", "monitored"]
   # }
 }
 
@@ -103,4 +104,62 @@ containers = {
   #   nesting = false
   #   tags    = ["service"]
   # }
+}
+
+# -----------------------------------------------------------------------------
+# Stack Monitoring (Prometheus + Grafana + Alertmanager)
+# -----------------------------------------------------------------------------
+# Deploie une VM avec la stack complete de monitoring.
+# Prerequis:
+# - Token API Proxmox read-only pour prometheus (pve-exporter)
+# - Bot Telegram cree via @BotFather (optionnel)
+# - node_exporter installe sur les hosts Proxmox (script fourni)
+# -----------------------------------------------------------------------------
+
+monitoring = {
+  enabled = false # Passer a true pour activer
+
+  # Node Proxmox pour la VM monitoring (null = default_node)
+  node = null
+
+  # Configuration de la VM monitoring
+  vm = {
+    ip        = "192.168.1.50"
+    cores     = 2
+    memory    = 4096
+    disk      = 30
+    data_disk = 50 # Stockage metriques Prometheus
+  }
+
+  # Nodes Proxmox a monitorer (extensible)
+  proxmox_nodes = [
+    { name = "pve1", ip = "192.168.1.100" },
+    # { name = "pve2", ip = "192.168.1.101" },
+    # { name = "pve3", ip = "192.168.1.102" },
+  ]
+
+  # Credentials pve-exporter (token read-only)
+  # Creer avec:
+  #   pveum user add prometheus@pve
+  #   pveum aclmod / -user prometheus@pve -role PVEAuditor
+  #   pveum user token add prometheus@pve prometheus -privsep=0
+  pve_exporter = {
+    user        = "prometheus@pve"
+    token_name  = "prometheus"
+    token_value = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  }
+
+  # Retention des metriques (jours)
+  retention_days = 30
+
+  # Mot de passe admin Grafana
+  grafana_admin_password = "ChangeMePlease123!"
+
+  # Notifications Telegram (optionnel)
+  # Creer un bot via @BotFather et recuperer le chat_id
+  telegram = {
+    enabled   = false
+    bot_token = "" # Token du bot (@BotFather)
+    chat_id   = "" # ID du chat/groupe (utiliser @userinfobot)
+  }
 }
