@@ -199,7 +199,29 @@ Le format du token sera :
 terraform@pve!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
-## Étape 7 : Activer les snippets pour cloud-init
+## Étape 7 : Créer un utilisateur Prometheus (optionnel)
+
+Si vous prévoyez d'utiliser le module `monitoring-stack` pour surveiller vos nodes Proxmox, créez un utilisateur dédié avec des permissions en lecture seule :
+
+```bash
+# Créer l'utilisateur prometheus (lecture seule)
+pveum user add prometheus@pve --comment "Prometheus monitoring"
+
+# Assigner le rôle PVEAuditor (lecture seule intégrée)
+pveum aclmod / -user prometheus@pve -role PVEAuditor
+
+# Créer le token API (NOTEZ BIEN LE TOKEN AFFICHÉ)
+pveum user token add prometheus@pve prometheus --privsep=0
+```
+
+Le format du token sera :
+```
+prometheus@pve!prometheus=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
+> **Note** : Ce token est utilisé par `pve-exporter` pour collecter les métriques Proxmox (VMs, LXC, stockage, etc.).
+
+## Étape 8 : Activer les snippets pour cloud-init
 
 Pour que Terraform puisse uploader des fichiers cloud-init personnalisés (installation Docker, etc.), il faut activer le content type "snippets" sur le storage local :
 
@@ -213,7 +235,7 @@ pvesm set local --content backup,iso,vztmpl,snippets
 
 > **Note** : Sans cette configuration, Terraform ne pourra pas créer de VMs avec Docker pré-installé.
 
-## Étape 8 : Télécharger des templates
+## Étape 9 : Télécharger des templates
 
 ### Templates LXC (conteneurs)
 
@@ -264,7 +286,7 @@ qm set 9000 --agent enabled=1
 qm template 9000
 ```
 
-## Étape 9 : Vérification
+## Étape 10 : Vérification
 
 ### Vérifier que tout fonctionne
 
@@ -296,7 +318,8 @@ Gardez ces informations pour la configuration Terraform :
 |-------------|--------|
 | URL Proxmox | `https://192.168.1.X:8006` |
 | Node name | `pve` (nom par défaut) |
-| Token API | `terraform@pve!terraform-token=xxx` |
+| Token API Terraform | `terraform@pve!terraform-token=xxx` |
+| Token API Prometheus | `prometheus@pve!prometheus=xxx` (optionnel, pour monitoring) |
 | Template VM ID | `9000` |
 | Template LXC | `local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst` |
 | Bridge réseau | `vmbr0` |

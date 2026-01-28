@@ -6,7 +6,8 @@ Infrastructure as Code pour gérer un homelab Proxmox VE sur Intel NUC avec Terr
 
 - **VMs avec cloud-init** : Provisionnement automatique avec Docker pré-installé
 - **Conteneurs LXC** : Support des conteneurs légers avec option nesting
-- **Modules réutilisables** : Modules Terraform pour VM et LXC
+- **Stack Monitoring** : Prometheus, Grafana, Alertmanager avec support multi-NUC
+- **Modules réutilisables** : Modules Terraform pour VM, LXC et monitoring
 - **CI/CD** : Validation Terraform et scans de sécurité via GitHub Actions
 
 ## Prérequis
@@ -22,13 +23,14 @@ Infrastructure as Code pour gérer un homelab Proxmox VE sur Intel NUC avec Terr
 pve-home/
 ├── infrastructure/proxmox/
 │   ├── modules/
-│   │   ├── vm/           # Module VM avec cloud-init et Docker
-│   │   └── lxc/          # Module conteneur LXC
+│   │   ├── vm/               # Module VM avec cloud-init et Docker
+│   │   ├── lxc/              # Module conteneur LXC
+│   │   └── monitoring-stack/ # Stack Prometheus/Grafana/Alertmanager
 │   └── environments/
-│       └── home/         # Configuration homelab
+│       └── home/             # Configuration homelab
 ├── docs/
 │   └── INSTALLATION-PROXMOX.md
-└── .github/workflows/    # CI/CD (Terraform fmt, validate, tfsec)
+└── .github/workflows/        # CI/CD (Terraform fmt, validate, tfsec)
 ```
 
 ## Démarrage rapide
@@ -56,14 +58,15 @@ terraform apply
 ## Exemple de configuration
 
 ```hcl
-# VM avec Docker pré-installé
+# VM avec Docker et monitoring activé
 "docker-server" = {
-  ip     = "192.168.1.20"
-  cores  = 4
-  memory = 4096
-  disk   = 50
-  docker = true
-  tags   = ["docker", "server"]
+  ip            = "192.168.1.20"
+  cores         = 4
+  memory        = 4096
+  disk          = 50
+  docker        = true
+  node_exporter = true  # Expose les métriques pour Prometheus
+  tags          = ["docker", "server", "monitored"]
 }
 
 # Conteneur LXC léger
@@ -76,6 +79,40 @@ terraform apply
   tags    = ["proxy"]
 }
 ```
+
+## Stack Monitoring
+
+Le module `monitoring-stack` déploie une stack complète de monitoring :
+
+- **Prometheus** : Collecte des métriques (nodes, VMs, LXC, Proxmox)
+- **Grafana** : Visualisation et dashboards
+- **Alertmanager** : Notifications via Telegram
+- **PVE Exporter** : Métriques spécifiques Proxmox
+
+```hcl
+monitoring = {
+  enabled = true
+  vm = {
+    ip        = "192.168.1.50"
+    cores     = 2
+    memory    = 4096
+    disk      = 30
+    data_disk = 50
+  }
+  proxmox_nodes = [
+    { name = "pve1", ip = "192.168.1.100" },
+    { name = "pve2", ip = "192.168.1.101" },
+  ]
+  grafana_admin_password = "secure-password"
+  telegram = {
+    enabled   = true
+    bot_token = "123456:ABC..."
+    chat_id   = "-1001234567890"
+  }
+}
+```
+
+Voir [terraform.tfvars.example](infrastructure/proxmox/environments/home/terraform.tfvars.example) pour la configuration complète.
 
 ## Sécurité
 
