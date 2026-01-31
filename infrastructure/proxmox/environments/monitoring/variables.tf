@@ -115,13 +115,13 @@ variable "monitoring" {
       data_disk = optional(number, 50)
     })
     proxmox_nodes = list(object({
-      name = string
-      ip   = string
+      name        = string
+      ip          = string
+      token_value = string
     }))
     pve_exporter = object({
-      user        = optional(string, "prometheus@pve")
-      token_name  = optional(string, "prometheus")
-      token_value = string
+      user       = optional(string, "prometheus@pve")
+      token_name = optional(string, "prometheus")
     })
     retention_days         = optional(number, 30)
     grafana_admin_password = optional(string, "admin")

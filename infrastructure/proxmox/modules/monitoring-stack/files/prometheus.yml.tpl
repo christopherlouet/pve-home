@@ -56,7 +56,7 @@ scrape_configs:
       - targets: ['pve-exporter:9221']
     params:
       target: ['${node.ip}']
-      module: ['default']
+      module: ['${node.name}']
     metrics_path: /pve
     relabel_configs:
       - source_labels: [__param_target]

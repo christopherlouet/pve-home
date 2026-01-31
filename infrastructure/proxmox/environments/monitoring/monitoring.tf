@@ -31,9 +31,8 @@ module "monitoring" {
   proxmox_nodes = var.monitoring.proxmox_nodes
 
   # Credentials pve-exporter
-  pve_exporter_user        = var.monitoring.pve_exporter.user
-  pve_exporter_token_name  = var.monitoring.pve_exporter.token_name
-  pve_exporter_token_value = var.monitoring.pve_exporter.token_value
+  pve_exporter_user       = var.monitoring.pve_exporter.user
+  pve_exporter_token_name = var.monitoring.pve_exporter.token_name
 
   # Cibles distantes (VMs sur d'autres PVE)
   remote_scrape_targets = var.remote_targets
@@ -100,6 +99,14 @@ resource "proxmox_virtual_environment_firewall_rules" "monitoring" {
     proto   = "tcp"
     dport   = "9093"
     comment = "Alertmanager"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "9100"
+    comment = "Node Exporter"
   }
 
   rule {

@@ -36,12 +36,12 @@ locals {
     retention_size         = var.prometheus_retention_size
   })
 
-  # Configuration PVE Exporter
+  # Configuration PVE Exporter (un module par node)
   pve_exporter_config = yamlencode({
-    default = {
+    for node in var.proxmox_nodes : node.name => {
       user        = var.pve_exporter_user
       token_name  = var.pve_exporter_token_name
-      token_value = var.pve_exporter_token_value
+      token_value = node.token_value
       verify_ssl  = false
     }
   })
