@@ -91,11 +91,98 @@ DNS Server:           192.168.1.1         # Ou 1.1.1.1, 8.8.8.8
    - Password: Le mot de passe défini à l'installation
    - Realm: `Linux PAM standard authentication`
 
-## Étape 5 : Configuration post-installation
+## Étape 5 : Configurer l'accès SSH avec clé publique
 
-### 5.1 Supprimer le message de souscription
+Avant de lancer le script de post-installation, configurez l'accès SSH par clé publique depuis votre poste de travail. Cela permet d'exécuter le script à distance et est requis par Terraform.
 
-Exécuter sur le node Proxmox (via SSH ou la console web) :
+### 5.1 Générer une paire de clés SSH (si nécessaire)
+
+Si vous n'avez pas encore de clé SSH, générez-en une sur votre poste de travail :
+
+```bash
+ssh-keygen -t ed25519 -C "votre-email@example.com"
+```
+
+> **Note** : Appuyez sur Entrée pour accepter l'emplacement par défaut (`~/.ssh/id_ed25519`). Vous pouvez définir une passphrase pour plus de sécurité.
+
+### 5.2 Copier la clé publique sur le node Proxmox
+
+```bash
+ssh-copy-id root@192.168.1.X
+```
+
+Ou manuellement, si `ssh-copy-id` n'est pas disponible :
+
+```bash
+# Afficher votre clé publique
+cat ~/.ssh/id_ed25519.pub
+
+# Sur le node Proxmox (via la console web), ajouter la clé :
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+echo "VOTRE_CLE_PUBLIQUE_ICI" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+```
+
+### 5.3 Vérifier la connexion
+
+```bash
+ssh root@192.168.1.X "hostname && pveversion"
+```
+
+Vous devez obtenir le nom du node et la version de Proxmox sans saisir de mot de passe.
+
+## Étape 6 : Configuration post-installation (script automatisé)
+
+Le script `post-install-proxmox.sh` automatise toutes les étapes de configuration :
+- Suppression du popup de souscription
+- Configuration des dépôts APT (no-subscription)
+- Mise à jour système
+- Configuration du fuseau horaire
+- Installation des outils utiles (vim, htop, iotop, curl, wget, net-tools, sudo, fail2ban)
+- Configuration de fail2ban (protection SSH + interface web Proxmox)
+- Création de l'utilisateur Terraform avec token API
+- Création de l'utilisateur Prometheus (optionnel)
+- Activation des snippets cloud-init
+- Téléchargement des templates LXC et VM cloud-init
+
+### Exécution du script
+
+Copiez le script sur le node Proxmox et exécutez-le :
+
+```bash
+# Depuis votre poste de travail
+scp scripts/post-install-proxmox.sh root@192.168.1.X:/root/
+
+# Sur le node Proxmox (via SSH)
+ssh root@192.168.1.X
+chmod +x /root/post-install-proxmox.sh
+./post-install-proxmox.sh
+```
+
+Le script est interactif : il demande confirmation avant chaque étape. Utilisez `--yes` pour tout accepter automatiquement :
+
+```bash
+./post-install-proxmox.sh --yes
+```
+
+### Options disponibles
+
+| Option | Description |
+|--------|-------------|
+| `-y`, `--yes` | Mode non-interactif (tout accepter) |
+| `--skip-reboot` | Ne pas redémarrer après la mise à jour |
+| `--timezone ZONE` | Fuseau horaire (défaut: `Europe/Paris`) |
+| `--vm-template-id ID` | ID du template VM cloud-init (défaut: `9000`) |
+| `--no-prometheus` | Ne pas créer l'utilisateur Prometheus |
+| `--no-template-vm` | Ne pas créer le template VM cloud-init |
+| `-h`, `--help` | Afficher l'aide |
+
+> **Important** : Le script affiche un résumé final avec les tokens API générés. Notez-les immédiatement, ils ne seront plus affichables ensuite.
+
+<details>
+<summary>Commandes manuelles détaillées (référence)</summary>
+
+### Supprimer le message de souscription
 
 ```bash
 # Supprimer le popup de souscription (optionnel, légal pour usage personnel)
@@ -103,7 +190,7 @@ sed -Ezi.bak "s/(Ext\.Msg\.show\(\{.+?title: 'No valid subscription)/void({ \/\/
 systemctl restart pveproxy.service
 ```
 
-### 5.2 Configurer les dépôts (gratuits)
+### Configurer les dépôts (gratuits)
 
 > **Proxmox VE 9.x** utilise le nouveau format de fichiers APT DEB822 (`.sources`) au lieu de l'ancien format `.list`.
 
@@ -154,35 +241,32 @@ apt update && apt full-upgrade -y
 
 </details>
 
-### 5.3 Mettre à jour le système
+### Mettre à jour le système
 
 ```bash
 apt update && apt full-upgrade -y
 reboot
 ```
 
-### 5.4 Configurer le fuseau horaire
+### Configurer le fuseau horaire
 
 ```bash
 timedatectl set-timezone Europe/Paris
 ```
 
-### 5.5 Installer les outils utiles
+### Installer les outils utiles
 
 ```bash
-apt install -y vim htop iotop curl wget net-tools
+apt install -y vim htop iotop curl wget net-tools sudo fail2ban
 ```
 
-## Étape 6 : Créer un utilisateur Terraform
-
-Pour que Terraform puisse gérer Proxmox, il faut créer un utilisateur dédié avec un token API.
+### Créer un utilisateur Terraform
 
 ```bash
 # Créer l'utilisateur terraform
 pveum user add terraform@pve --comment "Terraform automation"
 
 # Créer un rôle avec les permissions nécessaires (PVE 9.x)
-# Inclut VM.GuestAgent.Audit pour la récupération d'infos via QEMU Guest Agent
 pveum role add TerraformRole -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify SDN.Use VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.GuestAgent.Audit VM.Migrate VM.PowerMgmt User.Modify"
 
 # Assigner le rôle à l'utilisateur sur tout le datacenter
@@ -192,113 +276,197 @@ pveum aclmod / -user terraform@pve -role TerraformRole
 pveum user token add terraform@pve terraform-token --privsep=0
 ```
 
-> **Important** : Copiez et sauvegardez le token affiché. Il ne sera plus visible ensuite.
-
-Le format du token sera :
-```
-terraform@pve!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-```
-
-## Étape 7 : Activer les snippets pour cloud-init
-
-Pour que Terraform puisse uploader des fichiers cloud-init personnalisés (installation Docker, etc.), il faut activer le content type "snippets" sur le storage local :
+### Créer un utilisateur Prometheus (optionnel)
 
 ```bash
-# Créer le répertoire snippets
-mkdir -p /var/lib/vz/snippets
+pveum user add prometheus@pve --comment "Prometheus monitoring"
+pveum aclmod / -user prometheus@pve -role PVEAuditor
+pveum user token add prometheus@pve prometheus --privsep=0
+```
 
-# Activer les snippets sur le storage local
+### Activer les snippets pour cloud-init
+
+```bash
+mkdir -p /var/lib/vz/snippets
 pvesm set local --content backup,iso,vztmpl,snippets
 ```
 
-> **Note** : Sans cette configuration, Terraform ne pourra pas créer de VMs avec Docker pré-installé.
-
-## Étape 8 : Télécharger des templates
-
-### Templates LXC (conteneurs)
-
-Depuis l'interface web ou en ligne de commande :
+### Télécharger des templates
 
 ```bash
-# Mettre à jour la liste des templates
+# Templates LXC
 pveam update
-
-# Lister les templates disponibles
-pveam available --section system
-
-# Télécharger Ubuntu 24.04 (recommandé)
 pveam download local ubuntu-24.04-standard_24.04-2_amd64.tar.zst
-
-# Télécharger Debian 13 (Trixie - base de PVE 9.x)
-pveam download local debian-13-standard_13.1-2_amd64.tar.zst
-
-# Ou Debian 12 (Bookworm)
 pveam download local debian-12-standard_12.12-1_amd64.tar.zst
-```
 
-### Template VM cloud-init (pour Terraform)
-
-```bash
-# Télécharger l'image cloud Ubuntu
+# Template VM cloud-init (ID 9000)
 cd /var/lib/vz/template/iso
 wget https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
-
-# Créer une VM template (ID 9000)
 qm create 9000 --name "ubuntu-cloud-template" --memory 2048 --cores 2 --net0 virtio,bridge=vmbr0
-
-# Importer le disque
 qm importdisk 9000 noble-server-cloudimg-amd64.img local-lvm
-
-# Configurer le disque
 qm set 9000 --scsihw virtio-scsi-pci --scsi0 local-lvm:vm-9000-disk-0
-
-# Configurer cloud-init
 qm set 9000 --ide2 local-lvm:cloudinit
 qm set 9000 --boot c --bootdisk scsi0
 qm set 9000 --serial0 socket --vga serial0
-
-# Activer QEMU Guest Agent
 qm set 9000 --agent enabled=1
-
-# Convertir en template
 qm template 9000
 ```
 
-## Étape 9 : Vérification
-
-### Vérifier que tout fonctionne
+### Vérification
 
 ```bash
-# Vérifier les services Proxmox
 systemctl status pvedaemon pveproxy
-
-# Vérifier les informations du node
 pvesh get /nodes/$(hostname)/status
-
-# Vérifier le stockage
 pvesm status
-
-# Lister les templates téléchargés
 pveam list local
-
-# Tester l'API avec le token (utiliser des guillemets simples pour éviter l'interprétation du !)
 curl -k -H 'Authorization: PVEAPIToken=terraform@pve!terraform-token=VOTRE_TOKEN' \
   'https://127.0.0.1:8006/api2/json/nodes'
 ```
 
-> **Note** : La commande `pvecm status` est uniquement pour les clusters multi-nodes. Sur une installation single-node, elle retourne une erreur (c'est normal).
+</details>
+
+## Étape 7 : Sécurisation de l'instance Proxmox
+
+Même sur un réseau local, quelques mesures de sécurité de base sont recommandées.
+
+### 7.1 Désactiver l'authentification SSH par mot de passe
+
+Une fois la clé SSH configurée (étape 5), désactivez l'authentification par mot de passe :
+
+```bash
+# Sur le node Proxmox
+sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config
+sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+systemctl restart sshd
+```
+
+> **Important** : Vérifiez que votre connexion par clé SSH fonctionne **avant** de désactiver le mot de passe. En cas de problème, vous pouvez toujours accéder au node via la console physique ou l'interface web (Shell).
+
+### 7.2 Configurer fail2ban
+
+Le script de post-installation (étape 6) installe et configure automatiquement `fail2ban` avec deux jails :
+- **sshd** : protège SSH (5 tentatives max, ban 1h)
+- **proxmox** : protège l'interface web (3 tentatives max, ban 1h)
+
+Vous pouvez vérifier que fail2ban est actif :
+
+```bash
+fail2ban-client status
+fail2ban-client status sshd
+fail2ban-client status proxmox
+```
+
+<details>
+<summary>Configuration manuelle (si le script n'a pas été utilisé)</summary>
+
+```bash
+# PVE 9.x (Debian Trixie) utilise journald, pas /var/log/daemon.log
+# Adapter "backend" selon votre version :
+#   - PVE 9.x : backend = systemd (pas de logpath)
+#   - PVE 8.x : backend = auto, logpath = /var/log/daemon.log
+cat > /etc/fail2ban/jail.local << 'EOF'
+[sshd]
+enabled = true
+port = ssh
+maxretry = 5
+bantime = 3600
+
+[proxmox]
+enabled = true
+port = https,http,8006
+filter = proxmox
+backend = systemd
+maxretry = 3
+bantime = 3600
+EOF
+
+cat > /etc/fail2ban/filter.d/proxmox.conf << 'EOF'
+[Definition]
+failregex = pvedaemon\[.*authentication failure; rhost=<HOST> user=.* msg=.*
+ignoreregex =
+journalmatch = _SYSTEMD_UNIT=pvedaemon.service
+EOF
+
+systemctl enable fail2ban
+systemctl restart fail2ban
+```
+
+</details>
+
+### 7.3 Configurer le pare-feu Proxmox
+
+Le pare-feu intégré de Proxmox peut être activé via l'interface web ou en ligne de commande. Ports à ouvrir :
+
+| Port | Service | Requis |
+|------|---------|--------|
+| 22 | SSH | Oui |
+| 8006 | Interface web Proxmox | Oui |
+| 9100 | Node Exporter (Prometheus) | Optionnel (monitoring) |
+
+Le pare-feu Proxmox fonctionne a deux niveaux : **datacenter** (regles partagees par tous les nodes) et **node** (activation par node). Les deux niveaux doivent etre configures.
+
+```bash
+# 1. Configurer les regles au niveau du datacenter
+cat > /etc/pve/firewall/cluster.fw << 'EOF'
+[OPTIONS]
+enable: 1
+policy_in: DROP
+policy_out: ACCEPT
+
+[RULES]
+IN ACCEPT -p tcp -dport 22 -log nolog
+IN ACCEPT -p tcp -dport 8006 -log nolog
+IN ACCEPT -p tcp -dport 9100 -log nolog -comment "Node Exporter"
+IN ACCEPT -p icmp -log nolog -comment "Ping"
+EOF
+
+# 2. Activer le pare-feu au niveau du node
+#    $(hostname) detecte automatiquement le nom du node (ex: pve, pve2, nuc-01...)
+#    Verifier avec : echo $(hostname)
+cat > /etc/pve/nodes/$(hostname)/host.fw << 'EOF'
+[OPTIONS]
+enable: 1
+EOF
+
+# 3. Activer et demarrer le service pve-firewall
+systemctl enable pve-firewall
+systemctl start pve-firewall
+```
+
+Apres configuration, les regles sont visibles dans l'interface web :
+- **Datacenter > Firewall** : regles globales (cluster.fw)
+- **Node > Firewall > Options** : activation du pare-feu au niveau du node (host.fw)
+
+> **Note** : Le service `pve-firewall` surveille automatiquement les fichiers dans `/etc/pve/firewall/` et applique les changements a chaud. Les modifications ulterieures seront prises en compte sans redemarrage du service.
+
+> **Attention** : Activez le pare-feu uniquement si vous etes sur que vos regles sont correctes. Une mauvaise configuration peut bloquer l'acces au node. En cas de probleme, accedez au node via la console physique et desactivez le pare-feu : `pve-firewall stop`.
+
+### 7.4 Certificat HTTPS
+
+Le certificat auto-signé de Proxmox est suffisant pour un usage sur réseau local. L'avertissement du navigateur est normal et n'affecte pas la sécurité du chiffrement.
+
+Si l'avertissement vous gêne, vous pouvez utiliser [mkcert](https://github.com/FiloSottile/mkcert) pour créer une autorité de certification locale et générer un certificat de confiance pour votre navigateur.
+
+### 7.5 Authentification à deux facteurs (optionnel)
+
+Sur un réseau local domestique, le 2FA n'est généralement pas nécessaire. Il peut être utile si :
+- D'autres personnes ont accès à votre réseau (Wi-Fi partagé, appareils IoT)
+- Vous exposez l'interface web via un VPN
+
+La configuration se fait dans l'interface web Proxmox : **Datacenter > Permissions > Two Factor**.
 
 ## Informations à noter
 
-Gardez ces informations pour la configuration Terraform :
+Gardez ces informations pour la configuration Terraform (affichées dans le résumé du script) :
 
 | Information | Valeur |
 |-------------|--------|
 | URL Proxmox | `https://192.168.1.X:8006` |
-| Node name | `pve` (nom par défaut) |
-| Token API | `terraform@pve!terraform-token=xxx` |
+| Node name | Défini à l'installation (ex: `pve`, `pve2`). Vérifier avec `hostname` |
+| Token API Terraform | `terraform@pve!terraform-token=xxx` |
+| Token API Prometheus | `prometheus@pve!prometheus=xxx` (optionnel, pour monitoring) |
 | Template VM ID | `9000` |
-| Template LXC | `local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst` |
+| Template LXC | `local:vztmpl/ubuntu-24.04-standard_24.04-2_amd64.tar.zst` |
 | Bridge réseau | `vmbr0` |
 | Datastore | `local-lvm` |
 | Gateway | `192.168.1.1` |
@@ -319,7 +487,7 @@ Une fois Proxmox installé et configuré :
 - Vérifier le firewall : `pve-firewall status`
 
 ### Erreur "No valid subscription"
-- Normal sans souscription, suivre l'étape 5.1 pour supprimer le popup
+- Normal sans souscription, le script de post-installation désactive automatiquement le popup
 
 ### Token API ne fonctionne pas
 - Vérifier que `--privsep=0` a été utilisé
@@ -328,3 +496,13 @@ Une fois Proxmox installé et configuré :
 ### VMs ne démarrent pas
 - Vérifier que VT-x est activé dans le BIOS
 - Vérifier l'espace disque : `df -h`
+
+### Connexion SSH refusée après sécurisation
+- Accéder au node via la console physique ou le Shell de l'interface web
+- Vérifier `/etc/ssh/sshd_config`
+- Réactiver temporairement `PasswordAuthentication yes` si nécessaire
+
+### Pare-feu bloque l'accès
+- Accéder au node via la console physique
+- Désactiver le pare-feu : `pve-firewall stop`
+- Corriger les règles dans `/etc/pve/firewall/cluster.fw`
