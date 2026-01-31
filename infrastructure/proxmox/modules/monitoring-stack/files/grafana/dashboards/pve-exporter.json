@@ -597,42 +597,42 @@
       ],
       "targets": [
         {
-          "expr": "sum by (id, name, type) (pve_guest_info{node=~\"$node\"})",
+          "expr": "sum by (id, name, type) (pve_guest_info{node=~\"$node\", template!=\"1\"})",
           "legendFormat": "",
           "refId": "A",
           "format": "table",
           "instant": true
         },
         {
-          "expr": "sum by (id) (pve_up{node=~\"$node\"} and on (id, instance) pve_guest_info)",
+          "expr": "sum by (id) (pve_up{node=~\"$node\"} and on (id, instance) pve_guest_info{template!=\"1\"})",
           "legendFormat": "",
           "refId": "B",
           "format": "table",
           "instant": true
         },
         {
-          "expr": "sum by (id) (pve_cpu_usage_limit{node=~\"$node\"} and on (id, instance) pve_guest_info)",
+          "expr": "sum by (id) (pve_cpu_usage_limit{node=~\"$node\"} and on (id, instance) pve_guest_info{template!=\"1\"})",
           "legendFormat": "",
           "refId": "C",
           "format": "table",
           "instant": true
         },
         {
-          "expr": "sum by (id) (pve_memory_size_bytes{node=~\"$node\"} and on (id, instance) pve_guest_info)",
+          "expr": "sum by (id) (pve_memory_size_bytes{node=~\"$node\"} and on (id, instance) pve_guest_info{template!=\"1\"})",
           "legendFormat": "",
           "refId": "D",
           "format": "table",
           "instant": true
         },
         {
-          "expr": "sum by (id) (pve_memory_usage_bytes{node=~\"$node\", template!=\"1\"} / pve_memory_size_bytes and on (id, instance) pve_guest_info and on (id) pve_up == 1)",
+          "expr": "sum by (id) (pve_memory_usage_bytes{node=~\"$node\", template!=\"1\"} / pve_memory_size_bytes and on (id, instance) pve_guest_info{template!=\"1\"} and on (id) pve_up == 1)",
           "legendFormat": "",
           "refId": "E",
           "format": "table",
           "instant": true
         },
         {
-          "expr": "sum by (id) (pve_disk_size_bytes{node=~\"$node\"} and on (id, instance) pve_guest_info)",
+          "expr": "sum by (id) (pve_disk_size_bytes{node=~\"$node\"} and on (id, instance) pve_guest_info{template!=\"1\"})",
           "legendFormat": "",
           "refId": "F",
           "format": "table",
@@ -951,7 +951,7 @@
       },
       "targets": [
         {
-          "expr": "((pve_cpu_usage_ratio{node=~\"$node\"} / pve_cpu_usage_limit) * on(id, instance) group_left(name, type) pve_guest_info) and on(id, instance) pve_up == 1",
+          "expr": "((pve_cpu_usage_ratio{node=~\"$node\"} / pve_cpu_usage_limit) * on(id, instance) group_left(name, type) pve_guest_info{template!=\"1\"}) and on(id, instance) pve_up == 1",
           "legendFormat": "{{ name }} ({{ type }})",
           "refId": "A"
         }
@@ -997,7 +997,7 @@
       },
       "targets": [
         {
-          "expr": "(pve_memory_usage_bytes{node=~\"$node\"} / pve_memory_size_bytes * on(id, instance) group_left(name, type) pve_guest_info) and on(id, instance) pve_up == 1",
+          "expr": "(pve_memory_usage_bytes{node=~\"$node\"} / pve_memory_size_bytes * on(id, instance) group_left(name, type) pve_guest_info{template!=\"1\"}) and on(id, instance) pve_up == 1",
           "legendFormat": "{{ name }} ({{ type }})",
           "refId": "A"
         }
@@ -1042,7 +1042,7 @@
       },
       "targets": [
         {
-          "expr": "(pve_memory_usage_bytes{id=~\"qemu/.*|lxc/.*\", node=~\"$node\"} * on(id, instance) group_left(name, type) pve_guest_info) and on(id, instance) pve_up == 1",
+          "expr": "(pve_memory_usage_bytes{id=~\"qemu/.*|lxc/.*\", node=~\"$node\"} * on(id, instance) group_left(name, type) pve_guest_info{template!=\"1\"}) and on(id, instance) pve_up == 1",
           "legendFormat": "{{ name }} ({{ type }})",
           "refId": "A"
         }
@@ -1099,12 +1099,12 @@
       },
       "targets": [
         {
-          "expr": "(rate(pve_network_receive_bytes{node=~\"$node\"}[5m]) * on(id, instance) group_left(name, type) pve_guest_info) and on(id, instance) pve_up == 1",
+          "expr": "(rate(pve_network_receive_bytes{node=~\"$node\"}[5m]) * on(id, instance) group_left(name, type) pve_guest_info{template!=\"1\"}) and on(id, instance) pve_up == 1",
           "legendFormat": "{{ name }} RX ({{ type }})",
           "refId": "A"
         },
         {
-          "expr": "-(rate(pve_network_transmit_bytes{node=~\"$node\"}[5m]) * on(id, instance) group_left(name, type) pve_guest_info) and on(id, instance) pve_up == 1",
+          "expr": "-(rate(pve_network_transmit_bytes{node=~\"$node\"}[5m]) * on(id, instance) group_left(name, type) pve_guest_info{template!=\"1\"}) and on(id, instance) pve_up == 1",
           "legendFormat": "{{ name }} TX ({{ type }})",
           "refId": "B"
         }
@@ -1149,12 +1149,12 @@
       },
       "targets": [
         {
-          "expr": "(rate(pve_disk_read_bytes{node=~\"$node\"}[5m]) * on(id, instance) group_left(name, type) pve_guest_info) and on(id, instance) pve_up == 1",
+          "expr": "(rate(pve_disk_read_bytes{node=~\"$node\"}[5m]) * on(id, instance) group_left(name, type) pve_guest_info{template!=\"1\"}) and on(id, instance) pve_up == 1",
           "legendFormat": "{{ name }} Read ({{ type }})",
           "refId": "A"
         },
         {
-          "expr": "-(rate(pve_disk_write_bytes{node=~\"$node\"}[5m]) * on(id, instance) group_left(name, type) pve_guest_info) and on(id, instance) pve_up == 1",
+          "expr": "-(rate(pve_disk_write_bytes{node=~\"$node\"}[5m]) * on(id, instance) group_left(name, type) pve_guest_info{template!=\"1\"}) and on(id, instance) pve_up == 1",
           "legendFormat": "{{ name }} Write ({{ type }})",
           "refId": "B"
         }
