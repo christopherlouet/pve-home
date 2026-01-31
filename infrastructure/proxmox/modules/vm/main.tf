@@ -248,9 +248,10 @@ resource "proxmox_virtual_environment_vm" "this" {
   }
 
   network_device {
-    bridge  = var.network_bridge
-    model   = "virtio"
-    vlan_id = var.vlan_id
+    bridge   = var.network_bridge
+    model    = "virtio"
+    vlan_id  = var.vlan_id
+    firewall = true
   }
 
   agent {

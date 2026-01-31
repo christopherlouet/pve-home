@@ -227,8 +227,9 @@ resource "proxmox_virtual_environment_vm" "monitoring" {
   }
 
   network_device {
-    bridge = var.network_bridge
-    model  = "virtio"
+    bridge   = var.network_bridge
+    model    = "virtio"
+    firewall = true
   }
 
   agent {
