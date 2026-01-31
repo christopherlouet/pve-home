@@ -58,6 +58,7 @@ locals {
   dashboard_node_exporter = file("${path.module}/files/grafana/dashboards/node-exporter.json")
   dashboard_pve_exporter  = file("${path.module}/files/grafana/dashboards/pve-exporter.json")
   dashboard_prometheus    = file("${path.module}/files/grafana/dashboards/prometheus.json")
+  dashboard_nodes_overview = file("${path.module}/files/grafana/dashboards/nodes-overview.json")
 
   # Configuration Alertmanager
   alertmanager_config = templatefile("${path.module}/files/alertmanager.yml.tpl", {
@@ -185,6 +186,11 @@ EOT
         path        = "/opt/monitoring/grafana/dashboards/prometheus.json"
         permissions = "0644"
         content     = local.dashboard_prometheus
+      },
+      {
+        path        = "/opt/monitoring/grafana/dashboards/nodes-overview.json"
+        permissions = "0644"
+        content     = local.dashboard_nodes_overview
       },
       {
         path        = "/opt/monitoring/prometheus/alerts/default.yml"
