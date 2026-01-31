@@ -68,9 +68,9 @@ scrape_configs:
   # -------------------------------------------------------------------------
   # Node Exporter sur la VM Monitoring elle-meme (optionnel)
   # -------------------------------------------------------------------------
-  - job_name: 'monitoring-vm'
+  - job_name: 'monitoring-stack'
     static_configs:
       - targets: ['${monitoring_ip}:9100']
         labels:
-          instance: 'monitoring-vm'
+          instance: 'monitoring-stack'
           role: 'monitoring'
