@@ -81,7 +81,7 @@
       },
       "targets": [
         {
-          "expr": "count(pve_guest_info{status=\"running\", node=~\"$node\"})",
+          "expr": "count(pve_up{id=~\"qemu/.*|lxc/.*\", node=~\"$node\"} == 1 unless on(id) pve_guest_info{template=\"1\"})",
           "legendFormat": "Running",
           "refId": "A"
         }
@@ -110,7 +110,7 @@
       },
       "targets": [
         {
-          "expr": "count(pve_guest_info{status=\"stopped\", node=~\"$node\"}) or vector(0)",
+          "expr": "count(pve_up{id=~\"qemu/.*|lxc/.*\", node=~\"$node\"} == 0 unless on(id) pve_guest_info{template=\"1\"}) or vector(0)",
           "legendFormat": "Stopped",
           "refId": "A"
         }
@@ -263,7 +263,7 @@
       },
       "targets": [
         {
-          "expr": "topk(10, pve_cpu_usage_ratio{id=~\"qemu/.*\", node=~\"$node\"} * 100)",
+          "expr": "topk(10, pve_cpu_usage_ratio{id=~\"qemu/.*\", template!=\"1\", node=~\"$node\"} * 100)",
           "legendFormat": "{{ name }}",
           "refId": "A"
         }
@@ -291,7 +291,7 @@
       },
       "targets": [
         {
-          "expr": "pve_memory_usage_bytes{id=~\"qemu/.*\", node=~\"$node\"}",
+          "expr": "pve_memory_usage_bytes{id=~\"qemu/.*\", template!=\"1\", node=~\"$node\"}",
           "legendFormat": "{{ name }}",
           "refId": "A"
         }
