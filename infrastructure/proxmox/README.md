@@ -19,7 +19,13 @@ infrastructure/proxmox/
 │   └── monitoring-stack/
 │       ├── main.tf               # Stack Prometheus + Grafana + Alertmanager
 │       ├── variables.tf
-│       └── outputs.tf
+│       ├── outputs.tf
+│       └── files/
+│           ├── docker-compose.yml.tpl   # Services: Prometheus, Grafana, PVE Exporter, Node Exporter
+│           ├── prometheus.yml.tpl       # Config scrape avec modules per-node
+│           ├── alertmanager.yml.tpl     # Config notifications Telegram
+│           ├── install-node-exporter.sh # Script d'installation pour hosts Proxmox
+│           └── grafana/                 # Dashboards JSON auto-provisionnes
 └── environments/
     ├── prod/                      # Instance PVE "production" (workloads)
     │   ├── versions.tf            # Versions Terraform/provider
@@ -68,7 +74,7 @@ infrastructure/proxmox/
 |---------------|------|---------|
 | **prod** | Workloads production | VMs applicatives (web-server, db-server, etc.) |
 | **lab** | Workloads lab/test | VMs applicatives (file-server, dev-server, etc.) |
-| **monitoring** | Monitoring centralise | Stack Prometheus/Grafana/Alertmanager uniquement |
+| **monitoring** | Monitoring centralise | Stack Prometheus/Grafana/Alertmanager/Node Exporter uniquement |
 
 Le PVE monitoring est dedie : il n'heberge aucun workload applicatif. Il supervise tous les nodes Proxmox et toutes les VMs des autres environnements via `remote_targets`.
 
@@ -153,12 +159,25 @@ vim terraform.tfvars
 
 # Configurer :
 # - proxmox_endpoint : URL du PVE dedie monitoring
-# - monitoring.proxmox_nodes : TOUS les PVE a superviser
+# - monitoring.proxmox_nodes : TOUS les PVE a superviser (avec token_value par node)
 # - remote_targets : VMs des autres PVE a monitorer
 
 terraform init
 terraform plan
 terraform apply
+```
+
+### 5. Installer node_exporter sur les hosts Proxmox
+
+Le script `install-node-exporter.sh` installe node_exporter comme service systemd sur les hosts PVE :
+
+```bash
+# Depuis votre machine de travail
+ssh root@192.168.1.100 'bash -s' < infrastructure/proxmox/modules/monitoring-stack/files/install-node-exporter.sh
+ssh root@192.168.1.50 'bash -s' < infrastructure/proxmox/modules/monitoring-stack/files/install-node-exporter.sh
+
+# Penser a ouvrir le port 9100 dans le firewall PVE de chaque host :
+# Datacenter > Host > Firewall > Add > TCP 9100 IN ACCEPT
 ```
 
 ## Creer un nouvel environnement
@@ -322,6 +341,16 @@ ssh root@192.168.1.20
 ### Monitoring ne scrape pas les VMs distantes
 - Verifier que node_exporter ecoute sur le port 9100 des VMs cibles
 - Verifier que le firewall autorise le trafic sur le port 9100
+
+### Prometheus target DOWN pour un host PVE
+- Verifier que node_exporter est installe : `ssh root@<ip> systemctl status node_exporter`
+- Verifier le firewall PVE : le port 9100 doit etre ouvert en entree
+- Tester : `curl http://<ip>:9100/metrics`
+
+### PVE Exporter ne remonte pas les metriques
+- Verifier que chaque node dans `proxmox_nodes` a un `token_value` valide
+- Verifier que le token a le role PVEAuditor sur chaque PVE
+- Tester : `curl "http://192.168.1.51:9221/pve?target=<ip-pve>&module=<node-name>"`
 
 ## Ressources
 
