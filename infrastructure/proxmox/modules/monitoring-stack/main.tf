@@ -36,13 +36,21 @@ locals {
     retention_size         = var.prometheus_retention_size
   })
 
+  # Configuration PVE Exporter
+  pve_exporter_config = yamlencode({
+    default = {
+      user        = var.pve_exporter_user
+      token_name  = var.pve_exporter_token_name
+      token_value = var.pve_exporter_token_value
+      verify_ssl  = false
+    }
+  })
+
   # Configuration Prometheus
   prometheus_config = templatefile("${path.module}/files/prometheus.yml.tpl", {
     proxmox_nodes        = var.proxmox_nodes
     scrape_targets       = local.all_scrape_targets
     monitoring_ip        = var.ip_address
-    pve_exporter_user    = var.pve_exporter_user
-    pve_exporter_token   = "${var.pve_exporter_user}!${var.pve_exporter_token_name}=${var.pve_exporter_token_value}"
     alertmanager_enabled = var.telegram_enabled
   })
 
@@ -66,7 +74,7 @@ set -e
 echo "=== Configuration Stack Monitoring ==="
 
 # Creer les repertoires
-mkdir -p /opt/monitoring/{prometheus,alertmanager,grafana/provisioning/{datasources,dashboards},grafana/dashboards}
+mkdir -p /opt/monitoring/{prometheus,alertmanager,grafana/provisioning/{datasources,dashboards},grafana/dashboards,pve-exporter}
 mkdir -p /opt/monitoring/prometheus/data
 mkdir -p /opt/monitoring/grafana/data
 
@@ -182,6 +190,11 @@ EOT
         path        = "/opt/monitoring/prometheus/alerts/default.yml"
         permissions = "0644"
         content     = file("${path.module}/files/prometheus/alerts/default.yml")
+      },
+      {
+        path        = "/opt/monitoring/pve-exporter/pve.yml"
+        permissions = "0644"
+        content     = local.pve_exporter_config
       }
     ]
     runcmd = concat(

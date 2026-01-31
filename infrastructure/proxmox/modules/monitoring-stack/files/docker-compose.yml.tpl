@@ -69,8 +69,8 @@ services:
     image: prompve/prometheus-pve-exporter:3.4.5
     container_name: pve-exporter
     restart: unless-stopped
-    environment:
-      - PVE_VERIFY_SSL=false
+    volumes:
+      - ./pve-exporter/pve.yml:/etc/prometheus/pve.yml:ro
     ports:
       - "9221:9221"
     networks:
