@@ -551,7 +551,7 @@
         {
           "id": "seriesToColumns",
           "options": {
-            "byField": "id"
+            "byField": "vm_key"
           }
         },
         {
@@ -572,19 +572,26 @@
               "instance 5": true,
               "instance 6": true,
               "instance 7": true,
-              "id": true,
+              "id 1": true,
+              "id 2": true,
+              "id 3": true,
+              "id 4": true,
+              "id 5": true,
+              "id 6": true,
+              "id 7": true,
               "__name__ 1": true,
               "__name__ 2": true,
               "__name__ 3": true,
               "__name__ 4": true,
               "__name__ 5": true,
               "__name__ 6": true,
-              "__name__ 7": true
+              "__name__ 7": true,
+              "vm_key": true,
+              "Value #A": true
             },
             "renameByName": {
               "name 1": "Name",
               "type 1": "Type",
-              "Value #A": "Info",
               "Value #B": "Status",
               "Value #C": "CPUs",
               "Value #D": "Memory",
@@ -597,49 +604,49 @@
       ],
       "targets": [
         {
-          "expr": "sum by (id, name, type) (pve_guest_info{node=~\"$node\", template!=\"1\"})",
+          "expr": "label_join(sum by (id, instance, name, type) (pve_guest_info{node=~\"$node\", template!=\"1\"}), \"vm_key\", \"@\", \"id\", \"instance\")",
           "legendFormat": "",
           "refId": "A",
           "format": "table",
           "instant": true
         },
         {
-          "expr": "sum by (id) (pve_up{node=~\"$node\"} and on (id, instance) pve_guest_info{template!=\"1\"})",
+          "expr": "label_join(sum by (id, instance) (pve_up{node=~\"$node\"} and on (id, instance) pve_guest_info{template!=\"1\"}), \"vm_key\", \"@\", \"id\", \"instance\")",
           "legendFormat": "",
           "refId": "B",
           "format": "table",
           "instant": true
         },
         {
-          "expr": "sum by (id) (pve_cpu_usage_limit{node=~\"$node\"} and on (id, instance) pve_guest_info{template!=\"1\"})",
+          "expr": "label_join(sum by (id, instance) (pve_cpu_usage_limit{node=~\"$node\"} and on (id, instance) pve_guest_info{template!=\"1\"}), \"vm_key\", \"@\", \"id\", \"instance\")",
           "legendFormat": "",
           "refId": "C",
           "format": "table",
           "instant": true
         },
         {
-          "expr": "sum by (id) (pve_memory_size_bytes{node=~\"$node\"} and on (id, instance) pve_guest_info{template!=\"1\"})",
+          "expr": "label_join(sum by (id, instance) (pve_memory_size_bytes{node=~\"$node\"} and on (id, instance) pve_guest_info{template!=\"1\"}), \"vm_key\", \"@\", \"id\", \"instance\")",
           "legendFormat": "",
           "refId": "D",
           "format": "table",
           "instant": true
         },
         {
-          "expr": "sum by (id) (pve_memory_usage_bytes{node=~\"$node\", template!=\"1\"} / pve_memory_size_bytes and on (id, instance) pve_guest_info{template!=\"1\"} and on (id) pve_up == 1)",
+          "expr": "label_join(sum by (id, instance) (pve_memory_usage_bytes{node=~\"$node\", template!=\"1\"} / pve_memory_size_bytes and on (id, instance) pve_guest_info{template!=\"1\"} and on (id, instance) pve_up == 1), \"vm_key\", \"@\", \"id\", \"instance\")",
           "legendFormat": "",
           "refId": "E",
           "format": "table",
           "instant": true
         },
         {
-          "expr": "sum by (id) (pve_disk_size_bytes{node=~\"$node\"} and on (id, instance) pve_guest_info{template!=\"1\"})",
+          "expr": "label_join(sum by (id, instance) (pve_disk_size_bytes{node=~\"$node\"} and on (id, instance) pve_guest_info{template!=\"1\"}), \"vm_key\", \"@\", \"id\", \"instance\")",
           "legendFormat": "",
           "refId": "F",
           "format": "table",
           "instant": true
         },
         {
-          "expr": "sum by (id) (pve_disk_usage_bytes{node=~\"$node\"} / pve_disk_size_bytes and on (id, instance) pve_guest_info{type=\"lxc\"})",
+          "expr": "label_join(sum by (id, instance) (pve_disk_usage_bytes{node=~\"$node\"} / pve_disk_size_bytes and on (id, instance) pve_guest_info{type=\"lxc\"}), \"vm_key\", \"@\", \"id\", \"instance\")",
           "legendFormat": "",
           "refId": "G",
           "format": "table",
