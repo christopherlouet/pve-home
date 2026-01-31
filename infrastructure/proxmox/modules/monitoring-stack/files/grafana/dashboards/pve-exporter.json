@@ -18,7 +18,7 @@
         "name": "node",
         "type": "query",
         "datasource": { "type": "prometheus", "uid": "prometheus" },
-        "query": "label_values(pve_up, id)",
+        "query": "label_values(pve_up{id=~\"node/.*\"}, node)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
@@ -53,8 +53,8 @@
       },
       "targets": [
         {
-          "expr": "pve_up{id=~\"$node\"}",
-          "legendFormat": "{{ id }}",
+          "expr": "pve_up{id=~\"node/.*\", node=~\"$node\"}",
+          "legendFormat": "{{ node }}",
           "refId": "A"
         }
       ]
@@ -81,7 +81,7 @@
       },
       "targets": [
         {
-          "expr": "count(pve_up{id=~\"qemu/.*|lxc/.*\", node=~\"$node\"} == 1 unless on(id) pve_guest_info{template=\"1\"})",
+          "expr": "count(pve_up{id=~\"qemu/.*|lxc/.*\", node=~\"$node\"} == 1 unless on(id, node) pve_guest_info{template=\"1\"}) or vector(0)",
           "legendFormat": "Running",
           "refId": "A"
         }
@@ -110,7 +110,7 @@
       },
       "targets": [
         {
-          "expr": "count(pve_up{id=~\"qemu/.*|lxc/.*\", node=~\"$node\"} == 0 unless on(id) pve_guest_info{template=\"1\"}) or vector(0)",
+          "expr": "count(pve_up{id=~\"qemu/.*|lxc/.*\", node=~\"$node\"} == 0 unless on(id, node) pve_guest_info{template=\"1\"}) or vector(0)",
           "legendFormat": "Stopped",
           "refId": "A"
         }
@@ -141,7 +141,7 @@
       },
       "targets": [
         {
-          "expr": "avg(pve_storage_usage_bytes / pve_storage_size_bytes) * 100",
+          "expr": "avg(pve_disk_usage_bytes{id=~\"storage/.*\", node=~\"$node\"} / pve_disk_size_bytes{id=~\"storage/.*\", node=~\"$node\"}) * 100",
           "legendFormat": "Avg Storage",
           "refId": "A"
         }
@@ -171,8 +171,8 @@
       },
       "targets": [
         {
-          "expr": "pve_cpu_usage_ratio{id=~\"$node\"} * 100",
-          "legendFormat": "{{ id }}",
+          "expr": "pve_cpu_usage_ratio{id=~\"node/.*\", node=~\"$node\"} * 100",
+          "legendFormat": "{{ node }}",
           "refId": "A"
         }
       ]
@@ -201,8 +201,8 @@
       },
       "targets": [
         {
-          "expr": "(pve_memory_usage_bytes{id=~\"$node\"} / pve_memory_size_bytes{id=~\"$node\"}) * 100",
-          "legendFormat": "{{ id }}",
+          "expr": "(pve_memory_usage_bytes{id=~\"node/.*\", node=~\"$node\"} / pve_memory_size_bytes{id=~\"node/.*\", node=~\"$node\"}) * 100",
+          "legendFormat": "{{ node }}",
           "refId": "A"
         }
       ]
@@ -234,8 +234,8 @@
       },
       "targets": [
         {
-          "expr": "(pve_storage_usage_bytes{node=~\"$node\"} / pve_storage_size_bytes{node=~\"$node\"}) * 100",
-          "legendFormat": "{{ node }}/{{ storage }}",
+          "expr": "(pve_disk_usage_bytes{id=~\"storage/.*\", node=~\"$node\"} / pve_disk_size_bytes{id=~\"storage/.*\", node=~\"$node\"}) * 100",
+          "legendFormat": "{{ node }}/{{ id }}",
           "refId": "A"
         }
       ]
@@ -263,8 +263,8 @@
       },
       "targets": [
         {
-          "expr": "topk(10, pve_cpu_usage_ratio{id=~\"qemu/.*\", template!=\"1\", node=~\"$node\"} * 100)",
-          "legendFormat": "{{ name }}",
+          "expr": "topk(10, pve_cpu_usage_ratio{id=~\"qemu/.*|lxc/.*\", node=~\"$node\"} * 100 unless on(id, node) pve_guest_info{template=\"1\"})",
+          "legendFormat": "{{ id }}",
           "refId": "A"
         }
       ]
@@ -291,8 +291,8 @@
       },
       "targets": [
         {
-          "expr": "pve_memory_usage_bytes{id=~\"qemu/.*\", template!=\"1\", node=~\"$node\"}",
-          "legendFormat": "{{ name }}",
+          "expr": "pve_memory_usage_bytes{id=~\"qemu/.*|lxc/.*\", node=~\"$node\"} unless on(id, node) pve_guest_info{template=\"1\"}",
+          "legendFormat": "{{ id }}",
           "refId": "A"
         }
       ]
