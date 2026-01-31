@@ -63,7 +63,7 @@
           "links": [
             {
               "title": "Drill down to Node Exporter Full",
-              "url": "/d/node-exporter?var-node=${__data.fields.instance}&from=${__from}&to=${__to}",
+              "url": "/d/node-exporter?var-node=${__data.fields.Hostname}&from=${__from}&to=${__to}",
               "targetBlank": false
             }
           ]
@@ -400,18 +400,6 @@
                 "value": 80
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "instance"
-            },
-            "properties": [
-              {
-                "id": "custom.hidden",
-                "value": true
-              }
-            ]
           }
         ]
       },
@@ -435,35 +423,30 @@
           }
         },
         {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "instance",
+                "Value #C",
+                "Value #D",
+                "Value #F",
+                "Value #G",
+                "Value #H",
+                "Value #I",
+                "Value #K",
+                "Value #L",
+                "Value #M",
+                "Value #N"
+              ]
+            }
+          }
+        },
+        {
           "id": "organize",
           "options": {
-            "excludeByName": {
-              "Time 1": true,
-              "Time 2": true,
-              "Time 3": true,
-              "Time 4": true,
-              "Time 5": true,
-              "Time 6": true,
-              "Time 7": true,
-              "Time 8": true,
-              "Time 9": true,
-              "Time 10": true,
-              "Time 11": true,
-              "Time 12": true,
-              "__name__ 1": true,
-              "__name__ 2": true,
-              "__name__ 3": true,
-              "domainname 1": true,
-              "job 1": true,
-              "machine 1": true,
-              "nodename 1": true,
-              "release 1": true,
-              "sysname 1": true,
-              "version 1": true
-            },
             "renameByName": {
-              "hostname 1": "Hostname",
-              "Value #A": "Info",
+              "instance": "Hostname",
               "Value #C": "CPU %",
               "Value #D": "Mem %",
               "Value #F": "Disk %",
@@ -477,17 +460,16 @@
             },
             "indexByName": {
               "instance": 0,
-              "hostname 1": 1,
-              "Value #C": 2,
-              "Value #D": 3,
-              "Value #F": 4,
-              "Value #M": 5,
-              "Value #G": 6,
-              "Value #H": 7,
-              "Value #K": 8,
-              "Value #L": 9,
-              "Value #I": 10,
-              "Value #N": 11
+              "Value #C": 1,
+              "Value #D": 2,
+              "Value #F": 3,
+              "Value #M": 4,
+              "Value #G": 5,
+              "Value #H": 6,
+              "Value #K": 7,
+              "Value #L": 8,
+              "Value #I": 9,
+              "Value #N": 10
             }
           }
         }
