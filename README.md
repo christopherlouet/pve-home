@@ -34,7 +34,7 @@ pve-home/
 │       └── monitoring/          # PVE dedie monitoring
 ├── docs/
 │   └── INSTALLATION-PROXMOX.md
-└── .github/workflows/           # CI/CD (Terraform fmt, validate, markdown-lint)
+└── .github/workflows/           # CI/CD + Security (fmt, validate, tfsec, Checkov, Trivy)
 ```
 
 ## Démarrage rapide
@@ -100,13 +100,27 @@ PVE Lab  (192.168.1.110)  ──┼── scrape ──> PVE Monitoring (192.168
 PVE Mon  (192.168.1.50)   ──┘              └─ Prometheus + Grafana + Alertmanager
 ```
 
+### Dashboards Grafana
+
+4 dashboards sont auto-provisionnes au deploiement :
+
+| Dashboard | Base | Description |
+|-----------|------|-------------|
+| **Node Exporter** | [#1860](https://grafana.com/grafana/dashboards/1860) | CPU, memoire, disque, reseau par host |
+| **PVE Exporter** | [#10347](https://grafana.com/grafana/dashboards/10347) | VMs, LXC, stockage, statut par node Proxmox |
+| **Prometheus** | [#3662](https://grafana.com/grafana/dashboards/3662) | Self-monitoring (targets, regles, samples) |
+| **Nodes Overview** | Custom | Vue d'ensemble multi-nodes avec drill-down |
+
+Les dashboards sont stockes dans `infrastructure/proxmox/modules/monitoring-stack/files/grafana/dashboards/` et deployes via le provisioning Grafana.
+
 Voir [environments/monitoring/terraform.tfvars.example](infrastructure/proxmox/environments/monitoring/terraform.tfvars.example) pour la configuration.
 
-## Sécurité
+## Securite
 
 - Les fichiers sensibles (`*.tfvars`, `*.tfstate`) sont exclus du versioning
-- Ne jamais commiter de tokens ou clés SSH
-- Scans optionnels recommandés : [tfsec](https://github.com/aquasecurity/tfsec) et [gitleaks](https://github.com/gitleaks/gitleaks)
+- Ne jamais commiter de tokens ou cles SSH
+- Scans automatiques en CI : [Gitleaks](https://github.com/gitleaks/gitleaks) (secrets), [tfsec](https://github.com/aquasecurity/tfsec) (Terraform), [Checkov](https://www.checkov.io/) (policy-as-code), [Trivy](https://trivy.dev/) (IaC misconfigurations)
+- Resultats SARIF uploades dans l'onglet Security de GitHub
 
 ## Licence
 
