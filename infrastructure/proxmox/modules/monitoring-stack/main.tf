@@ -36,15 +36,28 @@ locals {
     retention_size         = var.prometheus_retention_size
   })
 
+  # Configuration PVE Exporter (un module par node)
+  pve_exporter_config = yamlencode({
+    for node in var.proxmox_nodes : node.name => {
+      user        = var.pve_exporter_user
+      token_name  = var.pve_exporter_token_name
+      token_value = node.token_value
+      verify_ssl  = false
+    }
+  })
+
   # Configuration Prometheus
   prometheus_config = templatefile("${path.module}/files/prometheus.yml.tpl", {
     proxmox_nodes        = var.proxmox_nodes
     scrape_targets       = local.all_scrape_targets
     monitoring_ip        = var.ip_address
-    pve_exporter_user    = var.pve_exporter_user
-    pve_exporter_token   = "${var.pve_exporter_user}!${var.pve_exporter_token_name}=${var.pve_exporter_token_value}"
     alertmanager_enabled = var.telegram_enabled
   })
+
+  # Dashboards Grafana
+  dashboard_node_exporter = file("${path.module}/files/grafana/dashboards/node-exporter.json")
+  dashboard_pve_exporter  = file("${path.module}/files/grafana/dashboards/pve-exporter.json")
+  dashboard_prometheus    = file("${path.module}/files/grafana/dashboards/prometheus.json")
 
   # Configuration Alertmanager
   alertmanager_config = templatefile("${path.module}/files/alertmanager.yml.tpl", {
@@ -61,7 +74,7 @@ set -e
 echo "=== Configuration Stack Monitoring ==="
 
 # Creer les repertoires
-mkdir -p /opt/monitoring/{prometheus,alertmanager,grafana/provisioning/{datasources,dashboards}}
+mkdir -p /opt/monitoring/{prometheus,alertmanager,grafana/provisioning/{datasources,dashboards},grafana/dashboards,pve-exporter}
 mkdir -p /opt/monitoring/prometheus/data
 mkdir -p /opt/monitoring/grafana/data
 
@@ -70,6 +83,7 @@ chown -R 65534:65534 /opt/monitoring/prometheus/data
 
 # Permissions pour Grafana (user 472)
 chown -R 472:472 /opt/monitoring/grafana/data
+chown -R 472:472 /opt/monitoring/grafana/dashboards
 
 # Docker Compose
 cat > /opt/monitoring/docker-compose.yml << 'COMPOSE'
@@ -92,6 +106,7 @@ apiVersion: 1
 datasources:
   - name: Prometheus
     type: prometheus
+    uid: prometheus
     access: proxy
     url: http://prometheus:9090
     isDefault: true
@@ -155,6 +170,31 @@ EOT
         path        = "/opt/setup-monitoring.sh"
         permissions = "0755"
         content     = local.monitoring_setup_script
+      },
+      {
+        path        = "/opt/monitoring/grafana/dashboards/node-exporter.json"
+        permissions = "0644"
+        content     = local.dashboard_node_exporter
+      },
+      {
+        path        = "/opt/monitoring/grafana/dashboards/pve-exporter.json"
+        permissions = "0644"
+        content     = local.dashboard_pve_exporter
+      },
+      {
+        path        = "/opt/monitoring/grafana/dashboards/prometheus.json"
+        permissions = "0644"
+        content     = local.dashboard_prometheus
+      },
+      {
+        path        = "/opt/monitoring/prometheus/alerts/default.yml"
+        permissions = "0644"
+        content     = file("${path.module}/files/prometheus/alerts/default.yml")
+      },
+      {
+        path        = "/opt/monitoring/pve-exporter/pve.yml"
+        permissions = "0644"
+        content     = local.pve_exporter_config
       }
     ]
     runcmd = concat(

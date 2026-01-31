@@ -103,10 +103,11 @@ variable "username" {
 # -----------------------------------------------------------------------------
 
 variable "proxmox_nodes" {
-  description = "Liste des nodes Proxmox a monitorer"
+  description = "Liste des nodes Proxmox a monitorer avec credentials par node"
   type = list(object({
-    name = string
-    ip   = string
+    name        = string
+    ip          = string
+    token_value = string
   }))
 }
 
@@ -122,11 +123,6 @@ variable "pve_exporter_token_name" {
   default     = "prometheus"
 }
 
-variable "pve_exporter_token_value" {
-  description = "Valeur du token API pour pve-exporter"
-  type        = string
-  sensitive   = true
-}
 
 # -----------------------------------------------------------------------------
 # Additional Scrape Targets

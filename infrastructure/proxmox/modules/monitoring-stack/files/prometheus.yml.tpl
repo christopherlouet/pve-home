@@ -10,15 +10,15 @@ global:
     environment: homelab
     datacenter: home
 
+rule_files:
+  - /etc/prometheus/alerts/*.yml
+
 %{ if alertmanager_enabled }
 alerting:
   alertmanagers:
     - static_configs:
         - targets:
             - alertmanager:9093
-
-rule_files:
-  - /etc/prometheus/alerts/*.yml
 %{ endif }
 
 scrape_configs:
@@ -53,19 +53,16 @@ scrape_configs:
 %{ for node in proxmox_nodes }
   - job_name: 'pve-${node.name}'
     static_configs:
-      - targets: ['localhost:9221']
+      - targets: ['pve-exporter:9221']
     params:
       target: ['${node.ip}']
-      module: ['default']
+      module: ['${node.name}']
     metrics_path: /pve
     relabel_configs:
       - source_labels: [__param_target]
         target_label: instance
       - target_label: node
         replacement: '${node.name}'
-    basic_auth:
-      username: '${pve_exporter_user}'
-      password: '${pve_exporter_token}'
 %{ endfor }
 
   # -------------------------------------------------------------------------

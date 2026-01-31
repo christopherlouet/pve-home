@@ -28,9 +28,12 @@ npm-debug.log*
 # Test coverage
 coverage/
 
-# Claude Code local config
+# Claude Code
+.claude/
 CLAUDE.local.md
-.claude/settings.local.json
+
+# Mise
+mise.toml
 
 # Docusaurus
 website/node_modules/

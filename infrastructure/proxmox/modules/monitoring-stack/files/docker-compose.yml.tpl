@@ -31,6 +31,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=${grafana_admin_password}
@@ -68,12 +69,29 @@ services:
     image: prompve/prometheus-pve-exporter:3.4.5
     container_name: pve-exporter
     restart: unless-stopped
-    environment:
-      - PVE_VERIFY_SSL=false
+    volumes:
+      - ./pve-exporter/pve.yml:/etc/prometheus/pve.yml:ro
     ports:
       - "9221:9221"
     networks:
       - monitoring
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.rootfs=/host'
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - '/:/host:ro,rslave'
+    ports:
+      - "9100:9100"
+    networks:
+      - monitoring
+    pid: host
 
 volumes:
   prometheus_data:
