@@ -383,7 +383,7 @@ Le pare-feu intégré de Proxmox peut être activé via l'interface web ou en li
 | 9100 | Node Exporter (Prometheus) | Optionnel (monitoring) |
 
 ```bash
-# Activer le pare-feu au niveau du datacenter
+# Creer la configuration du pare-feu au niveau du datacenter
 cat > /etc/pve/firewall/cluster.fw << 'EOF'
 [OPTIONS]
 enable: 1
@@ -396,9 +396,15 @@ IN ACCEPT -p tcp -dport 8006 -log nolog
 IN ACCEPT -p tcp -dport 9100 -log nolog -comment "Node Exporter"
 IN ACCEPT -p icmp -log nolog -comment "Ping"
 EOF
+
+# Activer et demarrer le service pve-firewall
+systemctl enable pve-firewall
+systemctl start pve-firewall
 ```
 
-> **Attention** : Activez le pare-feu uniquement si vous êtes sûr que vos règles sont correctes. Une mauvaise configuration peut bloquer l'accès au node. En cas de problème, accédez au node via la console physique et désactivez le pare-feu : `pve-firewall stop`.
+> **Note** : Le service `pve-firewall` surveille automatiquement les fichiers dans `/etc/pve/firewall/` et applique les changements a chaud. Les modifications ulterieures du fichier `cluster.fw` seront prises en compte sans redemarrage.
+
+> **Attention** : Activez le pare-feu uniquement si vous etes sur que vos regles sont correctes. Une mauvaise configuration peut bloquer l'acces au node. En cas de probleme, accedez au node via la console physique et desactivez le pare-feu : `pve-firewall stop`.
 
 ### 7.4 Certificat HTTPS
 
