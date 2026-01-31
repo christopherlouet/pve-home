@@ -6,10 +6,18 @@ on:
   pull_request:
     branches: [main, develop]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   terraform-fmt:
     name: Terraform Format
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -17,7 +25,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: '1.5'
+          terraform_version: '1.5.7'
 
       - name: Check Terraform formatting
         run: terraform fmt -check -recursive -diff
@@ -26,6 +34,7 @@ jobs:
   terraform-validate:
     name: Terraform Validate
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       matrix:
         directory:
@@ -42,7 +51,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: '1.5'
+          terraform_version: '1.5.7'
 
       - name: Terraform Init
         run: terraform init -backend=false
@@ -52,9 +61,32 @@ jobs:
         run: terraform validate
         working-directory: ${{ matrix.directory }}
 
+  terraform-docs:
+    name: Terraform Docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        module:
+          - infrastructure/proxmox/modules/vm
+          - infrastructure/proxmox/modules/lxc
+          - infrastructure/proxmox/modules/monitoring-stack
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check terraform-docs is up to date
+        uses: terraform-docs/gh-actions@v1
+        with:
+          working-dir: ${{ matrix.module }}
+          output-file: README.md
+          output-method: inject
+          fail-on-diff: true
+
   markdown-lint:
     name: Markdown Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4

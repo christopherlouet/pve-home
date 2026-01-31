@@ -1,0 +1,8 @@
+# Default owner for all files
+* @christopherlouet
+
+# Infrastructure (critical)
+/infrastructure/ @christopherlouet
+
+# CI/CD pipeline protection
+/.github/ @christopherlouet
