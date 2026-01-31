@@ -1,0 +1,17 @@
+# =============================================================================
+# Provider Proxmox - Configuration partagee
+# =============================================================================
+# Copier ce fichier en provider.tf dans votre environnement.
+# Les variables sont definies dans variables.tf de chaque environnement.
+# =============================================================================
+
+provider "proxmox" {
+  endpoint  = var.proxmox_endpoint
+  api_token = var.proxmox_api_token
+  insecure  = var.proxmox_insecure
+
+  ssh {
+    agent    = true
+    username = var.ssh_username
+  }
+}

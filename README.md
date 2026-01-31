@@ -6,7 +6,7 @@ Infrastructure as Code pour gérer un homelab Proxmox VE sur Intel NUC avec Terr
 
 - **VMs avec cloud-init** : Provisionnement automatique avec Docker pré-installé
 - **Conteneurs LXC** : Support des conteneurs légers avec option nesting
-- **Stack Monitoring** : Prometheus, Grafana, Alertmanager avec support multi-NUC
+- **Stack Monitoring** : Prometheus, Grafana, Alertmanager sur PVE dédié (monitoring centralisé)
 - **Modules réutilisables** : Modules Terraform pour VM, LXC et monitoring
 - **CI/CD** : Validation Terraform et scans de sécurité via GitHub Actions
 
@@ -27,7 +27,9 @@ pve-home/
 │   │   ├── lxc/              # Module conteneur LXC
 │   │   └── monitoring-stack/ # Stack Prometheus/Grafana/Alertmanager
 │   └── environments/
-│       └── home/             # Configuration homelab
+│       ├── prod/             # PVE production (workloads)
+│       ├── lab/              # PVE lab/test (workloads)
+│       └── monitoring/       # PVE dédié monitoring
 ├── docs/
 │   └── INSTALLATION-PROXMOX.md
 └── .github/workflows/        # CI/CD (Terraform fmt, validate, tfsec)
@@ -36,7 +38,7 @@ pve-home/
 ## Démarrage rapide
 
 ```bash
-cd infrastructure/proxmox/environments/home
+cd infrastructure/proxmox/environments/prod
 
 # Copier et configurer les variables
 cp terraform.tfvars.example terraform.tfvars
@@ -82,37 +84,20 @@ terraform apply
 
 ## Stack Monitoring
 
-Le module `monitoring-stack` déploie une stack complète de monitoring :
+Le monitoring est déployé sur un **PVE dédié** (`environments/monitoring/`) et supervise tous les autres PVE :
 
 - **Prometheus** : Collecte des métriques (nodes, VMs, LXC, Proxmox)
 - **Grafana** : Visualisation et dashboards
 - **Alertmanager** : Notifications via Telegram
 - **PVE Exporter** : Métriques spécifiques Proxmox
 
-```hcl
-monitoring = {
-  enabled = true
-  vm = {
-    ip        = "192.168.1.51"
-    cores     = 2
-    memory    = 4096
-    disk      = 30
-    data_disk = 50
-  }
-  proxmox_nodes = [
-    { name = "pve1", ip = "192.168.1.100" },
-    { name = "pve2", ip = "192.168.1.50" },
-  ]
-  grafana_admin_password = "secure-password"
-  telegram = {
-    enabled   = true
-    bot_token = "123456:ABC..."
-    chat_id   = "-1001234567890"
-  }
-}
+```
+PVE Prod (192.168.1.100)  ──┐
+PVE Lab  (192.168.1.110)  ──┼── scrape ──> PVE Monitoring (192.168.1.50)
+PVE Mon  (192.168.1.50)   ──┘              └─ Prometheus + Grafana + Alertmanager
 ```
 
-Voir [terraform.tfvars.example](infrastructure/proxmox/environments/home/terraform.tfvars.example) pour la configuration complète.
+Voir [environments/monitoring/terraform.tfvars.example](infrastructure/proxmox/environments/monitoring/terraform.tfvars.example) pour la configuration.
 
 ## Sécurité
 

@@ -1,0 +1,105 @@
+# =============================================================================
+# Lab - Configuration Terraform
+# =============================================================================
+# 1. Copier ce fichier en terraform.tfvars
+# 2. Remplir les valeurs avec vos informations
+# 3. NE PAS commiter terraform.tfvars (contient des secrets)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Connexion Proxmox
+# -----------------------------------------------------------------------------
+
+# URL de votre serveur Proxmox (instance lab de test)
+proxmox_endpoint = "https://192.168.1.110:8006"
+
+# Token API cree sur cette instance Proxmox
+# Format: user@realm!token-name=secret
+proxmox_api_token = "terraform@pve!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# true si certificat auto-signe (defaut Proxmox)
+proxmox_insecure = true
+
+# -----------------------------------------------------------------------------
+# Infrastructure Proxmox
+# -----------------------------------------------------------------------------
+
+# Nom du node Proxmox (visible dans l'interface web)
+default_node = "pve"
+
+# ID du template VM cloud-init (cree lors de l'installation)
+vm_template_id = 9000
+
+# Template LXC (telecharge lors de l'installation)
+lxc_template = "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
+
+# Datastore pour les disques
+default_datastore = "local-lvm"
+
+# -----------------------------------------------------------------------------
+# Reseau
+# -----------------------------------------------------------------------------
+
+# Bridge reseau Proxmox
+network_bridge = "vmbr0"
+
+# Passerelle (votre routeur/box du lab)
+network_gateway = "192.168.1.1"
+
+# Serveurs DNS
+network_dns = ["1.1.1.1", "8.8.8.8"]
+
+# -----------------------------------------------------------------------------
+# SSH
+# -----------------------------------------------------------------------------
+
+# Cle(s) SSH publique(s) pour acceder aux VMs/LXC
+ssh_public_keys = [
+  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIxxx... user@workstation"
+]
+
+# -----------------------------------------------------------------------------
+# Environnement
+# -----------------------------------------------------------------------------
+
+environment = "lab"
+
+# -----------------------------------------------------------------------------
+# VMs
+# -----------------------------------------------------------------------------
+
+vms = {
+  # Exemple de VM
+  # "file-server" = {
+  #   ip     = "192.168.1.120"
+  #   cores  = 2
+  #   memory = 4096
+  #   disk   = 100
+  #   tags   = ["storage", "files"]
+  # }
+  # "dev-server" = {
+  #   ip            = "192.168.1.121"
+  #   cores         = 4
+  #   memory        = 8192
+  #   disk          = 50
+  #   docker        = true
+  #   node_exporter = true
+  #   tags          = ["dev", "docker", "monitored"]
+  # }
+}
+
+# -----------------------------------------------------------------------------
+# Conteneurs LXC
+# -----------------------------------------------------------------------------
+
+containers = {
+  # Exemple de conteneur LXC
+  # "dns-server" = {
+  #   ip      = "192.168.1.122"
+  #   cores   = 1
+  #   memory  = 512
+  #   disk    = 8
+  #   nesting = false
+  #   tags    = ["dns", "infra"]
+  # }
+}

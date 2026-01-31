@@ -26,6 +26,15 @@ jobs:
   terraform-validate:
     name: Terraform Validate
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        directory:
+          - infrastructure/proxmox/modules/vm
+          - infrastructure/proxmox/modules/lxc
+          - infrastructure/proxmox/modules/monitoring-stack
+          - infrastructure/proxmox/environments/prod
+          - infrastructure/proxmox/environments/lab
+          - infrastructure/proxmox/environments/monitoring
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,21 +44,13 @@ jobs:
         with:
           terraform_version: '1.5'
 
-      - name: Terraform Init (modules)
+      - name: Terraform Init
         run: terraform init -backend=false
-        working-directory: infrastructure/proxmox/modules/vm
+        working-directory: ${{ matrix.directory }}
 
-      - name: Terraform Validate (VM module)
+      - name: Terraform Validate
         run: terraform validate
-        working-directory: infrastructure/proxmox/modules/vm
-
-      - name: Terraform Init (LXC module)
-        run: terraform init -backend=false
-        working-directory: infrastructure/proxmox/modules/lxc
-
-      - name: Terraform Validate (LXC module)
-        run: terraform validate
-        working-directory: infrastructure/proxmox/modules/lxc
+        working-directory: ${{ matrix.directory }}
 
   markdown-lint:
     name: Markdown Lint

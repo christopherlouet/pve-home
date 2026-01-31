@@ -133,7 +133,18 @@ variable "pve_exporter_token_value" {
 # -----------------------------------------------------------------------------
 
 variable "additional_scrape_targets" {
-  description = "Cibles additionnelles a scraper (VMs avec node_exporter)"
+  description = "Cibles additionnelles a scraper (VMs avec node_exporter sur le meme reseau)"
+  type = list(object({
+    name   = string
+    ip     = string
+    port   = optional(number, 9100)
+    labels = optional(map(string), {})
+  }))
+  default = []
+}
+
+variable "remote_scrape_targets" {
+  description = "Cibles distantes a scraper (VMs sur d'autres PVE/reseaux)"
   type = list(object({
     name   = string
     ip     = string

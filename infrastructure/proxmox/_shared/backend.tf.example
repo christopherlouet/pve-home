@@ -1,0 +1,37 @@
+# =============================================================================
+# Backend Terraform - Exemple de configuration
+# =============================================================================
+# Par defaut, le state est stocke localement (terraform.tfstate).
+# Pour un usage multi-utilisateur ou multi-machine, configurer un backend
+# distant (S3, Minio, Consul, etc.).
+#
+# Copier ce fichier en backend.tf dans votre environnement et adapter.
+# =============================================================================
+
+# --- Backend local (defaut, suffisant pour un homelab) ---
+# Rien a configurer, Terraform utilise un fichier local par defaut.
+
+# --- Backend S3/Minio (recommande pour multi-utilisateur) ---
+# terraform {
+#   backend "s3" {
+#     bucket         = "terraform-state"
+#     key            = "proxmox/<ENVIRONMENT>/terraform.tfstate"
+#     region         = "us-east-1"
+#     encrypt        = true
+#
+#     # Pour Minio (auto-heberge)
+#     endpoint                    = "https://minio.example.com:9000"
+#     skip_credentials_validation = true
+#     skip_metadata_api_check     = true
+#     force_path_style            = true
+#   }
+# }
+
+# --- Backend Consul ---
+# terraform {
+#   backend "consul" {
+#     address = "consul.example.com:8500"
+#     scheme  = "https"
+#     path    = "terraform/proxmox/<ENVIRONMENT>"
+#   }
+# }

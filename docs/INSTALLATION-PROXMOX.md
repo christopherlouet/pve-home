@@ -421,7 +421,7 @@ IN ACCEPT -p icmp -log nolog -comment "Ping"
 EOF
 
 # 2. Activer le pare-feu au niveau du node
-#    $(hostname) detecte automatiquement le nom du node (ex: pve, pve2, nuc-01...)
+#    $(hostname) detecte automatiquement le nom du node (ex: pve, pve-lab, nuc-01...)
 #    Verifier avec : echo $(hostname)
 cat > /etc/pve/nodes/$(hostname)/host.fw << 'EOF'
 [OPTIONS]
@@ -462,7 +462,7 @@ Gardez ces informations pour la configuration Terraform (affichées dans le rés
 | Information | Valeur |
 |-------------|--------|
 | URL Proxmox | `https://192.168.1.X:8006` |
-| Node name | Défini à l'installation (ex: `pve`, `pve2`). Vérifier avec `hostname` |
+| Node name | Défini à l'installation (ex: `pve`, `pve-lab`). Vérifier avec `hostname` |
 | Token API Terraform | `terraform@pve!terraform-token=xxx` |
 | Token API Prometheus | `prometheus@pve!prometheus=xxx` (optionnel, pour monitoring) |
 | Template VM ID | `9000` |

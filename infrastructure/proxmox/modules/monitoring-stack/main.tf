@@ -24,8 +24,8 @@ locals {
     }
   ]
 
-  # Combiner avec les targets additionnels
-  all_scrape_targets = concat(local.node_exporter_targets, var.additional_scrape_targets)
+  # Combiner avec les targets additionnels (locaux + distants)
+  all_scrape_targets = concat(local.node_exporter_targets, var.additional_scrape_targets, var.remote_scrape_targets)
 
   # Configuration Docker Compose
   docker_compose_content = templatefile("${path.module}/files/docker-compose.yml.tpl", {

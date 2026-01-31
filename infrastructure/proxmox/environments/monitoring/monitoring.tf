@@ -1,13 +1,12 @@
 # =============================================================================
 # Monitoring Stack Configuration
 # =============================================================================
-# Stack de monitoring optionnelle: Prometheus + Grafana + Alertmanager
-# Deployee sur une VM dediee avec Docker Compose
+# Stack de monitoring centralisee: Prometheus + Grafana + Alertmanager
+# Deployee sur un PVE dedie, supervise TOUS les environnements (prod, lab, etc.)
 # =============================================================================
 
 module "monitoring" {
   source = "../../modules/monitoring-stack"
-  count  = var.monitoring.enabled ? 1 : 0
 
   name        = "${local.environment}-monitoring"
   target_node = var.monitoring.node != null ? var.monitoring.node : var.default_node
@@ -28,7 +27,7 @@ module "monitoring" {
   network_bridge = var.network_bridge
   ssh_keys       = var.ssh_public_keys
 
-  # Nodes Proxmox a monitorer
+  # Nodes Proxmox a monitorer (TOUS les PVE: prod, lab, monitoring)
   proxmox_nodes = var.monitoring.proxmox_nodes
 
   # Credentials pve-exporter
@@ -36,19 +35,8 @@ module "monitoring" {
   pve_exporter_token_name  = var.monitoring.pve_exporter.token_name
   pve_exporter_token_value = var.monitoring.pve_exporter.token_value
 
-  # Cibles additionnelles (VMs avec node_exporter)
-  additional_scrape_targets = [
-    for k, v in var.vms : {
-      name = k
-      ip   = v.ip
-      port = 9100
-      labels = {
-        app  = k
-        type = "vm"
-      }
-    }
-    if try(v.node_exporter, false)
-  ]
+  # Cibles distantes (VMs sur d'autres PVE)
+  remote_scrape_targets = var.remote_targets
 
   # Prometheus
   prometheus_retention_days = var.monitoring.retention_days
@@ -71,11 +59,16 @@ module "monitoring" {
 
 output "monitoring" {
   description = "Stack monitoring"
-  value = var.monitoring.enabled ? {
-    vm_id   = module.monitoring[0].vm_id
-    vm_name = module.monitoring[0].vm_name
-    ip      = module.monitoring[0].ip_address
-    urls    = module.monitoring[0].urls
-    ssh     = module.monitoring[0].ssh_command
-  } : null
+  value = {
+    vm_id   = module.monitoring.vm_id
+    vm_name = module.monitoring.vm_name
+    ip      = module.monitoring.ip_address
+    urls    = module.monitoring.urls
+    ssh     = module.monitoring.ssh_command
+  }
+}
+
+output "scrape_targets" {
+  description = "Toutes les cibles Prometheus configurees"
+  value       = module.monitoring.scrape_targets
 }

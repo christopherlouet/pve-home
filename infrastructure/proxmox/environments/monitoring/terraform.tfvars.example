@@ -1,49 +1,47 @@
 # =============================================================================
-# Homelab - Configuration Terraform
+# Monitoring - Configuration Terraform
 # =============================================================================
+# PVE dedie au monitoring centralise de tous les environnements.
 # 1. Copier ce fichier en terraform.tfvars
 # 2. Remplir les valeurs avec vos informations
 # 3. NE PAS commiter terraform.tfvars (contient des secrets)
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# Connexion Proxmox
+# Connexion Proxmox (PVE dedie monitoring)
 # -----------------------------------------------------------------------------
 
-# URL de votre serveur Proxmox (remplacer l'IP)
-proxmox_endpoint = "https://192.168.1.100:8006"
+# URL du serveur Proxmox dedie au monitoring
+proxmox_endpoint = "https://192.168.1.50:8006"
 
-# Token API créé lors de l'installation
+# Token API cree sur cette instance Proxmox
 # Format: user@realm!token-name=secret
 proxmox_api_token = "terraform@pve!terraform-token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
-# true si certificat auto-signé (défaut Proxmox)
+# true si certificat auto-signe (defaut Proxmox)
 proxmox_insecure = true
 
 # -----------------------------------------------------------------------------
 # Infrastructure Proxmox
 # -----------------------------------------------------------------------------
 
-# Nom du node Proxmox (visible dans l'interface web)
-default_node = "pve"
+# Nom du node Proxmox dedie monitoring
+default_node = "pve-mon"
 
-# ID du template VM cloud-init (créé lors de l'installation)
+# ID du template VM cloud-init
 vm_template_id = 9000
-
-# Template LXC (téléchargé lors de l'installation - Ubuntu 24.04 recommandé pour PVE 9.x)
-lxc_template = "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
 
 # Datastore pour les disques
 default_datastore = "local-lvm"
 
 # -----------------------------------------------------------------------------
-# Réseau
+# Reseau
 # -----------------------------------------------------------------------------
 
-# Bridge réseau Proxmox
+# Bridge reseau Proxmox
 network_bridge = "vmbr0"
 
-# Passerelle (votre routeur/box)
+# Passerelle
 network_gateway = "192.168.1.1"
 
 # Serveurs DNS
@@ -53,8 +51,7 @@ network_dns = ["1.1.1.1", "8.8.8.8"]
 # SSH
 # -----------------------------------------------------------------------------
 
-# Clé(s) SSH publique(s) pour accéder aux VMs/LXC
-# Copier le contenu de ~/.ssh/id_ed25519.pub ou ~/.ssh/id_rsa.pub
+# Cle(s) SSH publique(s) pour acceder aux VMs
 ssh_public_keys = [
   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIxxx... user@workstation"
 ]
@@ -63,62 +60,16 @@ ssh_public_keys = [
 # Environnement
 # -----------------------------------------------------------------------------
 
-environment = "home"
-
-# -----------------------------------------------------------------------------
-# VMs
-# -----------------------------------------------------------------------------
-
-vms = {
-  # Exemple de VM simple
-  "my-vm" = {
-    ip     = "192.168.1.10"
-    cores  = 2
-    memory = 2048
-    disk   = 20
-    tags   = ["web"]
-  }
-  # Exemple de VM avec Docker et node_exporter pour monitoring
-  # "docker-server" = {
-  #   ip            = "192.168.1.20"
-  #   cores         = 4
-  #   memory        = 4096
-  #   disk          = 50
-  #   docker        = true
-  #   node_exporter = true  # Activer pour exposer les metriques systeme
-  #   tags          = ["docker", "server", "monitored"]
-  # }
-}
-
-# -----------------------------------------------------------------------------
-# Conteneurs LXC
-# -----------------------------------------------------------------------------
-
-containers = {
-  # Exemple de conteneur LXC
-  # "my-service" = {
-  #   ip      = "192.168.1.30"
-  #   cores   = 1
-  #   memory  = 512
-  #   disk    = 10
-  #   nesting = false
-  #   tags    = ["service"]
-  # }
-}
+environment = "monitoring"
 
 # -----------------------------------------------------------------------------
 # Stack Monitoring (Prometheus + Grafana + Alertmanager)
 # -----------------------------------------------------------------------------
-# Deploie une VM avec la stack complete de monitoring.
-# Prerequis:
-# - Token API Proxmox read-only pour prometheus (pve-exporter)
-# - Bot Telegram cree via @BotFather (optionnel)
-# - node_exporter installe sur les hosts Proxmox (script fourni)
+# Supervise TOUS les PVE (prod, lab, monitoring)
+# Les nodes Proxmox doivent etre accessibles depuis ce reseau
 # -----------------------------------------------------------------------------
 
 monitoring = {
-  enabled = false # Passer a true pour activer
-
   # Node Proxmox pour la VM monitoring (null = default_node)
   node = null
 
@@ -131,14 +82,15 @@ monitoring = {
     data_disk = 50 # Stockage metriques Prometheus
   }
 
-  # Nodes Proxmox a monitorer (extensible)
+  # TOUS les nodes Proxmox a monitorer (multi-PVE)
   proxmox_nodes = [
-    { name = "pve1", ip = "192.168.1.100" },
-    # { name = "pve2", ip = "192.168.1.50" },
+    { name = "pve-prod", ip = "192.168.1.100" },  # PVE prod
+    { name = "pve-lab", ip = "192.168.1.110" },    # PVE lab
+    { name = "pve-mon", ip = "192.168.1.50" },    # PVE monitoring (lui-meme)
   ]
 
   # Credentials pve-exporter (token read-only)
-  # Creer avec:
+  # Le meme token doit etre cree sur CHAQUE PVE a monitorer :
   #   pveum user add prometheus@pve
   #   pveum aclmod / -user prometheus@pve -role PVEAuditor
   #   pveum user token add prometheus@pve prometheus -privsep=0
@@ -155,10 +107,41 @@ monitoring = {
   grafana_admin_password = "ChangeMePlease123!"
 
   # Notifications Telegram (optionnel)
-  # Creer un bot via @BotFather et recuperer le chat_id
   telegram = {
     enabled   = false
     bot_token = "" # Token du bot (@BotFather)
-    chat_id   = "" # ID du chat/groupe (utiliser @userinfobot)
+    chat_id   = "" # ID du chat/groupe
   }
 }
+
+# -----------------------------------------------------------------------------
+# Cibles distantes (VMs sur d'autres PVE)
+# -----------------------------------------------------------------------------
+# VMs avec node_exporter sur d'autres PVE.
+# Toutes les VMs sont sur le meme reseau 192.168.1.0/24.
+# -----------------------------------------------------------------------------
+
+remote_targets = [
+  # VMs sur PVE prod (192.168.1.0/24)
+  # {
+  #   name = "web-server"
+  #   ip   = "192.168.1.110"
+  #   port = 9100
+  #   labels = {
+  #     app         = "web-server"
+  #     type        = "vm"
+  #     environment = "prod"
+  #   }
+  # },
+  # VMs sur PVE lab (192.168.1.0/24)
+  # {
+  #   name = "file-server"
+  #   ip   = "192.168.1.120"
+  #   port = 9100
+  #   labels = {
+  #     app         = "file-server"
+  #     type        = "vm"
+  #     environment = "lab"
+  #   }
+  # },
+]
