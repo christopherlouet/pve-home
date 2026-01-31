@@ -1,35 +1,9 @@
 # =============================================================================
-# Homelab Infrastructure - Environnement Home
+# Infrastructure - Environnement Lab
 # =============================================================================
-# Exemple d'infrastructure pour un homelab sur Intel NUC
+# Environnement pour une instance Proxmox de test/lab
 # Adaptez les IPs, ressources et services selon vos besoins
 # =============================================================================
-
-terraform {
-  required_version = ">= 1.5.0"
-
-  required_providers {
-    proxmox = {
-      source  = "bpg/proxmox"
-      version = "~> 0.50"
-    }
-  }
-}
-
-# -----------------------------------------------------------------------------
-# Provider Proxmox
-# -----------------------------------------------------------------------------
-
-provider "proxmox" {
-  endpoint  = var.proxmox_endpoint
-  api_token = var.proxmox_api_token
-  insecure  = var.proxmox_insecure
-
-  ssh {
-    agent    = true
-    username = var.ssh_username
-  }
-}
 
 # -----------------------------------------------------------------------------
 # Variables locales
@@ -49,7 +23,7 @@ module "vms" {
   for_each = var.vms
 
   name        = "${local.environment}-${each.key}"
-  description = "${each.key} - Homelab"
+  description = "${each.key} - Lab"
   target_node = var.default_node
   template_id = var.vm_template_id
 
@@ -79,7 +53,7 @@ module "containers" {
   for_each = var.containers
 
   hostname         = "${local.environment}-${each.key}"
-  description      = "${each.key} - Homelab"
+  description      = "${each.key} - Lab"
   target_node      = var.default_node
   template_file_id = var.lxc_template
   os_type          = "ubuntu"
@@ -106,7 +80,7 @@ module "containers" {
 # -----------------------------------------------------------------------------
 
 output "vms" {
-  description = "VMs créées"
+  description = "VMs creees"
   value = {
     for k, v in module.vms : k => {
       id   = v.vm_id
@@ -117,7 +91,7 @@ output "vms" {
 }
 
 output "containers" {
-  description = "Conteneurs LXC créés"
+  description = "Conteneurs LXC crees"
   value = {
     for k, v in module.containers : k => {
       id       = v.container_id

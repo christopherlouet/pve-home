@@ -1,5 +1,5 @@
 # =============================================================================
-# Variables pour l'environnement Home
+# Variables pour l'environnement Monitoring
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -7,7 +7,7 @@
 # -----------------------------------------------------------------------------
 
 variable "proxmox_endpoint" {
-  description = "URL de l'API Proxmox (ex: https://192.168.1.100:8006)"
+  description = "URL de l'API Proxmox du PVE monitoring (ex: https://192.168.1.50:8006)"
   type        = string
 }
 
@@ -34,7 +34,7 @@ variable "ssh_username" {
 # -----------------------------------------------------------------------------
 
 variable "default_node" {
-  description = "Node Proxmox par defaut"
+  description = "Node Proxmox par defaut (PVE dedie monitoring)"
   type        = string
   default     = "pve"
 }
@@ -47,11 +47,6 @@ variable "vm_template_id" {
   description = "ID du template VM cloud-init"
   type        = number
   default     = 9000
-}
-
-variable "lxc_template" {
-  description = "Template LXC (ex: local:vztmpl/ubuntu-24.04-standard_24.04-1_amd64.tar.zst)"
-  type        = string
 }
 
 # -----------------------------------------------------------------------------
@@ -99,40 +94,9 @@ variable "default_datastore" {
 # -----------------------------------------------------------------------------
 
 variable "environment" {
-  description = "Nom de l'environnement (home, dev, prod)"
+  description = "Nom de l'environnement"
   type        = string
-  default     = "home"
-}
-
-# -----------------------------------------------------------------------------
-# Configuration des VMs et Conteneurs
-# -----------------------------------------------------------------------------
-
-variable "vms" {
-  description = "Configuration des VMs a creer"
-  type = map(object({
-    ip            = string
-    cores         = number
-    memory        = number
-    disk          = number
-    docker        = optional(bool, false)
-    node_exporter = optional(bool, false)
-    tags          = list(string)
-  }))
-  default = {}
-}
-
-variable "containers" {
-  description = "Configuration des conteneurs LXC a creer"
-  type = map(object({
-    ip      = string
-    cores   = number
-    memory  = number
-    disk    = number
-    nesting = optional(bool, false)
-    tags    = list(string)
-  }))
-  default = {}
+  default     = "monitoring"
 }
 
 # -----------------------------------------------------------------------------
@@ -142,24 +106,23 @@ variable "containers" {
 variable "monitoring" {
   description = "Configuration de la stack monitoring"
   type = object({
-    enabled = optional(bool, false)
-    node    = optional(string, null)
-    vm = optional(object({
+    node = optional(string, null)
+    vm = object({
       ip        = string
       cores     = optional(number, 2)
       memory    = optional(number, 4096)
       disk      = optional(number, 30)
       data_disk = optional(number, 50)
-    }), null)
-    proxmox_nodes = optional(list(object({
+    })
+    proxmox_nodes = list(object({
       name = string
       ip   = string
-    })), [])
-    pve_exporter = optional(object({
+    }))
+    pve_exporter = object({
       user        = optional(string, "prometheus@pve")
       token_name  = optional(string, "prometheus")
       token_value = string
-    }), null)
+    })
     retention_days         = optional(number, 30)
     grafana_admin_password = optional(string, "admin")
     telegram = optional(object({
@@ -168,7 +131,19 @@ variable "monitoring" {
       chat_id   = optional(string, "")
     }), { enabled = false })
   })
-  default = {
-    enabled = false
-  }
+}
+
+# -----------------------------------------------------------------------------
+# Cibles distantes (VMs sur d'autres PVE)
+# -----------------------------------------------------------------------------
+
+variable "remote_targets" {
+  description = "VMs hebergees sur d'autres PVE a monitorer via node_exporter"
+  type = list(object({
+    name   = string
+    ip     = string
+    port   = optional(number, 9100)
+    labels = optional(map(string), {})
+  }))
+  default = []
 }
