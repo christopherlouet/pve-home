@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-01-31
+
+### Added
+- Per-VM firewall rules via Terraform for monitoring and prod environments
+- Firewall enabled on VM network devices (`firewall = true`) in vm and monitoring-stack modules
+- Monitoring VM: allow SSH, Grafana (3000), Prometheus (9090), Alertmanager (9093), PVE Exporter (9221), ICMP
+- Prod VMs: allow SSH, HTTP (80), HTTPS (443), Node Exporter (9100), ICMP
+- Input policy set to DROP on all VMs for defense-in-depth
+
+### Fixed
+- Use `virtio-scsi-single` SCSI controller to enable iothread on disks
+
 ## [0.3.0] - 2026-01-31
 
 ### Added

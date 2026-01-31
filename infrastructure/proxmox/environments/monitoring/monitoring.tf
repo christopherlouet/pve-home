@@ -54,6 +54,73 @@ module "monitoring" {
 }
 
 # -----------------------------------------------------------------------------
+# Firewall Monitoring
+# -----------------------------------------------------------------------------
+
+resource "proxmox_virtual_environment_firewall_options" "monitoring" {
+  node_name = module.monitoring.node_name
+  vm_id     = module.monitoring.vm_id
+
+  enabled       = true
+  input_policy  = "DROP"
+  output_policy = "ACCEPT"
+}
+
+resource "proxmox_virtual_environment_firewall_rules" "monitoring" {
+  node_name = module.monitoring.node_name
+  vm_id     = module.monitoring.vm_id
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "22"
+    comment = "SSH"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "3000"
+    comment = "Grafana"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "9090"
+    comment = "Prometheus"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "9093"
+    comment = "Alertmanager"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "9221"
+    comment = "PVE Exporter"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "icmp"
+    comment = "Ping"
+  }
+
+  depends_on = [proxmox_virtual_environment_firewall_options.monitoring]
+}
+
+# -----------------------------------------------------------------------------
 # Outputs Monitoring
 # -----------------------------------------------------------------------------
 

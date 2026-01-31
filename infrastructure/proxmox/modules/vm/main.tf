@@ -205,12 +205,13 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
 # -----------------------------------------------------------------------------
 
 resource "proxmox_virtual_environment_vm" "this" {
-  name        = var.name
-  description = var.description
-  tags        = var.tags
-  node_name   = var.target_node
-  on_boot     = var.start_on_boot
-  started     = true
+  name          = var.name
+  description   = var.description
+  tags          = var.tags
+  node_name     = var.target_node
+  on_boot       = var.start_on_boot
+  started       = true
+  scsi_hardware = "virtio-scsi-single"
 
   clone {
     vm_id = var.template_id
@@ -247,9 +248,10 @@ resource "proxmox_virtual_environment_vm" "this" {
   }
 
   network_device {
-    bridge  = var.network_bridge
-    model   = "virtio"
-    vlan_id = var.vlan_id
+    bridge   = var.network_bridge
+    model    = "virtio"
+    vlan_id  = var.vlan_id
+    firewall = true
   }
 
   agent {

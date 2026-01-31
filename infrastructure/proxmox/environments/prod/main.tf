@@ -45,6 +45,69 @@ module "vms" {
 }
 
 # -----------------------------------------------------------------------------
+# Firewall VMs
+# -----------------------------------------------------------------------------
+
+resource "proxmox_virtual_environment_firewall_options" "vms" {
+  for_each = var.vms
+
+  node_name = var.default_node
+  vm_id     = module.vms[each.key].vm_id
+
+  enabled       = true
+  input_policy  = "DROP"
+  output_policy = "ACCEPT"
+}
+
+resource "proxmox_virtual_environment_firewall_rules" "vms" {
+  for_each = var.vms
+
+  node_name = var.default_node
+  vm_id     = module.vms[each.key].vm_id
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "22"
+    comment = "SSH"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "80"
+    comment = "HTTP"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "443"
+    comment = "HTTPS"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "9100"
+    comment = "Node Exporter"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "icmp"
+    comment = "Ping"
+  }
+
+  depends_on = [proxmox_virtual_environment_firewall_options.vms]
+}
+
+# -----------------------------------------------------------------------------
 # Conteneurs LXC
 # -----------------------------------------------------------------------------
 
