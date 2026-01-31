@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-01-31
+
+### Added
+- Node Exporter container in monitoring VM Docker Compose for host-level metrics (CPU, RAM, disk, network)
+- Auto-provisioned Grafana dashboards: Node Exporter, PVE Exporter, Prometheus self-monitoring
+- Per-node PVE exporter credentials (`token_value` per `proxmox_nodes` entry) for multi-PVE isolation
+- Firewall rule for port 9100 (Node Exporter) on monitoring VM
+- `install-node-exporter.sh` documentation in infrastructure README
+- Terraform provider lock file (`.terraform.lock.hcl`)
+
+### Changed
+- PVE exporter configuration generates one module per Proxmox node instead of a single `default` module
+- `pve_exporter_token_value` removed as standalone variable, now embedded in `proxmox_nodes`
+- Prometheus scrape config uses `node.name` as pve-exporter module parameter
+
+### Fixed
+- PVE exporter crash-loop: mount `pve.yml` config with API credentials, use Docker service name for scrape target
+- Alert rules never loaded when Telegram notifications disabled (`rule_files` was inside conditional block)
+- PVE dashboard PromQL queries rewritten to match actual pve-exporter metric labels
+- Proxmox templates (cloud-init images) excluded from VM counts in dashboards
+
 ## [0.4.0] - 2026-01-31
 
 ### Added
