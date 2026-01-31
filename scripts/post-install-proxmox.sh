@@ -43,6 +43,7 @@ LXC_TEMPLATES=(
 # Variables pour le resume final
 TERRAFORM_TOKEN=""
 PROMETHEUS_TOKEN=""
+NEEDS_REBOOT=false
 
 # =============================================================================
 # Couleurs et fonctions de log
@@ -289,18 +290,7 @@ update_system() {
     apt update
     apt full-upgrade -y
     log_success "Systeme mis a jour"
-
-    if [[ "$SKIP_REBOOT" == true ]]; then
-        log_warn "Reboot ignore (--skip-reboot). Pensez a redemarrer manuellement."
-    else
-        if confirm "Redemarrer maintenant ? (recommande apres une mise a jour du noyau)"; then
-            log_info "Redemarrage dans 5 secondes... (Ctrl+C pour annuler)"
-            sleep 5
-            reboot
-        else
-            log_warn "Pensez a redemarrer manuellement apres la fin du script."
-        fi
-    fi
+    NEEDS_REBOOT=true
 }
 
 configure_timezone() {
@@ -375,13 +365,23 @@ create_terraform_user() {
     # Assigner le role
     pveum aclmod / -user terraform@pve -role TerraformRole
 
-    # Creer le token API
+    # Creer le token API et capturer la sortie complete
     local token_output
     token_output=$(pveum user token add terraform@pve terraform-token --privsep=0 2>&1)
-    TERRAFORM_TOKEN=$(echo "$token_output" | grep 'value' | awk '{print $NF}')
+
+    # Extraire le token (format: "│ value        │ xxxxxxxx-xxxx-... │")
+    # On cherche la ligne contenant une valeur UUID apres "value"
+    TERRAFORM_TOKEN=$(echo "$token_output" | grep -oP '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 
     log_success "Utilisateur terraform@pve cree"
-    log_info "Token : terraform@pve!terraform-token=${TERRAFORM_TOKEN}"
+    echo ""
+    echo "$token_output"
+    echo ""
+    if [[ -n "$TERRAFORM_TOKEN" ]]; then
+        log_info "Token complet : terraform@pve!terraform-token=${TERRAFORM_TOKEN}"
+    else
+        log_warn "Impossible d'extraire le token automatiquement. Copiez-le depuis la sortie ci-dessus."
+    fi
     echo ""
     log_warn "IMPORTANT : Notez ce token, il ne sera plus affichable ensuite !"
     echo ""
@@ -410,10 +410,18 @@ create_prometheus_user() {
 
     local token_output
     token_output=$(pveum user token add prometheus@pve prometheus --privsep=0 2>&1)
-    PROMETHEUS_TOKEN=$(echo "$token_output" | grep 'value' | awk '{print $NF}')
+
+    PROMETHEUS_TOKEN=$(echo "$token_output" | grep -oP '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 
     log_success "Utilisateur prometheus@pve cree"
-    log_info "Token : prometheus@pve!prometheus=${PROMETHEUS_TOKEN}"
+    echo ""
+    echo "$token_output"
+    echo ""
+    if [[ -n "$PROMETHEUS_TOKEN" ]]; then
+        log_info "Token complet : prometheus@pve!prometheus=${PROMETHEUS_TOKEN}"
+    else
+        log_warn "Impossible d'extraire le token automatiquement. Copiez-le depuis la sortie ci-dessus."
+    fi
     echo ""
     log_warn "IMPORTANT : Notez ce token, il ne sera plus affichable ensuite !"
     echo ""
@@ -666,6 +674,22 @@ main() {
     show_summary
 
     log_success "Post-installation terminee !"
+
+    # Reboot en dernier, apres le resume
+    if [[ "$NEEDS_REBOOT" == true ]]; then
+        if [[ "$SKIP_REBOOT" == true ]]; then
+            log_warn "Un redemarrage est recommande (--skip-reboot actif). Pensez a redemarrer manuellement."
+        else
+            echo ""
+            if confirm "Redemarrer maintenant ? (recommande apres une mise a jour du noyau)"; then
+                log_info "Redemarrage dans 5 secondes... (Ctrl+C pour annuler)"
+                sleep 5
+                reboot
+            else
+                log_warn "Pensez a redemarrer manuellement."
+            fi
+        fi
+    fi
 }
 
 main "$@"
