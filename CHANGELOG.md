@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-01-31
+
+### Added
+- Multi-environment architecture: prod, lab, and dedicated monitoring environments
+- Lab environment for test/development workloads
+- Dedicated monitoring environment (no workloads, monitoring stack only)
+- `remote_scrape_targets` variable in monitoring-stack module for cross-PVE scraping
+- Shared templates (`_shared/backend.tf.example`, `_shared/provider.tf.example`)
+- Reference `versions.tf` at infrastructure root level
+- CI matrix strategy validating all modules and environments
+
+### Changed
+- Renamed environment `home` to `prod`
+- Renamed Proxmox node hostnames: `pve` to `pve-prod`, `pve-lab`, `pve-mon`
+- Consolidated all PVE instances to `192.168.1.0/24` network
+- Extracted `provider.tf` and `versions.tf` per environment
+- Monitoring stack moved from per-environment to dedicated monitoring environment
+- Updated all documentation with 3-environment architecture
+
+### Removed
+- Root-level `main.tf` and `variables.tf` (replaced by per-environment configs)
+- Monitoring configuration from prod/lab environments
+- `home` and `office` environment directories (replaced by `prod` and `lab`)
+
 ## [0.2.0] - 2026-01-31
 
 ### Added
