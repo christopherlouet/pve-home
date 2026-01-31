@@ -31,6 +31,7 @@ SKIP_REBOOT=false
 AUTO_YES=false
 NO_PROMETHEUS=false
 NO_TEMPLATE_VM=false
+RESET_TOKENS=false
 
 # URLs et noms de templates
 UBUNTU_CLOUD_IMAGE_URL="https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
@@ -89,6 +90,7 @@ Options:
   --vm-template-id ID    ID du template VM cloud-init (defaut: 9000)
   --no-prometheus        Ne pas creer l'utilisateur Prometheus
   --no-template-vm       Ne pas creer le template VM cloud-init
+  --reset-tokens         Supprimer les tokens API existants pour les recreer
   -h, --help             Afficher cette aide
 
 Exemples:
@@ -96,6 +98,7 @@ Exemples:
   ./post-install-proxmox.sh --yes              # Tout accepter automatiquement
   ./post-install-proxmox.sh --timezone UTC     # Fuseau horaire UTC
   ./post-install-proxmox.sh --no-prometheus    # Sans utilisateur Prometheus
+  ./post-install-proxmox.sh --reset-tokens     # Recreer les tokens API perdus
 HELPEOF
 }
 
@@ -171,6 +174,10 @@ parse_options() {
                 ;;
             --no-template-vm)
                 NO_TEMPLATE_VM=true
+                shift
+                ;;
+            --reset-tokens)
+                RESET_TOKENS=true
                 shift
                 ;;
             *)
@@ -343,9 +350,15 @@ create_terraform_user() {
     log_info "=== Creation de l'utilisateur Terraform ==="
 
     if pveum user list 2>/dev/null | grep -q 'terraform@pve'; then
-        log_success "Utilisateur terraform@pve existe deja"
-        log_warn "Token existant non affichable. Si vous l'avez perdu, supprimez et recreez l'utilisateur."
-        return 0
+        if [[ "$RESET_TOKENS" == true ]]; then
+            log_info "Suppression du token Terraform existant (--reset-tokens)"
+            pveum user token remove terraform@pve terraform-token 2>/dev/null || true
+            log_success "Token Terraform supprime, recreation en cours..."
+        else
+            log_success "Utilisateur terraform@pve existe deja"
+            log_warn "Token existant non affichable. Utilisez --reset-tokens pour le recreer."
+            return 0
+        fi
     fi
 
     if ! confirm "Creer l'utilisateur Terraform avec token API ?"; then
@@ -353,8 +366,10 @@ create_terraform_user() {
         return 0
     fi
 
-    # Creer l'utilisateur
-    pveum user add terraform@pve --comment "Terraform automation"
+    # Creer l'utilisateur (si pas deja existant, ex: mode --reset-tokens)
+    if ! pveum user list 2>/dev/null | grep -q 'terraform@pve'; then
+        pveum user add terraform@pve --comment "Terraform automation"
+    fi
 
     # Creer le role avec les permissions necessaires
     if ! pveum role list 2>/dev/null | grep -q 'TerraformRole'; then
@@ -396,8 +411,15 @@ create_prometheus_user() {
     log_info "=== Creation de l'utilisateur Prometheus ==="
 
     if pveum user list 2>/dev/null | grep -q 'prometheus@pve'; then
-        log_success "Utilisateur prometheus@pve existe deja"
-        return 0
+        if [[ "$RESET_TOKENS" == true ]]; then
+            log_info "Suppression du token Prometheus existant (--reset-tokens)"
+            pveum user token remove prometheus@pve prometheus 2>/dev/null || true
+            log_success "Token Prometheus supprime, recreation en cours..."
+        else
+            log_success "Utilisateur prometheus@pve existe deja"
+            log_warn "Token existant non affichable. Utilisez --reset-tokens pour le recreer."
+            return 0
+        fi
     fi
 
     if ! confirm "Creer l'utilisateur Prometheus (monitoring, lecture seule) ?"; then
@@ -405,7 +427,10 @@ create_prometheus_user() {
         return 0
     fi
 
-    pveum user add prometheus@pve --comment "Prometheus monitoring"
+    # Creer l'utilisateur (si pas deja existant, ex: mode --reset-tokens)
+    if ! pveum user list 2>/dev/null | grep -q 'prometheus@pve'; then
+        pveum user add prometheus@pve --comment "Prometheus monitoring"
+    fi
     pveum aclmod / -user prometheus@pve -role PVEAuditor
 
     local token_output

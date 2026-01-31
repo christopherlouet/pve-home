@@ -47,6 +47,7 @@ SCRIPT="scripts/post-install-proxmox.sh"
     [[ "$output" == *"--vm-template-id"* ]]
     [[ "$output" == *"--no-prometheus"* ]]
     [[ "$output" == *"--no-template-vm"* ]]
+    [[ "$output" == *"--reset-tokens"* ]]
 }
 
 # =============================================================================
