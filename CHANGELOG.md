@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-01-31
+
+### Added
+- Checkov policy-as-code scanning with SARIF upload to GitHub Security tab
+- Trivy IaC misconfiguration scanning with SARIF upload to GitHub Security tab
+- SARIF upload for tfsec results to GitHub Security tab
+- CODEOWNERS file for automated PR review assignments
+- terraform-docs validation job in CI pipeline (matrix over all modules)
+- Auto-generated README.md with terraform-docs for vm, lxc, and monitoring-stack modules
+- Grafana dashboards documentation section in project README
+
+### Changed
+- Hardened tfsec to hard-fail on findings (previously soft-fail)
+- Hardened Gitleaks to hard-fail on detected secrets
+- Pinned Trivy action to @0.33.1 and Terraform to 1.5.7 for reproducibility
+- Added `permissions`, `concurrency` control, and `timeout-minutes` to all CI/CD jobs
+- Updated project README security section to reflect all 4 CI scan tools
+
+### Fixed
+- Node Exporter dashboard template variables (`job` query using correct metric)
+- Monitoring job name in Prometheus scrape config
+- Nodes overview dashboard default job variable set to All
+
 ## [0.5.0] - 2026-01-31
 
 ### Added
