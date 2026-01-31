@@ -89,9 +89,10 @@ terraform apply
 Le monitoring est déployé sur un **PVE dédié** (`environments/monitoring/`) et supervise tous les autres PVE :
 
 - **Prometheus** : Collecte des métriques (nodes, VMs, LXC, Proxmox)
-- **Grafana** : Visualisation et dashboards
+- **Grafana** : Visualisation avec dashboards auto-provisionnés (Node Exporter, PVE, Prometheus)
 - **Alertmanager** : Notifications via Telegram
-- **PVE Exporter** : Métriques spécifiques Proxmox
+- **PVE Exporter** : Métriques spécifiques Proxmox (un module par node)
+- **Node Exporter** : Métriques système (CPU, RAM, disque, réseau) sur la VM et les hosts PVE
 
 ```
 PVE Prod (192.168.1.100)  ──┐

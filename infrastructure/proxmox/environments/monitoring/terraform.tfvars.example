@@ -83,21 +83,20 @@ monitoring = {
   }
 
   # TOUS les nodes Proxmox a monitorer (multi-PVE)
-  proxmox_nodes = [
-    { name = "pve-prod", ip = "192.168.1.100" },  # PVE prod
-    { name = "pve-lab", ip = "192.168.1.110" },    # PVE lab
-    { name = "pve-mon", ip = "192.168.1.50" },    # PVE monitoring (lui-meme)
-  ]
-
-  # Credentials pve-exporter (token read-only)
-  # Le meme token doit etre cree sur CHAQUE PVE a monitorer :
+  # Chaque node a son propre token API (cree sur le PVE correspondant) :
   #   pveum user add prometheus@pve
   #   pveum aclmod / -user prometheus@pve -role PVEAuditor
   #   pveum user token add prometheus@pve prometheus -privsep=0
+  proxmox_nodes = [
+    { name = "pve-prod", ip = "192.168.1.100", token_value = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" },
+    { name = "pve-lab", ip = "192.168.1.110", token_value = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" },
+    { name = "pve-mon", ip = "192.168.1.50", token_value = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" },
+  ]
+
+  # Credentials pve-exporter (user et token_name communs a tous les nodes)
   pve_exporter = {
-    user        = "prometheus@pve"
-    token_name  = "prometheus"
-    token_value = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    user       = "prometheus@pve"
+    token_name = "prometheus"
   }
 
   # Retention des metriques (jours)
