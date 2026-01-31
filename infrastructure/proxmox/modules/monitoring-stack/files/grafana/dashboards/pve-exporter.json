@@ -226,7 +226,7 @@
       ]
     },
     {
-      "title": "Total CPU Cores",
+      "title": "Node CPU Cores",
       "type": "stat",
       "gridPos": {
         "h": 4,
@@ -265,7 +265,7 @@
       ]
     },
     {
-      "title": "Total Memory",
+      "title": "Node Memory",
       "type": "stat",
       "gridPos": {
         "h": 4,
