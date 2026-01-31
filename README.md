@@ -93,7 +93,7 @@ Le module `monitoring-stack` déploie une stack complète de monitoring :
 monitoring = {
   enabled = true
   vm = {
-    ip        = "192.168.1.50"
+    ip        = "192.168.1.51"
     cores     = 2
     memory    = 4096
     disk      = 30
@@ -101,7 +101,7 @@ monitoring = {
   }
   proxmox_nodes = [
     { name = "pve1", ip = "192.168.1.100" },
-    { name = "pve2", ip = "192.168.1.101" },
+    { name = "pve2", ip = "192.168.1.50" },
   ]
   grafana_admin_password = "secure-password"
   telegram = {
