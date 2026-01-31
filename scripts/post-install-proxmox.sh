@@ -10,6 +10,7 @@
 # - Mise a jour systeme
 # - Configuration du fuseau horaire
 # - Installation des outils utiles
+# - Configuration de fail2ban (SSH + interface web Proxmox)
 # - Creation de l'utilisateur Terraform avec token API
 # - Creation de l'utilisateur Prometheus (optionnel)
 # - Activation des snippets cloud-init
@@ -344,6 +345,70 @@ install_tools() {
 
     apt install -y "${missing[@]}"
     log_success "Outils installes : ${missing[*]}"
+}
+
+configure_fail2ban() {
+    log_info "=== Configuration de fail2ban ==="
+
+    # Verifier que fail2ban est installe
+    if ! command -v fail2ban-client &>/dev/null; then
+        log_warn "fail2ban n'est pas installe, etape ignoree"
+        return 0
+    fi
+
+    # Verifier si deja configure
+    if [[ -f /etc/fail2ban/jail.local ]] && grep -q 'proxmox' /etc/fail2ban/jail.local 2>/dev/null; then
+        log_success "fail2ban deja configure (jail.local avec section proxmox)"
+        return 0
+    fi
+
+    if ! confirm "Configurer fail2ban pour SSH et l'interface web Proxmox ?"; then
+        log_warn "Etape ignoree"
+        return 0
+    fi
+
+    # Sauvegarder la configuration existante
+    if [[ -f /etc/fail2ban/jail.local ]]; then
+        cp /etc/fail2ban/jail.local /etc/fail2ban/jail.local.bak
+        log_info "Sauvegarde de jail.local existante dans jail.local.bak"
+    fi
+
+    # Determiner le logpath selon la disponibilite de /var/log/daemon.log
+    # Debian Trixie (PVE 9.x) utilise journald par defaut, pas de daemon.log
+    local proxmox_backend="auto"
+    local proxmox_logpath="/var/log/daemon.log"
+    if [[ ! -f /var/log/daemon.log ]]; then
+        proxmox_backend="systemd"
+        proxmox_logpath=""
+    fi
+
+    cat > /etc/fail2ban/jail.local << EOF
+[sshd]
+enabled = true
+port = ssh
+maxretry = 5
+bantime = 3600
+
+[proxmox]
+enabled = true
+port = https,http,8006
+filter = proxmox
+backend = ${proxmox_backend}
+$(if [[ -n "$proxmox_logpath" ]]; then echo "logpath = ${proxmox_logpath}"; fi)
+maxretry = 3
+bantime = 3600
+EOF
+
+    cat > /etc/fail2ban/filter.d/proxmox.conf << 'EOF'
+[Definition]
+failregex = pvedaemon\[.*authentication failure; rhost=<HOST> user=.* msg=.*
+ignoreregex =
+journalmatch = _SYSTEMD_UNIT=pvedaemon.service
+EOF
+
+    systemctl enable fail2ban
+    systemctl restart fail2ban
+    log_success "fail2ban configure (jails: sshd, proxmox)"
 }
 
 create_terraform_user() {
@@ -689,6 +754,7 @@ main() {
     update_system
     configure_timezone
     install_tools
+    configure_fail2ban
     create_terraform_user
     create_prometheus_user
     enable_snippets

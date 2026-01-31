@@ -139,6 +139,7 @@ Le script `post-install-proxmox.sh` automatise toutes les étapes de configurati
 - Mise à jour système
 - Configuration du fuseau horaire
 - Installation des outils utiles (vim, htop, iotop, curl, wget, net-tools, sudo, fail2ban)
+- Configuration de fail2ban (protection SSH + interface web Proxmox)
 - Création de l'utilisateur Terraform avec token API
 - Création de l'utilisateur Prometheus (optionnel)
 - Activation des snippets cloud-init
@@ -343,9 +344,26 @@ systemctl restart sshd
 
 ### 7.2 Configurer fail2ban
 
-Le script de post-installation installe `fail2ban`. Il faut ensuite le configurer pour protéger SSH et l'interface web Proxmox :
+Le script de post-installation (étape 6) installe et configure automatiquement `fail2ban` avec deux jails :
+- **sshd** : protège SSH (5 tentatives max, ban 1h)
+- **proxmox** : protège l'interface web (3 tentatives max, ban 1h)
+
+Vous pouvez vérifier que fail2ban est actif :
 
 ```bash
+fail2ban-client status
+fail2ban-client status sshd
+fail2ban-client status proxmox
+```
+
+<details>
+<summary>Configuration manuelle (si le script n'a pas été utilisé)</summary>
+
+```bash
+# PVE 9.x (Debian Trixie) utilise journald, pas /var/log/daemon.log
+# Adapter "backend" selon votre version :
+#   - PVE 9.x : backend = systemd (pas de logpath)
+#   - PVE 8.x : backend = auto, logpath = /var/log/daemon.log
 cat > /etc/fail2ban/jail.local << 'EOF'
 [sshd]
 enabled = true
@@ -357,7 +375,7 @@ bantime = 3600
 enabled = true
 port = https,http,8006
 filter = proxmox
-logpath = /var/log/daemon.log
+backend = systemd
 maxretry = 3
 bantime = 3600
 EOF
@@ -366,11 +384,14 @@ cat > /etc/fail2ban/filter.d/proxmox.conf << 'EOF'
 [Definition]
 failregex = pvedaemon\[.*authentication failure; rhost=<HOST> user=.* msg=.*
 ignoreregex =
+journalmatch = _SYSTEMD_UNIT=pvedaemon.service
 EOF
 
 systemctl enable fail2ban
 systemctl restart fail2ban
 ```
+
+</details>
 
 ### 7.3 Configurer le pare-feu Proxmox
 
@@ -382,8 +403,10 @@ Le pare-feu intégré de Proxmox peut être activé via l'interface web ou en li
 | 8006 | Interface web Proxmox | Oui |
 | 9100 | Node Exporter (Prometheus) | Optionnel (monitoring) |
 
+Le pare-feu Proxmox fonctionne a deux niveaux : **datacenter** (regles partagees par tous les nodes) et **node** (activation par node). Les deux niveaux doivent etre configures.
+
 ```bash
-# Creer la configuration du pare-feu au niveau du datacenter
+# 1. Configurer les regles au niveau du datacenter
 cat > /etc/pve/firewall/cluster.fw << 'EOF'
 [OPTIONS]
 enable: 1
@@ -397,12 +420,24 @@ IN ACCEPT -p tcp -dport 9100 -log nolog -comment "Node Exporter"
 IN ACCEPT -p icmp -log nolog -comment "Ping"
 EOF
 
-# Activer et demarrer le service pve-firewall
+# 2. Activer le pare-feu au niveau du node
+#    $(hostname) detecte automatiquement le nom du node (ex: pve, pve2, nuc-01...)
+#    Verifier avec : echo $(hostname)
+cat > /etc/pve/nodes/$(hostname)/host.fw << 'EOF'
+[OPTIONS]
+enable: 1
+EOF
+
+# 3. Activer et demarrer le service pve-firewall
 systemctl enable pve-firewall
 systemctl start pve-firewall
 ```
 
-> **Note** : Le service `pve-firewall` surveille automatiquement les fichiers dans `/etc/pve/firewall/` et applique les changements a chaud. Les modifications ulterieures du fichier `cluster.fw` seront prises en compte sans redemarrage.
+Apres configuration, les regles sont visibles dans l'interface web :
+- **Datacenter > Firewall** : regles globales (cluster.fw)
+- **Node > Firewall > Options** : activation du pare-feu au niveau du node (host.fw)
+
+> **Note** : Le service `pve-firewall` surveille automatiquement les fichiers dans `/etc/pve/firewall/` et applique les changements a chaud. Les modifications ulterieures seront prises en compte sans redemarrage du service.
 
 > **Attention** : Activez le pare-feu uniquement si vous etes sur que vos regles sont correctes. Une mauvaise configuration peut bloquer l'acces au node. En cas de probleme, accedez au node via la console physique et desactivez le pare-feu : `pve-firewall stop`.
 
@@ -427,7 +462,7 @@ Gardez ces informations pour la configuration Terraform (affichées dans le rés
 | Information | Valeur |
 |-------------|--------|
 | URL Proxmox | `https://192.168.1.X:8006` |
-| Node name | `pve` (nom par défaut) |
+| Node name | Défini à l'installation (ex: `pve`, `pve2`). Vérifier avec `hostname` |
 | Token API Terraform | `terraform@pve!terraform-token=xxx` |
 | Token API Prometheus | `prometheus@pve!prometheus=xxx` (optionnel, pour monitoring) |
 | Template VM ID | `9000` |
