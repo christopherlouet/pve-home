@@ -1,5 +1,5 @@
 # =============================================================================
-# Variables pour l'environnement Home
+# Variables pour l'environnement Prod
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -99,9 +99,9 @@ variable "default_datastore" {
 # -----------------------------------------------------------------------------
 
 variable "environment" {
-  description = "Nom de l'environnement (home, dev, prod)"
+  description = "Nom de l'environnement"
   type        = string
-  default     = "home"
+  default     = "prod"
 }
 
 # -----------------------------------------------------------------------------

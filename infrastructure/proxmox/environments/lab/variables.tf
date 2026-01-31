@@ -1,5 +1,5 @@
 # =============================================================================
-# Variables pour l'environnement Office
+# Variables pour l'environnement Lab
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -101,7 +101,7 @@ variable "default_datastore" {
 variable "environment" {
   description = "Nom de l'environnement"
   type        = string
-  default     = "office"
+  default     = "lab"
 }
 
 # -----------------------------------------------------------------------------
