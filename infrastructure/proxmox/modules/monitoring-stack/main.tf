@@ -184,13 +184,13 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
 # -----------------------------------------------------------------------------
 
 resource "proxmox_virtual_environment_vm" "monitoring" {
-  name           = local.vm_name
-  description    = "Stack Monitoring - Prometheus/Grafana/Alertmanager"
-  tags           = var.tags
-  node_name      = var.target_node
-  on_boot        = true
-  started        = true
-  scsi_hardware  = "virtio-scsi-single"
+  name          = local.vm_name
+  description   = "Stack Monitoring - Prometheus/Grafana/Alertmanager"
+  tags          = var.tags
+  node_name     = var.target_node
+  on_boot       = true
+  started       = true
+  scsi_hardware = "virtio-scsi-single"
 
   clone {
     vm_id = var.template_id
