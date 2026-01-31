@@ -138,7 +138,7 @@
       },
       "targets": [
         {
-          "expr": "prometheus_rule_group_rules",
+          "expr": "sum(prometheus_rule_group_rules) or vector(0)",
           "legendFormat": "Rules",
           "refId": "A"
         }
@@ -356,7 +356,7 @@
       },
       "targets": [
         {
-          "expr": "rate(prometheus_tsdb_head_samples_appended_total[5m])",
+          "expr": "sum(rate(prometheus_tsdb_head_samples_appended_total[5m]))",
           "legendFormat": "Samples/s",
           "refId": "A"
         }
