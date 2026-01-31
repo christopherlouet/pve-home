@@ -63,7 +63,7 @@
           "links": [
             {
               "title": "Drill down to Node Exporter Full",
-              "url": "/d/node-exporter?var-node=${__data.fields.Hostname}&from=${__from}&to=${__to}",
+              "url": "/d/node-exporter?var-node=${__data.fields.Node}&from=${__from}&to=${__to}",
               "targetBlank": false
             }
           ]
@@ -72,7 +72,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Hostname"
+              "options": "Node"
             },
             "properties": [
               {
@@ -91,6 +91,18 @@
                   "mode": "fixed",
                   "fixedColor": "text"
                 }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Hostname"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 150
               }
             ]
           },
@@ -407,7 +419,7 @@
         "showHeader": true,
         "sortBy": [
           {
-            "displayName": "Hostname",
+            "displayName": "Node",
             "desc": false
           }
         ],
@@ -437,7 +449,8 @@
                 "Value #K",
                 "Value #L",
                 "Value #M",
-                "Value #N"
+                "Value #N",
+                "nodename 1"
               ]
             }
           }
@@ -446,7 +459,7 @@
           "id": "organize",
           "options": {
             "renameByName": {
-              "instance": "Hostname",
+              "instance": "Node",
               "Value #C": "CPU %",
               "Value #D": "Mem %",
               "Value #F": "Disk %",
@@ -456,20 +469,22 @@
               "Value #K": "Net RX",
               "Value #L": "Net TX",
               "Value #M": "Load 1m",
-              "Value #N": "Sockets"
+              "Value #N": "Sockets",
+              "nodename 1": "Hostname"
             },
             "indexByName": {
               "instance": 0,
-              "Value #C": 1,
-              "Value #D": 2,
-              "Value #F": 3,
-              "Value #M": 4,
-              "Value #G": 5,
-              "Value #H": 6,
-              "Value #K": 7,
-              "Value #L": 8,
-              "Value #I": 9,
-              "Value #N": 10
+              "nodename 1": 1,
+              "Value #C": 2,
+              "Value #D": 3,
+              "Value #F": 4,
+              "Value #M": 5,
+              "Value #G": 6,
+              "Value #H": 7,
+              "Value #K": 8,
+              "Value #L": 9,
+              "Value #I": 10,
+              "Value #N": 11
             }
           }
         }
