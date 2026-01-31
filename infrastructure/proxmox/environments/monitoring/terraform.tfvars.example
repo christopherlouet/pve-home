@@ -125,7 +125,7 @@ remote_targets = [
   # VMs sur PVE prod (192.168.1.0/24)
   # {
   #   name = "web-server"
-  #   ip   = "192.168.1.110"
+  #   ip   = "192.168.1.101"
   #   port = 9100
   #   labels = {
   #     app         = "web-server"
@@ -136,7 +136,7 @@ remote_targets = [
   # VMs sur PVE lab (192.168.1.0/24)
   # {
   #   name = "file-server"
-  #   ip   = "192.168.1.120"
+  #   ip   = "192.168.1.111"
   #   port = 9100
   #   labels = {
   #     app         = "file-server"
