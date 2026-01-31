@@ -8,7 +8,7 @@
 module "monitoring" {
   source = "../../modules/monitoring-stack"
 
-  name        = "${local.environment}-monitoring"
+  name        = "monitoring-stack"
   target_node = var.monitoring.node != null ? var.monitoring.node : var.default_node
   template_id = var.vm_template_id
 
