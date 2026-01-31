@@ -124,7 +124,7 @@ monitoring = {
 
   # Configuration de la VM monitoring
   vm = {
-    ip        = "192.168.1.50"
+    ip        = "192.168.1.51"
     cores     = 2
     memory    = 4096
     disk      = 30
@@ -134,8 +134,7 @@ monitoring = {
   # Nodes Proxmox a monitorer (extensible)
   proxmox_nodes = [
     { name = "pve1", ip = "192.168.1.100" },
-    # { name = "pve2", ip = "192.168.1.101" },
-    # { name = "pve3", ip = "192.168.1.102" },
+    # { name = "pve2", ip = "192.168.1.50" },
   ]
 
   # Credentials pve-exporter (token read-only)
