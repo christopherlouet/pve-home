@@ -10,15 +10,15 @@ global:
     environment: homelab
     datacenter: home
 
+rule_files:
+  - /etc/prometheus/alerts/*.yml
+
 %{ if alertmanager_enabled }
 alerting:
   alertmanagers:
     - static_configs:
         - targets:
             - alertmanager:9093
-
-rule_files:
-  - /etc/prometheus/alerts/*.yml
 %{ endif }
 
 scrape_configs:
