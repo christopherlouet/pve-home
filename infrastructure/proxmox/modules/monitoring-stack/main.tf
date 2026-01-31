@@ -55,9 +55,9 @@ locals {
   })
 
   # Dashboards Grafana
-  dashboard_node_exporter = file("${path.module}/files/grafana/dashboards/node-exporter.json")
-  dashboard_pve_exporter  = file("${path.module}/files/grafana/dashboards/pve-exporter.json")
-  dashboard_prometheus    = file("${path.module}/files/grafana/dashboards/prometheus.json")
+  dashboard_node_exporter  = file("${path.module}/files/grafana/dashboards/node-exporter.json")
+  dashboard_pve_exporter   = file("${path.module}/files/grafana/dashboards/pve-exporter.json")
+  dashboard_prometheus     = file("${path.module}/files/grafana/dashboards/prometheus.json")
   dashboard_nodes_overview = file("${path.module}/files/grafana/dashboards/nodes-overview.json")
 
   # Configuration Alertmanager
