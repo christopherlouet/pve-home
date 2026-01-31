@@ -22,17 +22,19 @@ Infrastructure as Code pour gérer un homelab Proxmox VE sur Intel NUC avec Terr
 ```
 pve-home/
 ├── infrastructure/proxmox/
+│   ├── versions.tf              # Versions de reference (provider + Terraform)
+│   ├── _shared/                 # Templates de configuration reutilisables
 │   ├── modules/
-│   │   ├── vm/               # Module VM avec cloud-init et Docker
-│   │   ├── lxc/              # Module conteneur LXC
-│   │   └── monitoring-stack/ # Stack Prometheus/Grafana/Alertmanager
+│   │   ├── vm/                  # Module VM avec cloud-init et Docker
+│   │   ├── lxc/                 # Module conteneur LXC
+│   │   └── monitoring-stack/    # Stack Prometheus/Grafana/Alertmanager
 │   └── environments/
-│       ├── prod/             # PVE production (workloads)
-│       ├── lab/              # PVE lab/test (workloads)
-│       └── monitoring/       # PVE dédié monitoring
+│       ├── prod/                # PVE production (workloads)
+│       ├── lab/                 # PVE lab/test (workloads)
+│       └── monitoring/          # PVE dedie monitoring
 ├── docs/
 │   └── INSTALLATION-PROXMOX.md
-└── .github/workflows/        # CI/CD (Terraform fmt, validate, tfsec)
+└── .github/workflows/           # CI/CD (Terraform fmt, validate, markdown-lint)
 ```
 
 ## Démarrage rapide
@@ -102,8 +104,8 @@ Voir [environments/monitoring/terraform.tfvars.example](infrastructure/proxmox/e
 ## Sécurité
 
 - Les fichiers sensibles (`*.tfvars`, `*.tfstate`) sont exclus du versioning
-- Scans automatiques avec [tfsec](https://github.com/aquasecurity/tfsec) et [gitleaks](https://github.com/gitleaks/gitleaks)
 - Ne jamais commiter de tokens ou clés SSH
+- Scans optionnels recommandés : [tfsec](https://github.com/aquasecurity/tfsec) et [gitleaks](https://github.com/gitleaks/gitleaks)
 
 ## Licence
 
