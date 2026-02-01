@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-02-01
+
+### Added
+- SSH keypair generation for monitoring VM health checks (`tls_private_key` in monitoring-stack module)
+  - Private key provisioned to `/root/.ssh/id_ed25519` via cloud-init
+  - Public key exposed as `health_check_ssh_public_key` output for cross-environment injection
+- `monitoring_ssh_public_key` variable in prod environment for monitoring VM SSH access
+- Automatic security updates (`unattended-upgrades`) for LXC containers via `remote-exec` provisioner
+  - Conditional on `auto_security_updates` and Ubuntu/Debian OS type
+- `deploy.sh` script for monitoring VM provisioning (rsync scripts, tfvars, systemd timers)
+
+### Changed
+- Health check `--ssh-user` option defaults to `ubuntu` (matches cloud-init VMs)
+- Health check extracts VM IPs only from `vms = {}` block in tfvars (avoids DNS/gateway false positives)
+- Skip Alertmanager health check when Telegram notifications are disabled
+
+### Dependencies
+- Bumped `bpg/proxmox` from 0.93.0 to 0.93.1 (prod, lab, monitoring)
+- Bumped `actions/checkout` from 4 to 6
+- Bumped `github/codeql-action` from 3 to 4
+- Bumped `DavidAnson/markdownlint-cli2-action` from 19 to 22
+- Added `hashicorp/tls ~> 4.0` provider (monitoring environment)
+
 ## [0.8.0] - 2026-02-01
 
 ### Added
