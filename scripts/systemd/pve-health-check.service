@@ -1,0 +1,20 @@
+[Unit]
+Description=PVE Infrastructure Health Check
+Documentation=file:///opt/pve-home/docs/HEALTH-CHECKS.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/pve-home/scripts/health/check-health.sh --all --force
+User=root
+WorkingDirectory=/opt/pve-home
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pve-health-check
+
+# Securite
+ProtectSystem=strict
+ReadWritePaths=/var/lib/prometheus/node-exporter
+PrivateTmp=true
+NoNewPrivileges=true
