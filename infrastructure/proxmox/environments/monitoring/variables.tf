@@ -47,6 +47,11 @@ variable "vm_template_id" {
   description = "ID du template VM cloud-init"
   type        = number
   default     = 9000
+
+  validation {
+    condition     = var.vm_template_id >= 100
+    error_message = "vm_template_id doit etre >= 100 (Proxmox reserve les IDs 0-99)."
+  }
 }
 
 # -----------------------------------------------------------------------------
@@ -124,7 +129,7 @@ variable "monitoring" {
       token_name = optional(string, "prometheus")
     })
     retention_days         = optional(number, 30)
-    grafana_admin_password = optional(string, "admin")
+    grafana_admin_password = string
     telegram = optional(object({
       enabled   = optional(bool, false)
       bot_token = optional(string, "")
