@@ -24,7 +24,7 @@ variable "container_id" {
   default     = null
 
   validation {
-    condition     = var.container_id == null || var.container_id >= 100
+    condition     = var.container_id == null ? true : var.container_id >= 100
     error_message = "container_id doit etre >= 100 (Proxmox reserve les IDs 0-99) ou null pour auto-attribution."
   }
 }
