@@ -16,9 +16,7 @@ module "backup" {
 
   retention = var.backup.retention
 
-  proxmox_endpoint  = var.proxmox_endpoint
-  proxmox_api_token = var.proxmox_api_token
-  proxmox_insecure  = var.proxmox_insecure
+  proxmox_endpoint = var.proxmox_endpoint
 }
 
 # -----------------------------------------------------------------------------

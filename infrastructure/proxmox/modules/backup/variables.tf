@@ -11,12 +11,22 @@ variable "storage_id" {
   description = "ID du storage pour les sauvegardes (ex: local, backup-store)"
   type        = string
   default     = "local"
+
+  validation {
+    condition     = length(var.storage_id) > 0
+    error_message = "storage_id ne peut pas etre vide."
+  }
 }
 
 variable "schedule" {
   description = "Horaire de sauvegarde au format Proxmox (ex: '01:00' pour 1h du matin quotidien, 'sun 03:00' pour dimanche 3h)"
   type        = string
   default     = "01:00"
+
+  validation {
+    condition     = can(regex("^(mon|tue|wed|thu|fri|sat|sun)?\\s?\\d{2}:\\d{2}$", var.schedule))
+    error_message = "Le format doit etre 'HH:MM' ou 'dow HH:MM' (ex: '01:00', 'sun 03:00')."
+  }
 }
 
 variable "mode" {
@@ -65,6 +75,11 @@ variable "retention" {
     keep_weekly  = 0
     keep_monthly = 0
   }
+
+  validation {
+    condition     = var.retention.keep_daily >= 0 && var.retention.keep_weekly >= 0 && var.retention.keep_monthly >= 0
+    error_message = "Les valeurs de retention (keep_daily, keep_weekly, keep_monthly) doivent etre >= 0."
+  }
 }
 
 variable "notification_mode" {
@@ -95,14 +110,3 @@ variable "proxmox_endpoint" {
   type        = string
 }
 
-variable "proxmox_api_token" {
-  description = "Token API Proxmox (format: user@realm!tokenid=secret)"
-  type        = string
-  sensitive   = true
-}
-
-variable "proxmox_insecure" {
-  description = "Ignorer la verification SSL"
-  type        = bool
-  default     = true
-}
