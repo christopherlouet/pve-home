@@ -36,7 +36,10 @@ systemctl enable --now pve-health-check.timer
 ./scripts/health/check-health.sh --env prod
 
 # Verifier tout
-./scripts/health/check-health.sh --all
+./scripts/health/check-health.sh --all --force
+
+# Specifier l'utilisateur SSH (defaut: ubuntu pour les VMs cloud-init)
+./scripts/health/check-health.sh --env prod --ssh-user root
 
 # Filtrer par composant
 ./scripts/health/check-health.sh --env monitoring --component monitoring
@@ -50,6 +53,21 @@ systemctl enable --now pve-health-check.timer
 # Mode dry-run
 ./scripts/health/check-health.sh --all --dry-run
 ```
+
+### Extraction des IPs
+
+Les IPs des VMs sont extraites uniquement du bloc `vms = { ... }` dans les fichiers `terraform.tfvars`. Les autres adresses IP (DNS, gateway, Proxmox) sont ignorees pour eviter les faux positifs.
+
+### Authentification SSH
+
+Le health check se connecte en SSH aux VMs pour verifier leur disponibilite. L'utilisateur par defaut est `ubuntu` (standard cloud-init). La VM monitoring utilise une **keypair SSH dediee** generee automatiquement par Terraform (`tls_private_key` dans le module monitoring-stack) :
+
+- **Cle privee** : provisionnee sur la VM monitoring dans `/root/.ssh/id_ed25519` via cloud-init
+- **Cle publique** : exposee via l'output `health_check_ssh_public_key`, a ajouter dans `monitoring_ssh_public_key` de l'env prod
+
+### Alertmanager
+
+La verification de l'Alertmanager est ignoree automatiquement lorsque les notifications Telegram sont desactivees (`telegram.enabled = false`).
 
 ## Metriques Prometheus
 
@@ -76,10 +94,37 @@ Pour exclure des composants de la verification :
 ./scripts/health/check-health.sh --all --exclude "dev-server,test-vm"
 ```
 
+## Installation
+
+### Deploiement automatise
+
+Utiliser `deploy.sh` pour deployer le script et les timers sur la VM monitoring :
+
+```bash
+./scripts/deploy.sh
+```
+
+### Deploiement manuel
+
+```bash
+cp /opt/pve-home/scripts/systemd/pve-health-check.service /etc/systemd/system/
+cp /opt/pve-home/scripts/systemd/pve-health-check.timer /etc/systemd/system/
+
+systemctl daemon-reload
+systemctl enable --now pve-health-check.timer
+```
+
 ## Troubleshooting
 
+### SSH unreachable sur les VMs prod
+
+1. **Verifier la keypair monitoring** : `ls -la /root/.ssh/id_ed25519` sur la VM monitoring
+2. **Verifier les authorized_keys** : `grep "health_check" ~/.ssh/authorized_keys` sur les VMs cibles
+3. **Tester manuellement** : `sudo ssh -v -o StrictHostKeyChecking=no ubuntu@<ip> exit`
+4. **Si la keypair manque** : cloud-init ne se re-execute pas sur les VMs existantes. Copier manuellement la cle publique (output `health_check_ssh_public_key`) dans `~ubuntu/.ssh/authorized_keys` sur les VMs cibles
+
 ### Faux positifs sur SSH
-- Verifier que la cle SSH de l'operateur est deployee sur les VMs
+- Verifier que l'utilisateur SSH est correct (defaut: `ubuntu`, surcharger avec `--ssh-user`)
 - Augmenter le timeout avec `--timeout 30`
 
 ### Metriques manquantes

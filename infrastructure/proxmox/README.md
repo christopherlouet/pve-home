@@ -187,7 +187,29 @@ terraform plan
 terraform apply
 ```
 
-### 5. Installer node_exporter sur les hosts Proxmox
+### 5. Deployer les scripts sur la VM monitoring
+
+Le script `deploy.sh` provisionne automatiquement la VM monitoring avec les health checks, drift detection et timers systemd :
+
+```bash
+./scripts/deploy.sh
+```
+
+Le module monitoring-stack genere automatiquement une **keypair SSH** (ED25519) pour permettre a la VM monitoring de se connecter aux VMs des autres environnements. Apres `terraform apply` sur monitoring :
+
+```bash
+# Recuperer la cle publique
+cd infrastructure/proxmox/environments/monitoring
+terraform output health_check_ssh_public_key
+
+# Ajouter dans prod/terraform.tfvars
+monitoring_ssh_public_key = "ssh-ed25519 AAAA..."
+
+# Appliquer
+cd ../prod && terraform apply
+```
+
+### 6. Installer node_exporter sur les hosts Proxmox
 
 Le script `install-node-exporter.sh` installe node_exporter comme service systemd sur les hosts PVE :
 
@@ -370,7 +392,10 @@ bats tests/restore/
 
 # Health checks
 ./scripts/health/check-health.sh --env prod
-./scripts/health/check-health.sh --all --component monitoring
+./scripts/health/check-health.sh --all --force
+
+# Deployer scripts sur la VM monitoring
+./scripts/deploy.sh
 
 # Snapshots
 ./scripts/lifecycle/snapshot-vm.sh create 100

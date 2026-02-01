@@ -377,6 +377,25 @@ Reconstruire la VM monitoring depuis zero avec Terraform :
 1. Verifier que le conteneur Grafana est demarre : `ssh ubuntu@<monitoring-ip> "sudo docker ps | grep grafana"`
 2. Verifier les logs Grafana : `ssh ubuntu@<monitoring-ip> "sudo docker logs grafana"`
 
+### Post-rebuild : Deployer les scripts et keypair SSH
+
+Apres la reconstruction du monitoring, deployer les scripts de health check et drift detection :
+
+```bash
+# Deployer scripts, tfvars et timers systemd
+./scripts/deploy.sh
+
+# Recuperer la cle SSH publique du monitoring
+cd infrastructure/proxmox/environments/monitoring
+terraform output health_check_ssh_public_key
+
+# Ajouter dans prod/terraform.tfvars > monitoring_ssh_public_key
+# Puis appliquer sur prod pour injecter la cle dans les VMs
+cd ../prod && terraform apply
+```
+
+**Note** : La keypair SSH est regeneree a chaque reconstruction (`tls_private_key`). La cle publique doit etre redistribuee sur les VMs des autres environnements. Pour les VMs existantes (cloud-init ne se re-execute pas), ajouter manuellement la cle publique dans `~ubuntu/.ssh/authorized_keys`.
+
 ### Note : Historique metriques
 
 - **Mode restore** : L'historique Prometheus est conserve si inclus dans le backup vzdump
@@ -717,6 +736,7 @@ En cas de probleme non resolu :
 
 | Date | Version | Changements |
 |------|---------|-------------|
+| 2026-02-01 | 1.1 | Ajout etape deploy.sh et keypair SSH post-rebuild monitoring |
 | 2026-02-01 | 1.0 | Creation initiale du runbook DR |
 
 ---

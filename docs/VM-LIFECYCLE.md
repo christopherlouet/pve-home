@@ -16,7 +16,17 @@ module "vm" {
 }
 ```
 
-Le module configure :
+### Mecanisme par type de ressource
+
+| Type | Mecanisme | OS supportes |
+|------|-----------|-------------|
+| **VM** | cloud-init (`runcmd`) | Ubuntu, Debian |
+| **LXC** | `remote-exec` provisioner via SSH | Ubuntu, Debian |
+
+- **VMs** : la configuration est injectee via cloud-init au premier demarrage
+- **LXC** : un provisioner `remote-exec` se connecte en SSH (root) apres la creation du conteneur pour installer et configurer `unattended-upgrades`. Conditionnel sur `auto_security_updates = true` et un OS compatible (Ubuntu/Debian). Les conteneurs Alpine, CentOS, Fedora ou Arch sont ignores.
+
+Les deux configurent :
 - `unattended-upgrades` : uniquement les paquets de securite
 - Pas de reboot automatique (alerte Prometheus si reboot necessaire)
 

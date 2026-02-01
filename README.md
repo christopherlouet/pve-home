@@ -12,7 +12,8 @@ Infrastructure as Code pour gérer un homelab Proxmox VE sur Intel NUC avec Terr
 - **Scripts de restauration** : Restauration automatisée de VMs, state Terraform et composants critiques
 - **Modules réutilisables** : Modules Terraform pour VM, LXC, backup, Minio et monitoring
 - **Détection de drift** : Vérification automatique des dérives Terraform avec métriques Prometheus
-- **Health checks** : Surveillance de la santé des VMs, monitoring et Minio
+- **Health checks** : Surveillance de la santé des VMs, monitoring et Minio (SSH automatise via keypair dediee)
+- **Deploiement monitoring** : Script `deploy.sh` pour provisionner scripts, tfvars et timers systemd sur la VM monitoring
 - **Cycle de vie VMs** : Snapshots, expiration automatique, mises à jour de sécurité, rotation SSH
 - **Tests Terraform natifs** : Validation des modules avec `terraform test` et `mock_provider`
 - **CI/CD** : Validation Terraform, tests, et scans de sécurité via GitHub Actions
@@ -237,7 +238,8 @@ Des scripts shell automatisent les opérations d'infrastructure depuis votre mac
 | Script | Description | Usage |
 |--------|-------------|-------|
 | **check-drift.sh** | Détecter les dérives Terraform | `./scripts/drift/check-drift.sh --env prod` |
-| **check-health.sh** | Vérifier la santé de l'infrastructure | `./scripts/health/check-health.sh --env prod` |
+| **check-health.sh** | Vérifier la santé de l'infrastructure | `./scripts/health/check-health.sh --all --force` |
+| **deploy.sh** | Deployer scripts et timers sur la VM monitoring | `./scripts/deploy.sh` |
 
 ### Cycle de vie VMs/LXC
 
