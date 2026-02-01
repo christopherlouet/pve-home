@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -48,7 +48,7 @@ jobs:
           - infrastructure/proxmox/environments/monitoring
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -78,7 +78,7 @@ jobs:
           - infrastructure/proxmox/modules/monitoring-stack
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -107,7 +107,7 @@ jobs:
           - infrastructure/proxmox/modules/monitoring-stack
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Check terraform-docs is up to date
         uses: terraform-docs/gh-actions@v1
@@ -123,7 +123,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y shellcheck bats
       - name: Shellcheck
@@ -137,7 +137,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Lint Markdown files
         uses: DavidAnson/markdownlint-cli2-action@v22
