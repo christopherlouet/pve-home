@@ -333,3 +333,19 @@ pvesh delete /nodes/<node>/storage/local/content/backup/<backup-volume-id>
 - **Documenter** les VMID et CTID de chaque environnement
 - **Conserver** une copie locale du state Terraform en plus de Minio
 - **Verifier** les alertes Prometheus apres chaque modification de la configuration backup
+
+## 8. Scripts de restauration automatises
+
+Des scripts automatises sont disponibles dans `scripts/restore/` pour simplifier les operations de restauration.
+
+| Script | Description | Usage |
+|--------|-------------|-------|
+| `restore-vm.sh` | Restaurer une VM/LXC depuis vzdump | `./scripts/restore/restore-vm.sh <vmid>` |
+| `restore-tfstate.sh` | Restaurer un state Terraform | `./scripts/restore/restore-tfstate.sh --env prod --list` |
+| `rebuild-minio.sh` | Reconstruire le conteneur Minio | `./scripts/restore/rebuild-minio.sh` |
+| `rebuild-monitoring.sh` | Reconstruire la stack monitoring | `./scripts/restore/rebuild-monitoring.sh` |
+| `verify-backups.sh` | Verifier l'integrite des sauvegardes | `./scripts/restore/verify-backups.sh --full` |
+
+Tous les scripts supportent `--dry-run` et `--help`. Voir la documentation complete dans `scripts/restore/README.md`.
+
+**Note**: Pour un guide complet de Disaster Recovery (reconstruction complete de l'infrastructure depuis zero), consultez le runbook dans `docs/DISASTER-RECOVERY.md` (à venir dans US6).
