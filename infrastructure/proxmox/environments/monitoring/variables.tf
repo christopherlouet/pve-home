@@ -129,7 +129,7 @@ variable "monitoring" {
       token_name = optional(string, "prometheus")
     })
     retention_days         = optional(number, 30)
-    grafana_admin_password = optional(string, "admin")
+    grafana_admin_password = string
     telegram = optional(object({
       enabled   = optional(bool, false)
       bot_token = optional(string, "")
