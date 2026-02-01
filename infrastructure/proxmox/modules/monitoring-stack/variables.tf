@@ -23,6 +23,11 @@ variable "target_node" {
 variable "template_id" {
   description = "ID du template VM cloud-init"
   type        = number
+
+  validation {
+    condition     = var.template_id >= 100
+    error_message = "template_id doit etre >= 100 (Proxmox reserve les IDs 0-99)."
+  }
 }
 
 variable "vm_config" {
@@ -34,6 +39,26 @@ variable "vm_config" {
     data_disk = optional(number, 50)
   })
   default = {}
+
+  validation {
+    condition     = var.vm_config.cores >= 1 && var.vm_config.cores <= 64
+    error_message = "vm_config.cores doit etre entre 1 et 64."
+  }
+
+  validation {
+    condition     = var.vm_config.memory >= 512 && var.vm_config.memory <= 131072
+    error_message = "vm_config.memory doit etre entre 512 et 131072 (512 MB - 128 GB)."
+  }
+
+  validation {
+    condition     = var.vm_config.disk >= 4 && var.vm_config.disk <= 4096
+    error_message = "vm_config.disk doit etre entre 4 et 4096 (4 GB - 4 TB)."
+  }
+
+  validation {
+    condition     = var.vm_config.data_disk >= 4 && var.vm_config.data_disk <= 4096
+    error_message = "vm_config.data_disk doit etre entre 4 et 4096 (4 GB - 4 TB)."
+  }
 }
 
 variable "datastore" {
@@ -49,12 +74,22 @@ variable "datastore" {
 variable "ip_address" {
   description = "Adresse IP de la VM monitoring (sans CIDR)"
   type        = string
+
+  validation {
+    condition     = can(regex("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$", var.ip_address))
+    error_message = "ip_address doit etre une adresse IPv4 valide (ex: 192.168.1.50)."
+  }
 }
 
 variable "network_cidr" {
   description = "CIDR du reseau (ex: 24)"
   type        = number
   default     = 24
+
+  validation {
+    condition     = var.network_cidr >= 8 && var.network_cidr <= 32
+    error_message = "network_cidr doit etre entre 8 et 32."
+  }
 }
 
 variable "gateway" {
@@ -149,12 +184,22 @@ variable "prometheus_retention_days" {
   description = "Duree de retention des metriques en jours"
   type        = number
   default     = 30
+
+  validation {
+    condition     = var.prometheus_retention_days >= 1 && var.prometheus_retention_days <= 365
+    error_message = "prometheus_retention_days doit etre entre 1 et 365."
+  }
 }
 
 variable "prometheus_retention_size" {
   description = "Taille max de retention (ex: 40GB)"
   type        = string
   default     = "40GB"
+
+  validation {
+    condition     = can(regex("^\\d+[KMGT]B$", var.prometheus_retention_size))
+    error_message = "prometheus_retention_size doit etre au format NGB (ex: 40GB, 1TB)."
+  }
 }
 
 # -----------------------------------------------------------------------------
