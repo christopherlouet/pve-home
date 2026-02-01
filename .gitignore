@@ -72,6 +72,9 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+# Lock files in test directories (generated during terraform init)
+tests/**/.terraform.lock.hcl
+
 # =============================================================================
 # Secrets et credentials
 # =============================================================================
