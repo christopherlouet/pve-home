@@ -167,10 +167,11 @@
     {
       "title": "Unprotected Guests (no backup job)",
       "type": "table",
-      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 7 },
+      "gridPos": { "h": 3, "w": 24, "x": 0, "y": 7 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
+          "noValue": "All guests are covered by a backup job",
           "custom": {
             "align": "auto",
             "cellOptions": { "type": "auto" }
@@ -226,13 +227,13 @@
     {
       "title": "Storage",
       "type": "row",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 10 },
       "collapsed": false
     },
     {
       "title": "Storage Usage by Pool",
       "type": "bargauge",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 11 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
@@ -265,7 +266,7 @@
     {
       "title": "Storage Space Allocation",
       "type": "bargauge",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 11 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
@@ -281,7 +282,7 @@
         "reduceOptions": { "calcs": ["lastNotNull"] },
         "displayMode": "gradient",
         "orientation": "horizontal",
-        "showUnfilled": false
+        "showUnfilled": true
       },
       "targets": [
         {
@@ -294,7 +295,7 @@
     {
       "title": "Storage Usage Over Time",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 22 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 19 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
@@ -337,13 +338,13 @@
     {
       "title": "Guest Inventory",
       "type": "row",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
       "collapsed": false
     },
     {
       "title": "Guest Resource Allocation",
       "type": "table",
-      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 31 },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 28 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
@@ -498,17 +499,7 @@
           "id": "filterFieldsByName",
           "options": {
             "include": {
-              "names": [
-                "name 1",
-                "node 1",
-                "type 1",
-                "Value #B",
-                "Value #C",
-                "Value #D",
-                "Value #E",
-                "Value #F",
-                "Value #G"
-              ]
+              "pattern": "(^name|^node|^type|Value #[B-G])"
             }
           }
         },
@@ -516,8 +507,11 @@
           "id": "organize",
           "options": {
             "renameByName": {
+              "node": "Node",
               "node 1": "Node",
+              "name": "Guest",
               "name 1": "Guest",
+              "type": "Type",
               "type 1": "Type",
               "Value #B": "Status",
               "Value #C": "CPU %",
@@ -527,8 +521,11 @@
               "Value #G": "HA"
             },
             "indexByName": {
+              "node": 0,
               "node 1": 0,
+              "name": 1,
               "name 1": 1,
+              "type": 2,
               "type 1": 2,
               "Value #B": 3,
               "Value #C": 4,

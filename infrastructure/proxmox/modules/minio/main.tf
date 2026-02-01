@@ -175,7 +175,7 @@ resource "terraform_data" "minio_install" {
   ]
 
   provisioner "remote-exec" {
-    inline = split("\n", local.install_script)
+    inline = [local.install_script]
 
     connection {
       type    = "ssh"
