@@ -27,7 +27,8 @@ source "${LIB_DIR}/common.sh"
 # =============================================================================
 
 PVE_NODE=""
-readonly PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+readonly PROJECT_ROOT
 readonly METRICS_DIR="/var/lib/prometheus/node-exporter"
 
 # =============================================================================
@@ -60,7 +61,7 @@ parse_args() {
                 shift
                 ;;
             --force)
-                FORCE_MODE=true
+                export FORCE_MODE=true
                 shift
                 ;;
             --help|-h)
