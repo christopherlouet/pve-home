@@ -223,7 +223,7 @@
 
 **Objectif** : Procedure guidee pas-a-pas pour reconstruire toute l'infrastructure depuis zero
 
-- [ ] T024 - [US6] Rediger `docs/DISASTER-RECOVERY.md` :
+- [x] T024 - [US6] Rediger `docs/DISASTER-RECOVERY.md` :
   - Prerequis : Proxmox VE installe, acces SSH, outils installes
   - Etape 1 : Reconstruire Minio (`rebuild-minio.sh`)
   - Etape 2 : Restaurer state Terraform (`restore-tfstate.sh`)
@@ -233,13 +233,13 @@
   - Pour chaque etape : prerequis, commande, verification attendue
   - Checklist de verification finale
 
-- [ ] T025 - [US6] Ajouter mode `--full` dans `scripts/restore/verify-backups.sh` :
+- [x] T025 - [US6] Ajouter mode `--full` dans `scripts/restore/verify-backups.sh` :
   - Verification de tous les composants : vzdump, Minio, monitoring
   - Test connectivite vers toutes les VMs/LXC connues
   - Verification que les sauvegardes automatiques sont actives
   - Rapport DR complet
 
-**Checkpoint** : Runbook DR complet, testable en suivant les etapes.
+**Checkpoint** : Runbook DR complet, testable en suivant les etapes. ✅ COMPLETE
 
 ---
 

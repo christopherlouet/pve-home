@@ -2,6 +2,10 @@
 
 Guide des procedures de sauvegarde et restauration pour l'infrastructure Proxmox VE.
 
+**Pour une perte totale (disaster recovery)** : Consultez [DISASTER-RECOVERY.md](DISASTER-RECOVERY.md) pour la procedure complete de reconstruction.
+
+**Pour une perte partielle** : Suivez les procedures ciblees ci-dessous.
+
 ## Architecture des sauvegardes
 
 ```
@@ -346,6 +350,6 @@ Des scripts automatises sont disponibles dans `scripts/restore/` pour simplifier
 | `rebuild-monitoring.sh` | Reconstruire la stack monitoring | `./scripts/restore/rebuild-monitoring.sh` |
 | `verify-backups.sh` | Verifier l'integrite des sauvegardes | `./scripts/restore/verify-backups.sh --full` |
 
-Tous les scripts supportent `--dry-run` et `--help`. Voir la documentation complete dans `scripts/restore/README.md`.
+Tous les scripts supportent `--dry-run` et `--help`.
 
-**Note**: Pour un guide complet de Disaster Recovery (reconstruction complete de l'infrastructure depuis zero), consultez le runbook dans `docs/DISASTER-RECOVERY.md` (à venir dans US6).
+**Disaster Recovery** : Pour un guide complet de reconstruction de l'infrastructure depuis zero, consultez [DISASTER-RECOVERY.md](DISASTER-RECOVERY.md).
