@@ -266,9 +266,9 @@ check_vm_health() {
         return 0
     fi
 
-    # Extraire les IPs des VMs depuis le tfvars (format simplifie)
+    # Extraire les IPs des VMs depuis le bloc "vms = { ... }" du tfvars
     local ips
-    ips=$(grep -oP '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' "$tfvars" 2>/dev/null | sort -u || echo "")
+    ips=$(awk '/^vms\s*=\s*\{/,/^\}/' "$tfvars" | grep -oP 'ip\s*=\s*"\K\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' 2>/dev/null | sort -u || echo "")
 
     for ip in $ips; do
         local name="vm-${ip}"
@@ -323,7 +323,7 @@ check_monitoring_health() {
     local tfvars="${ENVS_DIR}/monitoring/terraform.tfvars"
     local monitoring_ip=""
     if [[ -f "$tfvars" ]]; then
-        monitoring_ip=$(grep -oP '(?<=monitoring_ip\s*=\s*")\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' "$tfvars" 2>/dev/null || echo "")
+        monitoring_ip=$(awk '/^monitoring\s*=\s*\{/,/^\}/' "$tfvars" | grep -oP 'ip\s*=\s*"\K\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' 2>/dev/null | head -1 || echo "")
     fi
 
     if [[ -z "$monitoring_ip" ]]; then
@@ -377,7 +377,7 @@ check_minio_health() {
     local tfvars="${ENVS_DIR}/monitoring/terraform.tfvars"
     local minio_ip=""
     if [[ -f "$tfvars" ]]; then
-        minio_ip=$(grep -oP '(?<=minio_ip\s*=\s*")\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' "$tfvars" 2>/dev/null || echo "")
+        minio_ip=$(awk '/^minio\s*=\s*\{/,/^\}/' "$tfvars" | grep -oP 'ip\s*=\s*"\K\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' 2>/dev/null | head -1 || echo "")
     fi
 
     if [[ -z "$minio_ip" ]]; then
