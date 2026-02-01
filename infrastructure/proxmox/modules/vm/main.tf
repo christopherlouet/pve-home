@@ -34,6 +34,17 @@ locals {
     "systemctl enable --now qemu-guest-agent"
   ] : []
 
+  security_updates_packages = var.auto_security_updates ? ["unattended-upgrades", "apt-listchanges"] : []
+
+  security_updates_runcmd = var.auto_security_updates ? [
+    "echo 'Unattended-Upgrade::Allowed-Origins { \"$${distro_id}:$${distro_codename}-security\"; };' > /etc/apt/apt.conf.d/50unattended-upgrades-local",
+    "echo 'Unattended-Upgrade::Automatic-Reboot \"false\";' >> /etc/apt/apt.conf.d/50unattended-upgrades-local",
+    "systemctl enable --now unattended-upgrades"
+  ] : []
+
+  # Tag d'expiration pour le lifecycle management
+  expiration_tag = var.expiration_days != null ? ["expires:${formatdate("YYYY-MM-DD", timeadd(timestamp(), "${var.expiration_days * 24}h"))}"] : []
+
   cloud_config = {
     users = [
       {
@@ -45,13 +56,13 @@ locals {
     ]
     package_update  = true
     package_upgrade = false
-    packages        = local.all_packages
-    runcmd          = concat(local.docker_runcmd, local.qemu_agent_runcmd)
+    packages        = concat(local.all_packages, local.security_updates_packages)
+    runcmd          = concat(local.docker_runcmd, local.qemu_agent_runcmd, local.security_updates_runcmd)
   }
 }
 
 resource "proxmox_virtual_environment_file" "cloud_config" {
-  count = var.install_docker || var.install_qemu_agent || length(var.additional_packages) > 0 ? 1 : 0
+  count = var.install_docker || var.install_qemu_agent || var.auto_security_updates || length(var.additional_packages) > 0 ? 1 : 0
 
   content_type = "snippets"
   datastore_id = "local"
@@ -70,7 +81,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
 resource "proxmox_virtual_environment_vm" "this" {
   name          = var.name
   description   = var.description
-  tags          = var.tags
+  tags          = concat(var.tags, local.expiration_tag)
   node_name     = var.target_node
   on_boot       = var.start_on_boot
   started       = true

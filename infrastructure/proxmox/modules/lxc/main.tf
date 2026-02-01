@@ -14,10 +14,14 @@ terraform {
 # Resource LXC
 # -----------------------------------------------------------------------------
 
+locals {
+  expiration_tag = var.expiration_days != null ? ["expires:${formatdate("YYYY-MM-DD", timeadd(timestamp(), "${var.expiration_days * 24}h"))}"] : []
+}
+
 resource "proxmox_virtual_environment_container" "this" {
   description   = var.description
   node_name     = var.target_node
-  tags          = var.tags
+  tags          = concat(var.tags, local.expiration_tag)
   unprivileged  = var.unprivileged
   start_on_boot = var.start_on_boot
   started       = true

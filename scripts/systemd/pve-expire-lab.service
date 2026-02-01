@@ -1,0 +1,14 @@
+[Unit]
+Description=PVE Lab VM Expiration
+Documentation=file:///opt/pve-home/docs/VM-LIFECYCLE.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/pve-home/scripts/lifecycle/expire-lab-vms.sh --force
+User=root
+WorkingDirectory=/opt/pve-home
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pve-expire-lab

@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily PVE Snapshot Cleanup
+Documentation=file:///opt/pve-home/docs/VM-LIFECYCLE.md
+
+[Timer]
+OnCalendar=*-*-* 05:00:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
