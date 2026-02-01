@@ -168,3 +168,20 @@ variable "additional_packages" {
   type        = list(string)
   default     = []
 }
+
+variable "auto_security_updates" {
+  description = "Installer et configurer unattended-upgrades pour les mises a jour de securite"
+  type        = bool
+  default     = true
+}
+
+variable "expiration_days" {
+  description = "Nombre de jours avant expiration de la VM (null = pas d'expiration)"
+  type        = number
+  default     = null
+
+  validation {
+    condition     = var.expiration_days == null ? true : var.expiration_days > 0
+    error_message = "expiration_days doit etre > 0 ou null."
+  }
+}

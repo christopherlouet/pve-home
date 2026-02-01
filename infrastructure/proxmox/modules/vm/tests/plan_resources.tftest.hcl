@@ -175,9 +175,10 @@ run "no_cloud_init_when_no_packages" {
   command = plan
 
   variables {
-    install_qemu_agent  = false
-    install_docker      = false
-    additional_packages = []
+    install_qemu_agent    = false
+    install_docker        = false
+    additional_packages   = []
+    auto_security_updates = false
   }
 
   assert {

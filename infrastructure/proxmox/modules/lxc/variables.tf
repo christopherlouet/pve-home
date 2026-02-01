@@ -187,3 +187,20 @@ variable "backup_enabled" {
   type        = bool
   default     = true
 }
+
+variable "auto_security_updates" {
+  description = "Configurer unattended-upgrades pour les mises a jour de securite (Ubuntu/Debian)"
+  type        = bool
+  default     = true
+}
+
+variable "expiration_days" {
+  description = "Nombre de jours avant expiration du conteneur (null = pas d'expiration)"
+  type        = number
+  default     = null
+
+  validation {
+    condition     = var.expiration_days == null ? true : var.expiration_days > 0
+    error_message = "expiration_days doit etre > 0 ou null."
+  }
+}
