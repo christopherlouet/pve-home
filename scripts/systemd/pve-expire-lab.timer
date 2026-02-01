@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily PVE Lab VM Expiration Check
+Documentation=file:///opt/pve-home/docs/VM-LIFECYCLE.md
+
+[Timer]
+OnCalendar=*-*-* 07:00:00
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

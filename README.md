@@ -11,12 +11,16 @@ Infrastructure as Code pour gérer un homelab Proxmox VE sur Intel NUC avec Terr
 - **Stack Monitoring** : Prometheus, Grafana, Alertmanager sur PVE dédié avec dashboards et alertes backup
 - **Scripts de restauration** : Restauration automatisée de VMs, state Terraform et composants critiques
 - **Modules réutilisables** : Modules Terraform pour VM, LXC, backup, Minio et monitoring
-- **CI/CD** : Validation Terraform et scans de sécurité via GitHub Actions
+- **Détection de drift** : Vérification automatique des dérives Terraform avec métriques Prometheus
+- **Health checks** : Surveillance de la santé des VMs, monitoring et Minio
+- **Cycle de vie VMs** : Snapshots, expiration automatique, mises à jour de sécurité, rotation SSH
+- **Tests Terraform natifs** : Validation des modules avec `terraform test` et `mock_provider`
+- **CI/CD** : Validation Terraform, tests, et scans de sécurité via GitHub Actions
 
 ## Prérequis
 
 - [Proxmox VE 8.x ou 9.x](https://www.proxmox.com/) installé
-- [Terraform >= 1.5](https://www.terraform.io/)
+- [Terraform >= 1.9](https://www.terraform.io/)
 - Template VM cloud-init (Ubuntu) créé sur Proxmox
 - Token API Proxmox avec les permissions appropriées
 
@@ -29,10 +33,15 @@ pve-home/
 │   ├── _shared/                 # Templates de configuration reutilisables
 │   ├── modules/
 │   │   ├── vm/                  # Module VM avec cloud-init et Docker
+│   │   │   └── tests/           # Tests natifs Terraform
 │   │   ├── lxc/                 # Module conteneur LXC
+│   │   │   └── tests/           # Tests natifs Terraform
 │   │   ├── backup/              # Module sauvegardes vzdump
+│   │   │   └── tests/           # Tests natifs Terraform
 │   │   ├── minio/               # Module Minio S3 (backend Terraform)
+│   │   │   └── tests/           # Tests natifs Terraform
 │   │   └── monitoring-stack/    # Stack Prometheus/Grafana/Alertmanager
+│   │       └── tests/           # Tests natifs Terraform
 │   └── environments/
 │       ├── prod/                # PVE production (workloads)
 │       ├── lab/                 # PVE lab/test (workloads)
@@ -40,11 +49,23 @@ pve-home/
 ├── docs/
 │   ├── INSTALLATION-PROXMOX.md
 │   ├── BACKUP-RESTORE.md
-│   └── DISASTER-RECOVERY.md
+│   ├── DISASTER-RECOVERY.md
+│   ├── DRIFT-DETECTION.md
+│   ├── HEALTH-CHECKS.md
+│   └── VM-LIFECYCLE.md
 ├── scripts/
-│   ├── lib/                     # Bibliotheque commune
-│   └── restore/                 # Scripts de restauration
-└── .github/workflows/           # CI/CD + Security (fmt, validate, tfsec, Checkov, Trivy)
+│   ├── lib/                     # Bibliotheque commune (common.sh)
+│   ├── restore/                 # Scripts de restauration
+│   ├── drift/                   # Detection de drift Terraform
+│   ├── health/                  # Health checks infrastructure
+│   ├── lifecycle/               # Cycle de vie VMs/LXC (snapshots, expiration, SSH)
+│   └── systemd/                 # Timers et services systemd
+├── tests/                       # Tests BATS pour les scripts
+│   ├── restore/
+│   ├── drift/
+│   ├── health/
+│   └── lifecycle/
+└── .github/workflows/           # CI/CD + Security + Terraform Tests
 ```
 
 ## Démarrage rapide
@@ -67,9 +88,13 @@ terraform apply
 | Document | Description |
 |----------|-------------|
 | [Installation Proxmox](docs/INSTALLATION-PROXMOX.md) | Guide d'installation complet de Proxmox VE |
-| [Infrastructure README](infrastructure/proxmox/README.md) | Documentation Terraform détaillée (modules, environnements) |
+| [Infrastructure README](infrastructure/proxmox/README.md) | Documentation Terraform détaillée (modules, environnements, tests) |
 | [Sauvegarde & Restauration](docs/BACKUP-RESTORE.md) | Procédures manuelles et automatisées pour restaurer VMs, state Terraform et composants |
 | [Disaster Recovery](docs/DISASTER-RECOVERY.md) | Runbook pas-à-pas pour reconstruction complète après défaillance majeure |
+| [Détection de drift](docs/DRIFT-DETECTION.md) | Détection automatique des dérives Terraform avec métriques Prometheus |
+| [Health Checks](docs/HEALTH-CHECKS.md) | Vérification de santé de l'infrastructure (VMs, monitoring, Minio) |
+| [Cycle de vie VMs](docs/VM-LIFECYCLE.md) | Snapshots, expiration, mises à jour de sécurité, rotation SSH |
+| [Index des scripts](scripts/README.md) | Index complet de tous les scripts d'opération |
 
 ## Exemple de configuration
 
@@ -166,6 +191,14 @@ Les alertes suivantes supervisent l'infrastructure et les sauvegardes :
 | `BackupJobFailed` | Critical | Un job vzdump a échoué dans les dernières 24h |
 | `BackupJobMissing` | Warning | Aucune sauvegarde réussie depuis 48h |
 | `BackupStorageAlmostFull` | Warning | Stockage backup utilisé à plus de 80% |
+| `DriftDetected` | Warning | Drift Terraform détecté sur un environnement |
+| `DriftCheckFailed` | Critical | Le check de drift a échoué |
+| `DriftCheckStale` | Warning | Aucun check de drift depuis > 48h |
+| `InfraHealthCheckFailed` | Warning | Un composant infrastructure est en échec |
+| `HealthCheckStale` | Warning | Aucun health check depuis > 8h |
+| `LabVMExpired` | Warning | VMs lab expirées et arrêtées |
+| `SnapshotOlderThanWeek` | Info | Snapshots anciens nettoyés |
+| `VMRebootRequired` | Warning | Reboot nécessaire depuis > 24h |
 
 Les alertes sont configurées dans `infrastructure/proxmox/modules/monitoring-stack/files/prometheus/alerts/default.yml`.
 
@@ -185,21 +218,72 @@ Les modules réutilisables permettent de provisionner l'infrastructure rapidemen
 
 Documentation complète : [infrastructure/proxmox/README.md](infrastructure/proxmox/README.md)
 
-## Scripts de Restauration
+## Scripts d'opération
 
-Des scripts shell automatisent les opérations de restauration et diagnostic depuis votre machine de travail :
+Des scripts shell automatisent les opérations d'infrastructure depuis votre machine de travail. Tous supportent `--dry-run` et `--help`.
 
-| Script | Localisation | Description | Usage |
-|--------|--------------|-------------|-------|
-| **restore-vm.sh** | `scripts/restore/` | Restaurer une VM/LXC depuis vzdump | `./scripts/restore/restore-vm.sh <vmid> --node <node-name>` |
-| **restore-tfstate.sh** | `scripts/restore/` | Restaurer state Terraform depuis Minio | `./scripts/restore/restore-tfstate.sh --env prod --list` |
-| **rebuild-minio.sh** | `scripts/restore/` | Reconstruire le conteneur Minio | `./scripts/restore/rebuild-minio.sh --force` |
-| **rebuild-monitoring.sh** | `scripts/restore/` | Reconstruire la stack monitoring | `./scripts/restore/rebuild-monitoring.sh --mode restore` |
-| **verify-backups.sh** | `scripts/restore/` | Vérifier l'intégrité des sauvegardes | `./scripts/restore/verify-backups.sh --full` |
+### Restauration
 
-Tous les scripts supportent `--dry-run` pour un test sans risque et `--help` pour l'aide détaillée.
+| Script | Description | Usage |
+|--------|-------------|-------|
+| **restore-vm.sh** | Restaurer une VM/LXC depuis vzdump | `./scripts/restore/restore-vm.sh <vmid> --node <node>` |
+| **restore-tfstate.sh** | Restaurer state Terraform depuis Minio | `./scripts/restore/restore-tfstate.sh --env prod --list` |
+| **rebuild-minio.sh** | Reconstruire le conteneur Minio | `./scripts/restore/rebuild-minio.sh --force` |
+| **rebuild-monitoring.sh** | Reconstruire la stack monitoring | `./scripts/restore/rebuild-monitoring.sh --mode restore` |
+| **verify-backups.sh** | Vérifier l'intégrité des sauvegardes | `./scripts/restore/verify-backups.sh --full` |
 
-Documentation complète : [docs/DISASTER-RECOVERY.md](docs/DISASTER-RECOVERY.md)
+### Drift & Health
+
+| Script | Description | Usage |
+|--------|-------------|-------|
+| **check-drift.sh** | Détecter les dérives Terraform | `./scripts/drift/check-drift.sh --env prod` |
+| **check-health.sh** | Vérifier la santé de l'infrastructure | `./scripts/health/check-health.sh --env prod` |
+
+### Cycle de vie VMs/LXC
+
+| Script | Description | Usage |
+|--------|-------------|-------|
+| **snapshot-vm.sh** | Créer/lister/restaurer/supprimer des snapshots | `./scripts/lifecycle/snapshot-vm.sh create 100` |
+| **cleanup-snapshots.sh** | Nettoyer les snapshots automatiques expirés | `./scripts/lifecycle/cleanup-snapshots.sh --max-age 7` |
+| **expire-lab-vms.sh** | Arrêter les VMs lab expirées | `./scripts/lifecycle/expire-lab-vms.sh --dry-run` |
+| **rotate-ssh-keys.sh** | Ajouter/révoquer des clés SSH | `./scripts/lifecycle/rotate-ssh-keys.sh --add-key ~/.ssh/key.pub --env prod` |
+
+Index complet : [scripts/README.md](scripts/README.md) | Disaster Recovery : [docs/DISASTER-RECOVERY.md](docs/DISASTER-RECOVERY.md)
+
+## Tests
+
+Le projet utilise deux frameworks de test complémentaires :
+
+### Tests Terraform (modules)
+
+Les 5 modules Terraform sont testés avec le framework natif `terraform test` (>= 1.9) et `mock_provider` :
+
+```bash
+# Tester un module
+cd infrastructure/proxmox/modules/vm && terraform init -backend=false && terraform test
+
+# Tester tous les modules
+for m in vm lxc backup minio monitoring-stack; do
+  (cd infrastructure/proxmox/modules/$m && terraform init -backend=false && terraform test)
+done
+```
+
+### Tests BATS (scripts shell)
+
+Les scripts shell sont testés avec [BATS](https://github.com/bats-core/bats-core) :
+
+```bash
+# Tous les tests
+bats tests/
+
+# Par domaine
+bats tests/restore/
+bats tests/drift/
+bats tests/health/
+bats tests/lifecycle/
+```
+
+Les tests Terraform sont exécutés en CI via le job `terraform-test` dans `.github/workflows/ci.yml`.
 
 ## Securite
 

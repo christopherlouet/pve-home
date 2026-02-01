@@ -1,0 +1,14 @@
+[Unit]
+Description=PVE Snapshot Cleanup
+Documentation=file:///opt/pve-home/docs/VM-LIFECYCLE.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/pve-home/scripts/lifecycle/cleanup-snapshots.sh --force
+User=root
+WorkingDirectory=/opt/pve-home
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pve-cleanup-snapshots

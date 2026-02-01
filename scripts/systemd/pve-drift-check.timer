@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily PVE Infrastructure Drift Detection
+Documentation=file:///opt/pve-home/docs/DRIFT-DETECTION.md
+
+[Timer]
+OnCalendar=*-*-* 06:00:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

@@ -31,6 +31,7 @@ No modules.
 | <a name="input_additional_disks"></a> [additional\_disks](#input\_additional\_disks) | Disques additionnels | <pre>list(object({<br/>    size         = number<br/>    datastore_id = optional(string, "local-lvm")<br/>    interface    = optional(string, "scsi")<br/>  }))</pre> | `[]` | no |
 | <a name="input_additional_packages"></a> [additional\_packages](#input\_additional\_packages) | Packages supplementaires a installer via cloud-init | `list(string)` | `[]` | no |
 | <a name="input_agent_enabled"></a> [agent\_enabled](#input\_agent\_enabled) | Activer QEMU Guest Agent | `bool` | `true` | no |
+| <a name="input_auto_security_updates"></a> [auto\_security\_updates](#input\_auto\_security\_updates) | Installer et configurer unattended-upgrades pour les mises a jour de securite | `bool` | `true` | no |
 | <a name="input_backup_enabled"></a> [backup\_enabled](#input\_backup\_enabled) | Inclure les disques de cette VM dans les sauvegardes vzdump | `bool` | `true` | no |
 | <a name="input_cpu_cores"></a> [cpu\_cores](#input\_cpu\_cores) | Nombre de cores CPU | `number` | `2` | no |
 | <a name="input_cpu_type"></a> [cpu\_type](#input\_cpu\_type) | Type de CPU (host, kvm64, etc.) | `string` | `"host"` | no |
@@ -38,6 +39,7 @@ No modules.
 | <a name="input_description"></a> [description](#input\_description) | Description de la VM | `string` | `"Managed by Terraform"` | no |
 | <a name="input_disk_size_gb"></a> [disk\_size\_gb](#input\_disk\_size\_gb) | Taille du disque système en GB | `number` | `20` | no |
 | <a name="input_dns_servers"></a> [dns\_servers](#input\_dns\_servers) | Serveurs DNS | `list(string)` | <pre>[<br/>  "1.1.1.1",<br/>  "8.8.8.8"<br/>]</pre> | no |
+| <a name="input_expiration_days"></a> [expiration\_days](#input\_expiration\_days) | Nombre de jours avant expiration de la VM (null = pas d'expiration) | `number` | `null` | no |
 | <a name="input_gateway"></a> [gateway](#input\_gateway) | Passerelle par défaut | `string` | n/a | yes |
 | <a name="input_install_docker"></a> [install\_docker](#input\_install\_docker) | Installer Docker via cloud-init | `bool` | `false` | no |
 | <a name="input_install_qemu_agent"></a> [install\_qemu\_agent](#input\_install\_qemu\_agent) | Installer QEMU Guest Agent via cloud-init | `bool` | `true` | no |
