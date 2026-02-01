@@ -47,6 +47,11 @@ variable "vm_template_id" {
   description = "ID du template VM cloud-init"
   type        = number
   default     = 9000
+
+  validation {
+    condition     = var.vm_template_id >= 100
+    error_message = "vm_template_id doit etre >= 100 (Proxmox reserve les IDs 0-99)."
+  }
 }
 
 variable "lxc_template" {
