@@ -48,7 +48,8 @@ source "${LIB_DIR}/common.sh"
 # Variables globales
 # =============================================================================
 
-readonly PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+readonly PROJECT_ROOT
 readonly ENVS_DIR="${PROJECT_ROOT}/infrastructure/proxmox/environments"
 readonly METRICS_DIR="/var/lib/prometheus/node-exporter"
 readonly METRICS_FILE="${METRICS_DIR}/pve_health.prom"
@@ -116,7 +117,7 @@ parse_args() {
                 shift
                 ;;
             --force)
-                FORCE_MODE=true
+                export FORCE_MODE=true
                 shift
                 ;;
             --help|-h)
@@ -249,6 +250,7 @@ check_docker_service() {
 check_vm_health() {
     local env="$1"
     local env_dir="${ENVS_DIR}/${env}"
+    # shellcheck disable=SC2178
     local -n results_ref=$2
 
     if [[ -n "$COMPONENT_FILTER" && "$COMPONENT_FILTER" != "vm" ]]; then
@@ -305,6 +307,7 @@ check_vm_health() {
 
 check_monitoring_health() {
     local env="$1"
+    # shellcheck disable=SC2178
     local -n results_ref=$2
 
     if [[ -n "$COMPONENT_FILTER" && "$COMPONENT_FILTER" != "monitoring" ]]; then
@@ -358,6 +361,7 @@ check_monitoring_health() {
 
 check_minio_health() {
     local env="$1"
+    # shellcheck disable=SC2178
     local -n results_ref=$2
 
     if [[ -n "$COMPONENT_FILTER" && "$COMPONENT_FILTER" != "minio" ]]; then
@@ -395,6 +399,7 @@ check_minio_health() {
 # =============================================================================
 
 print_report() {
+    # shellcheck disable=SC2178
     local -n results_ref=$1
 
     echo ""
@@ -432,6 +437,7 @@ print_report() {
 }
 
 write_health_metrics() {
+    # shellcheck disable=SC2178
     local -n results_ref=$1
     local timestamp
     timestamp=$(date +%s)

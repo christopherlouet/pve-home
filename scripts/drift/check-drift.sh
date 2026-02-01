@@ -42,7 +42,8 @@ source "${LIB_DIR}/common.sh"
 # Variables globales
 # =============================================================================
 
-readonly PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+readonly PROJECT_ROOT
 readonly ENVS_DIR="${PROJECT_ROOT}/infrastructure/proxmox/environments"
 readonly LOG_DIR="/var/log/pve-drift"
 readonly METRICS_DIR="/var/lib/prometheus/node-exporter"
@@ -92,7 +93,7 @@ parse_args() {
                 shift
                 ;;
             --force)
-                FORCE_MODE=true
+                export FORCE_MODE=true
                 shift
                 ;;
             --help|-h)
@@ -269,9 +270,11 @@ write_metrics() {
     # Lire les metriques existantes des autres envs si le fichier existe
     for e in "${VALID_ENVS[@]}"; do
         if [[ "$e" == "$env" ]]; then
-            echo "pve_drift_status{env=\"${env}\"} ${status}" >> "$tmp_file"
-            echo "pve_drift_resources_changed{env=\"${env}\"} ${resources_changed}" >> "$tmp_file"
-            echo "pve_drift_last_check_timestamp{env=\"${env}\"} ${timestamp}" >> "$tmp_file"
+            {
+                echo "pve_drift_status{env=\"${env}\"} ${status}"
+                echo "pve_drift_resources_changed{env=\"${env}\"} ${resources_changed}"
+                echo "pve_drift_last_check_timestamp{env=\"${env}\"} ${timestamp}"
+            } >> "$tmp_file"
         elif [[ -f "$METRICS_FILE" ]]; then
             grep "env=\"${e}\"" "$METRICS_FILE" >> "$tmp_file" 2>/dev/null || true
         fi
