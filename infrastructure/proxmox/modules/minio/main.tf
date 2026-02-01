@@ -125,7 +125,7 @@ resource "proxmox_virtual_environment_container" "minio" {
   mount_point {
     volume = "${var.datastore}:${var.data_disk_size_gb}"
     path   = "/data"
-    size   = var.data_disk_size_gb
+    size   = "${var.data_disk_size_gb}G"
   }
 
   network_interface {
@@ -157,6 +157,8 @@ resource "proxmox_virtual_environment_container" "minio" {
     ignore_changes = [
       initialization,
       disk[0].size,
+      mount_point[0].size,
+      mount_point[0].volume,
     ]
   }
 }
