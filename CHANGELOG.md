@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-02-01
+
+### Changed
+- Tighten Proxmox provider constraint from `~> 0.50` to `~> 0.93` across all environments
+- Remove version-pinned `required_providers` from child modules (source-only, version delegated to root)
+- Extract VM and LXC module variables/outputs into dedicated files for consistent structure
+- Switch Checkov CI scanner to hard fail mode
+- Remove weak `"admin"` default for `grafana_admin_password` (now required)
+
+### Added
+- Input validations for VM module: template_id, cpu_cores, memory_mb, disk_size_gb, ip_address CIDR format
+- Input validations for LXC module: os_type enum, cpu_cores, memory_mb, swap_mb, disk_size_gb, ip_address CIDR
+- Input validations for Minio module: container_id, cpu_cores, memory_mb, disk sizes, ip_address CIDR, port ranges
+- Input validations for monitoring-stack module: template_id, vm_config ranges, ip_address, network_cidr, retention
+- Input validations for backup module: storage_id non-empty, schedule format, retention non-negative
+- Validation `vm_template_id >= 100` to all environment variables
+- Missing lock file for lab environment
+
+### Removed
+- Unused `proxmox_api_token` and `proxmox_insecure` variables from backup module
+- Empty placeholder `outputs.tf` from Minio module
+- Orphaned lock file from monitoring-stack child module
+
+### Fixed
+- Lock file provider constraints synced from `~> 0.50` to `~> 0.93`
+- Minio `container_id` validation handles nullable values correctly
+
 ## [0.7.0] - 2026-02-01
 
 ### Added
