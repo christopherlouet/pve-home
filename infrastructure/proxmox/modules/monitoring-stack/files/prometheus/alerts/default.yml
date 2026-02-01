@@ -157,3 +157,90 @@ groups:
         annotations:
           summary: "Backup storage critically full on {{ $labels.node }}"
           description: "Backup storage usage is above 95% (current: {{ $value | printf \"%.1f\" }}%) on {{ $labels.node }}. Backups will fail."
+
+  # ---------------------------------------------------------------------------
+  # Drift Detection Alerts - Infrastructure conformity
+  # ---------------------------------------------------------------------------
+  - name: drift-alerts
+    rules:
+      - alert: DriftDetected
+        expr: pve_drift_status == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Infrastructure drift detected in {{ $labels.env }}"
+          description: "{{ $value }} resource(s) have drifted from Terraform state in environment {{ $labels.env }}. Run 'terraform plan' to review changes."
+
+      - alert: DriftCheckFailed
+        expr: pve_drift_status == 2
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Drift check failed for {{ $labels.env }}"
+          description: "The drift detection script failed for environment {{ $labels.env }}. Check logs in /var/log/pve-drift/."
+
+      - alert: DriftCheckStale
+        expr: time() - pve_drift_last_check_timestamp > 172800
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Drift check stale for {{ $labels.env }}"
+          description: "No drift check has run for environment {{ $labels.env }} in over 48 hours."
+
+  # ---------------------------------------------------------------------------
+  # Health Check Alerts - Infrastructure health monitoring
+  # ---------------------------------------------------------------------------
+  - name: health-alerts
+    rules:
+      - alert: InfraHealthCheckFailed
+        expr: pve_health_status == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Health check failed for {{ $labels.component }} in {{ $labels.env }}"
+          description: "Component {{ $labels.component }} ({{ $labels.type }}) is unhealthy in environment {{ $labels.env }}."
+
+      - alert: HealthCheckStale
+        expr: time() - pve_health_last_check_timestamp > 28800
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Health check stale for {{ $labels.env }}"
+          description: "No health check has run for environment {{ $labels.env }} in over 8 hours."
+
+  # ---------------------------------------------------------------------------
+  # VM Lifecycle Alerts - Expiration, snapshots, updates
+  # ---------------------------------------------------------------------------
+  - name: lifecycle-alerts
+    rules:
+      - alert: LabVMExpired
+        expr: pve_lab_expired_total > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} lab VM(s) expired and stopped"
+          description: "The expiration check found {{ $value }} VM(s)/LXC(s) past their expiration date and shut them down."
+
+      - alert: SnapshotOlderThanWeek
+        expr: pve_snapshot_cleanup_deleted_total > 0
+        for: 1m
+        labels:
+          severity: info
+        annotations:
+          summary: "{{ $value }} old snapshot(s) cleaned up"
+          description: "The snapshot cleanup removed {{ $value }} snapshot(s) older than the configured retention period."
+
+      - alert: VMRebootRequired
+        expr: node_reboot_required == 1
+        for: 24h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Reboot required on {{ $labels.instance }}"
+          description: "Host {{ $labels.instance }} requires a reboot to apply security updates. Pending for over 24 hours."
