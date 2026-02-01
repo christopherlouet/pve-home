@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-02-01
+
+### Added
+- Native Terraform test framework (`terraform test`) for all 5 modules with `mock_provider`
+  - VM module: 20 validation tests + 13 plan tests + 1 regression test
+  - LXC module: 27 validation tests + 13 plan tests
+  - Backup module: 20 validation tests
+  - Minio module: 23 validation tests + 12 plan tests
+  - Monitoring-stack module: 30 validation tests
+- Terraform drift detection script (`scripts/drift/check-drift.sh`) with Prometheus metrics and systemd timer
+- Infrastructure health checks (`scripts/health/check-health.sh`) for VMs, monitoring endpoints, and Minio
+- VM/LXC lifecycle management: snapshots, automatic expiration, security updates, SSH key rotation
+  - `scripts/lifecycle/snapshot-vm.sh` - create/list/rollback/delete snapshots
+  - `scripts/lifecycle/cleanup-snapshots.sh` - auto-cleanup expired snapshots
+  - `scripts/lifecycle/expire-lab-vms.sh` - stop expired lab VMs
+  - `scripts/lifecycle/rotate-ssh-keys.sh` - add/revoke SSH keys with anti-lockout
+- `auto_security_updates` variable for VM and LXC modules (unattended-upgrades via cloud-init)
+- `expiration_days` variable for VM and LXC modules (automatic `expires:YYYY-MM-DD` tag)
+- 8 Prometheus alert rules: DriftDetected, DriftCheckFailed, DriftCheckStale, InfraHealthCheckFailed, HealthCheckStale, LabVMExpired, SnapshotOlderThanWeek, VMRebootRequired
+- 4 systemd timers: drift check (06:00), health check (4h), snapshot cleanup (05:00), lab expiration (07:00)
+- BATS tests for all new scripts (59 tests across drift, health, lifecycle)
+- `terraform-test` CI job running all module tests in parallel matrix
+- Documentation: DRIFT-DETECTION.md, HEALTH-CHECKS.md, VM-LIFECYCLE.md
+- `scripts/README.md` master index for all script directories
+
+### Changed
+- Bumped Terraform version from 1.5.7 to 1.9.8 in CI workflows
+- Added backup and minio modules to CI validate and docs matrices
+- Updated root README with new features, expanded alerts table, testing section
+- Updated infrastructure README with operations commands and documentation references
+
 ## [0.7.2] - 2026-02-01
 
 ### Fixed
