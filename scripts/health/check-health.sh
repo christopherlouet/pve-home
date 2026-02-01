@@ -357,14 +357,21 @@ check_monitoring_health() {
     results_ref+=("${env}|grafana|monitoring|${status}|${detail}|")
     [[ "$status" == "OK" ]] && log_success "  Grafana: OK" || log_error "  Grafana: ${detail}"
 
-    # Alertmanager
-    status="OK" detail=""
-    if ! check_http "http://${monitoring_ip}:9093/-/ready"; then
-        status="FAIL"
-        detail="Alertmanager unreachable"
+    # Alertmanager (deploye uniquement si telegram.enabled = true)
+    local telegram_enabled=""
+    telegram_enabled=$(awk '/^monitoring\s*=\s*\{/,/^\}/' "$tfvars" | grep -oP 'enabled\s*=\s*\K(true|false)' 2>/dev/null | head -1 || echo "")
+
+    if [[ "$telegram_enabled" == "true" ]]; then
+        status="OK" detail=""
+        if ! check_http "http://${monitoring_ip}:9093/-/ready"; then
+            status="FAIL"
+            detail="Alertmanager unreachable"
+        fi
+        results_ref+=("${env}|alertmanager|monitoring|${status}|${detail}|")
+        [[ "$status" == "OK" ]] && log_success "  Alertmanager: OK" || log_error "  Alertmanager: ${detail}"
+    else
+        log_info "  Alertmanager: skip (telegram non active)"
     fi
-    results_ref+=("${env}|alertmanager|monitoring|${status}|${detail}|")
-    [[ "$status" == "OK" ]] && log_success "  Alertmanager: OK" || log_error "  Alertmanager: ${detail}"
 }
 
 check_minio_health() {
