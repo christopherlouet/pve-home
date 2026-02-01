@@ -217,3 +217,57 @@ teardown() {
     [ -n "$BLUE" ]
     [ -n "$NC" ]
 }
+
+# =============================================================================
+# Tests retry_with_backoff et ssh_exec_retry
+# =============================================================================
+
+@test "retry_with_backoff existe comme fonction" {
+    declare -f retry_with_backoff > /dev/null
+}
+
+@test "retry_with_backoff reussit au 1er essai" {
+    run retry_with_backoff 3 true
+    [ "$status" -eq 0 ]
+}
+
+@test "retry_with_backoff reussit au 2eme essai" {
+    # Creer un script qui echoue la 1ere fois puis reussit
+    local counter_file="${BATS_TEST_TMPDIR}/retry_counter"
+    echo "0" > "$counter_file"
+
+    attempt_cmd() {
+        local count
+        count=$(cat "$counter_file")
+        count=$((count + 1))
+        echo "$count" > "$counter_file"
+        [ "$count" -ge 2 ]
+    }
+
+    run retry_with_backoff 3 attempt_cmd
+    [ "$status" -eq 0 ]
+}
+
+@test "retry_with_backoff echoue apres max tentatives" {
+    run retry_with_backoff 2 false
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"Echec apres 2 tentatives"* ]]
+}
+
+@test "retry_with_backoff log les tentatives intermediaires" {
+    run retry_with_backoff 2 false
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"Tentative"* ]]
+    [[ "$output" == *"retry dans"* ]]
+}
+
+@test "ssh_exec_retry existe comme fonction" {
+    declare -f ssh_exec_retry > /dev/null
+}
+
+@test "check_ssh_access utilise retry_with_backoff" {
+    # Verifier que la definition de check_ssh_access contient retry_with_backoff
+    local func_def
+    func_def=$(declare -f check_ssh_access)
+    [[ "$func_def" == *"retry_with_backoff"* ]]
+}

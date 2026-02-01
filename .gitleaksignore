@@ -4,3 +4,7 @@
 # Test fixture: minio module test uses a dummy password, not a real secret
 9f69accab15716ef2cecf0de08506795abb95cdc:tests/minio-module/main.tf:hashicorp-tf-password:20
 
+# Test fixtures: regression tests use dummy passwords, not real secrets
+8344ddf8c832e54ea0fe8928a40da8bdd97d601b:infrastructure/proxmox/modules/minio/tests/regression.tftest.hcl:hashicorp-tf-password:19
+8344ddf8c832e54ea0fe8928a40da8bdd97d601b:infrastructure/proxmox/modules/monitoring-stack/tests/regression.tftest.hcl:hashicorp-tf-password:20
+
