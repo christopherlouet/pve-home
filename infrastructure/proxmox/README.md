@@ -13,21 +13,26 @@ infrastructure/proxmox/
 │   └── provider.tf.example        # Exemple de configuration provider
 ├── modules/
 │   ├── vm/
-│   │   └── main.tf               # Module VM avec cloud-init et Docker
+│   │   ├── main.tf               # Module VM avec cloud-init et Docker
+│   │   └── tests/                # Tests natifs Terraform
 │   ├── lxc/
-│   │   └── main.tf               # Module conteneur LXC
+│   │   ├── main.tf               # Module conteneur LXC
+│   │   └── tests/                # Tests natifs Terraform
 │   ├── backup/
 │   │   ├── main.tf               # Jobs vzdump via pvesh
 │   │   ├── variables.tf
-│   │   └── outputs.tf
+│   │   ├── outputs.tf
+│   │   └── tests/                # Tests natifs Terraform
 │   ├── minio/
 │   │   ├── main.tf               # Conteneur LXC Minio S3
 │   │   ├── variables.tf
-│   │   └── outputs.tf
+│   │   ├── outputs.tf
+│   │   └── tests/                # Tests natifs Terraform
 │   └── monitoring-stack/
 │       ├── main.tf               # Stack Prometheus + Grafana + Alertmanager
 │       ├── variables.tf
 │       ├── outputs.tf
+│       ├── tests/                # Tests natifs Terraform
 │       └── files/
 │           ├── docker-compose.yml.tpl   # Services: Prometheus, Grafana, PVE Exporter, Node Exporter
 │           ├── prometheus.yml.tpl       # Config scrape avec modules per-node
@@ -109,7 +114,7 @@ Chaque environnement correspond a une **instance Proxmox separee** (serveur diff
 ## Prerequis
 
 1. **Proxmox VE installe** - Voir `docs/INSTALLATION-PROXMOX.md`
-2. **Terraform >= 1.5** installe
+2. **Terraform >= 1.9** installe
 3. **Token API Proxmox** cree
 4. **Template VM cloud-init** (ID 9000) cree
 5. **Template LXC** telecharge
@@ -386,6 +391,39 @@ ssh root@192.168.1.20
 - Verifier que chaque node dans `proxmox_nodes` a un `token_value` valide
 - Verifier que le token a le role PVEAuditor sur chaque PVE
 - Tester : `curl "http://192.168.1.51:9221/pve?target=<ip-pve>&module=<node-name>"`
+
+## Tests
+
+Les modules utilisent le framework de test natif de Terraform (>= 1.9) avec `mock_provider` pour valider la configuration sans connexion Proxmox reelle.
+
+### Lancer les tests
+
+```bash
+# Tester un module specifique
+cd infrastructure/proxmox/modules/vm
+terraform init -backend=false
+terraform test
+
+# Tester tous les modules
+for module in vm lxc backup minio monitoring-stack; do
+  echo "=== Testing $module ==="
+  (cd infrastructure/proxmox/modules/$module && terraform init -backend=false && terraform test)
+done
+```
+
+### Structure des tests
+
+Chaque module contient un repertoire `tests/` avec :
+
+| Fichier | Description |
+|---------|-------------|
+| `valid_inputs.tftest.hcl` | Validation des variables (bornes, formats, valeurs par defaut) |
+| `plan_resources.tftest.hcl` | Verification des attributs dans le plan genere |
+| `regression.tftest.hcl` | Tests de non-regression pour bugs corriges |
+
+### CI
+
+Les tests sont executes automatiquement en CI via le job `terraform-test` dans `.github/workflows/ci.yml`. Le job s'execute apres la validation et teste les 5 modules en matrice parallele.
 
 ## Ressources
 
