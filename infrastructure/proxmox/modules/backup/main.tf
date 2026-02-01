@@ -22,12 +22,13 @@ terraform {
 locals {
   vmids_str = length(var.vmids) > 0 ? join(",", var.vmids) : ""
 
-  # Construire les options de retention
-  retention_opts = join(" ", compact([
-    var.retention.keep_daily > 0 ? "--keep-daily ${var.retention.keep_daily}" : "",
-    var.retention.keep_weekly > 0 ? "--keep-weekly ${var.retention.keep_weekly}" : "",
-    var.retention.keep_monthly > 0 ? "--keep-monthly ${var.retention.keep_monthly}" : "",
-  ]))
+  # Construire les options de retention (format: --prune-backups keep-daily=7,keep-weekly=4)
+  prune_parts = compact([
+    var.retention.keep_daily > 0 ? "keep-daily=${var.retention.keep_daily}" : "",
+    var.retention.keep_weekly > 0 ? "keep-weekly=${var.retention.keep_weekly}" : "",
+    var.retention.keep_monthly > 0 ? "keep-monthly=${var.retention.keep_monthly}" : "",
+  ])
+  retention_opts = length(local.prune_parts) > 0 ? "--prune-backups ${join(",", local.prune_parts)}" : ""
 
   # Construire la commande pvesh pour creer le job de backup
   create_command = var.enabled ? join(" ", compact([

@@ -1,0 +1,286 @@
+#!/bin/bash
+# =============================================================================
+# Bibliotheque commune pour les scripts de restauration
+# =============================================================================
+# Usage: source scripts/lib/common.sh
+#
+# Fournit des fonctions partagees pour :
+# - Logging avec couleurs (log_info, log_success, log_warn, log_error)
+# - Confirmation interactive (confirm)
+# - Parsing arguments communs (parse_common_args)
+# - Execution SSH sur le noeud PVE (ssh_exec)
+# - Verification des prerequis (check_command, check_prereqs, check_ssh_access)
+# - Parsing des fichiers terraform.tfvars (parse_tfvars, get_pve_node, get_pve_ip)
+# - Mode dry-run (dry_run)
+# - Creation de points de sauvegarde (create_backup_point)
+# =============================================================================
+
+set -euo pipefail
+
+# =============================================================================
+# Detection du repertoire du script
+# =============================================================================
+
+# Variable exportee pour utilisation par les scripts qui sourcent cette lib
+# shellcheck disable=SC2034
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# =============================================================================
+# Couleurs
+# =============================================================================
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+# =============================================================================
+# Variables globales
+# =============================================================================
+
+DRY_RUN=false
+FORCE_MODE=false
+
+# =============================================================================
+# Fonctions de logging (T002)
+# =============================================================================
+
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[OK]${NC} $1"
+}
+
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+confirm() {
+    local message="$1"
+    if [[ "$FORCE_MODE" == true ]]; then
+        log_info "$message"
+        return 0
+    fi
+    echo -en "${BLUE}[?]${NC} $message [O/n] "
+    read -r response
+    case "$response" in
+        [nN]|[nN][oO]) return 1 ;;
+        *) return 0 ;;
+    esac
+}
+
+parse_common_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            --force)
+                FORCE_MODE=true
+                shift
+                ;;
+            --help|-h)
+                show_help
+                exit 0
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+}
+
+show_help() {
+    cat << 'HELPEOF'
+Usage: script [options]
+
+Options communes:
+  --dry-run    Afficher les commandes sans les executer
+  --force      Mode non-interactif (pas de confirmation)
+  -h, --help   Afficher cette aide
+HELPEOF
+}
+
+# =============================================================================
+# Fonctions SSH et verification prerequis (T003)
+# =============================================================================
+
+ssh_exec() {
+    local node="$1"
+    local command="$2"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "[DRY-RUN] SSH vers ${node}: ${command}"
+        return 0
+    fi
+
+    # Options SSH: desactiver la verification de cle (homelab uniquement)
+    ssh -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        -o LogLevel=ERROR \
+        "root@${node}" "${command}"
+}
+
+check_ssh_access() {
+    local node="$1"
+
+    log_info "Verification de l'acces SSH vers ${node}..."
+
+    if ! ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
+         -o UserKnownHostsFile=/dev/null "root@${node}" "exit" &>/dev/null; then
+        log_error "Impossible de se connecter en SSH a ${node}"
+        log_error "Verifiez que la cle SSH est configuree et que le noeud est accessible"
+        return 1
+    fi
+
+    log_success "Acces SSH vers ${node} OK"
+    return 0
+}
+
+check_command() {
+    local cmd="$1"
+    command -v "$cmd" &>/dev/null
+}
+
+check_prereqs() {
+    local missing=()
+    local required_commands=("ssh" "terraform" "mc" "jq")
+
+    for cmd in "${required_commands[@]}"; do
+        if ! check_command "$cmd"; then
+            missing+=("$cmd")
+        fi
+    done
+
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        log_error "Outils manquants: ${missing[*]}"
+        log_error "Installez les prerequis avant de continuer"
+        return 1
+    fi
+
+    log_success "Tous les prerequis sont presents"
+    return 0
+}
+
+check_disk_space() {
+    local node="$1"
+    local storage="$2"
+    local required_mb="${3:-1000}"
+
+    log_info "Verification de l'espace disque sur ${node}:${storage}..."
+
+    # Recuperer le statut du storage via pvesh
+    local status_json
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "[DRY-RUN] Verification espace disque sur ${storage}"
+        return 0
+    fi
+
+    status_json=$(ssh_exec "${node}" "pvesh get /storage/${storage}/status --output-format json" 2>/dev/null || echo "")
+
+    if [[ -z "$status_json" ]]; then
+        log_warn "Impossible de verifier l'espace disque sur ${storage}"
+        return 1
+    fi
+
+    local avail_mb
+    avail_mb=$(echo "$status_json" | jq -r '.avail // 0' | awk '{print int($1/1024/1024)}')
+
+    if [[ "$avail_mb" -lt "$required_mb" ]]; then
+        log_error "Espace disque insuffisant: ${avail_mb}MB disponible, ${required_mb}MB requis"
+        return 1
+    fi
+
+    log_success "Espace disque suffisant: ${avail_mb}MB disponible"
+    return 0
+}
+
+# =============================================================================
+# Fonctions parse_tfvars et dry_run (T004)
+# =============================================================================
+
+parse_tfvars() {
+    local tfvars_file="$1"
+    local key="$2"
+
+    if [[ ! -f "$tfvars_file" ]]; then
+        log_error "Fichier terraform.tfvars introuvable: ${tfvars_file}"
+        return 1
+    fi
+
+    # Parser avec grep/sed
+    # Format attendu: key = "value" ou key = value
+    # Regex: ^key\s*= capture tout apres le '=' et supprime les quotes optionnelles
+    local value
+    value=$(grep "^${key}\\s*=" "$tfvars_file" | \
+            sed -E 's/^[^=]*=\s*"?([^"]*)"?.*/\1/' | \
+            tr -d '"' | \
+            xargs)
+
+    if [[ -z "$value" ]]; then
+        log_error "Cle '${key}' introuvable dans ${tfvars_file}"
+        return 1
+    fi
+
+    echo "$value"
+}
+
+get_pve_node() {
+    local tfvars_file="${1:-terraform.tfvars}"
+    parse_tfvars "$tfvars_file" "pve_node"
+}
+
+get_pve_ip() {
+    local tfvars_file="${1:-terraform.tfvars}"
+    parse_tfvars "$tfvars_file" "pve_ip"
+}
+
+dry_run() {
+    local command="$*"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "[DRY-RUN] ${command}"
+        return 0
+    fi
+
+    # Executer la commande
+    eval "$command"
+}
+
+create_backup_point() {
+    local component="$1"
+    local backup_dir="${2:-/tmp/restore-backups}"
+    local timestamp
+    timestamp=$(date +%Y%m%d-%H%M%S)
+
+    mkdir -p "$backup_dir"
+
+    local backup_file="${backup_dir}/${component}-${timestamp}.backup"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "[DRY-RUN] Creation point de sauvegarde: ${backup_file}"
+        return 0
+    fi
+
+    log_info "Creation point de sauvegarde pour ${component}..."
+
+    # Creer un fichier de metadata sur la sauvegarde
+    cat > "$backup_file" << EOF
+# Point de sauvegarde
+Component: ${component}
+Timestamp: ${timestamp}
+Date: $(date)
+EOF
+
+    log_success "Point de sauvegarde cree: ${backup_file}"
+    echo "$backup_file"
+    return 0
+}

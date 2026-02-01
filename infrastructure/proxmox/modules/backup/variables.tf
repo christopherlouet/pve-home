@@ -68,13 +68,13 @@ variable "retention" {
 }
 
 variable "notification_mode" {
-  description = "Mode de notification : always, failure, never"
+  description = "Mode de notification Proxmox : auto, legacy-sendmail, notification-system"
   type        = string
-  default     = "failure"
+  default     = "auto"
 
   validation {
-    condition     = contains(["always", "failure", "never"], var.notification_mode)
-    error_message = "Le mode de notification doit etre 'always', 'failure' ou 'never'."
+    condition     = contains(["auto", "legacy-sendmail", "notification-system"], var.notification_mode)
+    error_message = "Le mode de notification doit etre 'auto', 'legacy-sendmail' ou 'notification-system'."
   }
 }
 

@@ -438,20 +438,7 @@
           "id": "filterFieldsByName",
           "options": {
             "include": {
-              "names": [
-                "instance",
-                "Value #C",
-                "Value #D",
-                "Value #F",
-                "Value #G",
-                "Value #H",
-                "Value #I",
-                "Value #K",
-                "Value #L",
-                "Value #M",
-                "Value #N",
-                "nodename 1"
-              ]
+              "pattern": "(^instance$|^nodename|Value #[C-N])"
             }
           }
         },
@@ -460,6 +447,8 @@
           "options": {
             "renameByName": {
               "instance": "Node",
+              "nodename": "Hostname",
+              "nodename 1": "Hostname",
               "Value #C": "CPU %",
               "Value #D": "Mem %",
               "Value #F": "Disk %",
@@ -469,11 +458,11 @@
               "Value #K": "Net RX",
               "Value #L": "Net TX",
               "Value #M": "Load 1m",
-              "Value #N": "Sockets",
-              "nodename 1": "Hostname"
+              "Value #N": "Sockets"
             },
             "indexByName": {
               "instance": 0,
+              "nodename": 1,
               "nodename 1": 1,
               "Value #C": 2,
               "Value #D": 3,
