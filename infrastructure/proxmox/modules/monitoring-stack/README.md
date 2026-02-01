@@ -31,6 +31,7 @@ No modules.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_additional_scrape_targets"></a> [additional\_scrape\_targets](#input\_additional\_scrape\_targets) | Cibles additionnelles a scraper (VMs avec node\_exporter sur le meme reseau) | <pre>list(object({<br/>    name   = string<br/>    ip     = string<br/>    port   = optional(number, 9100)<br/>    labels = optional(map(string), {})<br/>  }))</pre> | `[]` | no |
+| <a name="input_backup_alerting_enabled"></a> [backup\_alerting\_enabled](#input\_backup\_alerting\_enabled) | Activer les alertes de supervision des sauvegardes vzdump | `bool` | `true` | no |
 | <a name="input_datastore"></a> [datastore](#input\_datastore) | Datastore pour les disques | `string` | `"local-lvm"` | no |
 | <a name="input_dns_servers"></a> [dns\_servers](#input\_dns\_servers) | Serveurs DNS | `list(string)` | <pre>[<br/>  "1.1.1.1",<br/>  "8.8.8.8"<br/>]</pre> | no |
 | <a name="input_gateway"></a> [gateway](#input\_gateway) | Passerelle reseau | `string` | n/a | yes |

@@ -5,6 +5,13 @@
 # Usage: cd tests/minio-module && terraform init && terraform validate
 # =============================================================================
 
+variable "minio_root_password" {
+  description = "Minio root password"
+  type        = string
+  sensitive   = true
+  default     = "test-password-change-me"
+}
+
 module "minio" {
   source = "../../infrastructure/proxmox/modules/minio"
 
@@ -17,7 +24,7 @@ module "minio" {
   ssh_keys = ["ssh-ed25519 AAAA... test@test"]
 
   minio_root_user     = "minioadmin"
-  minio_root_password = "minioadmin123"
+  minio_root_password = var.minio_root_password
 
   buckets = ["tfstate-prod", "tfstate-lab", "tfstate-monitoring"]
 }
