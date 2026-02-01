@@ -4,3 +4,11 @@
 # Test fixture: minio module test uses a dummy password, not a real secret
 9f69accab15716ef2cecf0de08506795abb95cdc:tests/minio-module/main.tf:hashicorp-tf-password:20
 
+# Test fixtures: terraform test files use dummy passwords for mock_provider tests
+# Commit c22fdc0 (original)
+c22fdc010eb541255793e25f42ff38f811e39eb1:infrastructure/proxmox/modules/minio/tests/valid_inputs.tftest.hcl:hashicorp-tf-password:20
+c22fdc010eb541255793e25f42ff38f811e39eb1:infrastructure/proxmox/modules/minio/tests/plan_resources.tftest.hcl:hashicorp-tf-password:20
+c22fdc010eb541255793e25f42ff38f811e39eb1:infrastructure/proxmox/modules/monitoring-stack/tests/valid_inputs.tftest.hcl:hashicorp-tf-password:20
+# Commit 6fe577e (fmt fix)
+6fe577e93dc5563d99c77079f44973022ad82124:infrastructure/proxmox/modules/minio/tests/valid_inputs.tftest.hcl:hashicorp-tf-password:20
+6fe577e93dc5563d99c77079f44973022ad82124:infrastructure/proxmox/modules/minio/tests/plan_resources.tftest.hcl:hashicorp-tf-password:20
