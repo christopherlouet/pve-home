@@ -17,7 +17,7 @@ variables {
   ip_address             = "192.168.1.50"
   gateway                = "192.168.1.1"
   ssh_keys               = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITEST test@test"]
-  grafana_admin_password = "testpassword123"
+  grafana_admin_password = "testpassword123" # gitleaks:allow
   proxmox_nodes = [{
     name        = "pve-test"
     ip          = "192.168.1.100"

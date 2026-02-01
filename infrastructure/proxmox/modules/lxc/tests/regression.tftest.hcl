@@ -83,7 +83,7 @@ run "security_updates_disabled_for_alpine" {
   command = plan
 
   variables {
-    os_type              = "alpine"
+    os_type               = "alpine"
     auto_security_updates = true
   }
 
@@ -97,7 +97,7 @@ run "security_updates_enabled_for_ubuntu" {
   command = plan
 
   variables {
-    os_type              = "ubuntu"
+    os_type               = "ubuntu"
     auto_security_updates = true
   }
 
