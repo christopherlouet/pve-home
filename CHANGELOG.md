@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-02-01
+
+### Added
+- Minio S3 module for Terraform state backend with versioning and bucket management
+- Backup module for automated vzdump scheduling with configurable retention per environment
+- Backup alerting rules for Prometheus (BackupJobFailed, BackupJobMissing, BackupStorageAlmostFull)
+- Backup Overview Grafana dashboard with vzdump supervision metrics
+- Restore scripts: `restore-vm.sh`, `restore-tfstate.sh`, `rebuild-minio.sh`, `rebuild-monitoring.sh`, `verify-backups.sh`
+- Shared shell library (`scripts/lib/common.sh`) with logging, SSH helpers, input validation, and dry-run support
+- Disaster Recovery runbook (`docs/DISASTER-RECOVERY.md`) with 5-step rebuild procedure
+- Comprehensive test suite (162 bats tests) covering all restore scripts and common library
+- Backup & Restore documentation (`docs/BACKUP-RESTORE.md`) with automated script references
+- README sections for backup architecture, monitoring stack, Grafana dashboards, Terraform modules, and restore scripts
+
+### Changed
+- Monitoring-stack module: added `backup_alerting_enabled` variable and backup alert rules
+- Monitoring-stack module: Grafana provisioning includes Backup Overview dashboard
+- Test fixture for Minio module uses sensitive variable instead of hardcoded password
+
+### Fixed
+- Backup module retention format using `--prune-backups` with proper keep-daily/keep-weekly syntax
+- Backup module notification mode validation (auto, legacy-sendmail, notification-system)
+- Minio module provisioner script execution (single inline script instead of split lines)
+- Nodes Overview and Backup Overview Grafana dashboard template variables
+
 ## [0.6.0] - 2026-01-31
 
 ### Added
