@@ -122,9 +122,8 @@ ssh_exec() {
         return 0
     fi
 
-    # Options SSH: desactiver la verification de cle (homelab uniquement)
-    ssh -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
+    # Options SSH: accepter les nouvelles cles automatiquement (homelab)
+    ssh -o StrictHostKeyChecking=accept-new \
         -o LogLevel=ERROR \
         "root@${node}" "${command}"
 }
@@ -134,8 +133,8 @@ check_ssh_access() {
 
     log_info "Verification de l'acces SSH vers ${node}..."
 
-    if ! ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-         -o UserKnownHostsFile=/dev/null "root@${node}" "exit" &>/dev/null; then
+    if ! ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new \
+         "root@${node}" "exit" &>/dev/null; then
         log_error "Impossible de se connecter en SSH a ${node}"
         log_error "Verifiez que la cle SSH est configuree et que le noeud est accessible"
         return 1
@@ -244,15 +243,13 @@ get_pve_ip() {
 }
 
 dry_run() {
-    local command="$*"
-
     if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY-RUN] ${command}"
+        log_info "[DRY-RUN] $*"
         return 0
     fi
 
-    # Executer la commande
-    eval "$command"
+    # Executer la commande directement (sans eval pour eviter l'injection)
+    "$@"
 }
 
 create_backup_point() {

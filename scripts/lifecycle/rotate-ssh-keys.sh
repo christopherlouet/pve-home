@@ -153,8 +153,8 @@ add_key_to_host() {
 
     local cmd="mkdir -p ~/.ssh && echo '${key}' >> ~/.ssh/authorized_keys && sort -u -o ~/.ssh/authorized_keys ~/.ssh/authorized_keys"
 
-    if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no \
-           -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
+    if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
+           -o LogLevel=ERROR \
            "${user}@${host}" "$cmd" 2>/dev/null; then
         log_success "Cle ajoutee sur ${user}@${host}"
     else
@@ -177,8 +177,8 @@ remove_key_from_host() {
     fi
 
     local key_count
-    key_count=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no \
-                    -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
+    key_count=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
+                    -o LogLevel=ERROR \
                     "${user}@${host}" "wc -l < ~/.ssh/authorized_keys" 2>/dev/null || echo "0")
 
     if [[ "$key_count" -le 1 ]]; then
@@ -189,8 +189,8 @@ remove_key_from_host() {
     # Identifier la ligne de la cle par fingerprint
     local cmd="ssh-keygen -lf ~/.ssh/authorized_keys 2>/dev/null | grep -n '${fingerprint}' | cut -d: -f1 | head -1"
     local line_num
-    line_num=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no \
-                   -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
+    line_num=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
+                   -o LogLevel=ERROR \
                    "${user}@${host}" "$cmd" 2>/dev/null || echo "")
 
     if [[ -z "$line_num" ]]; then
@@ -199,8 +199,8 @@ remove_key_from_host() {
     fi
 
     cmd="sed -i '${line_num}d' ~/.ssh/authorized_keys"
-    if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no \
-           -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
+    if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
+           -o LogLevel=ERROR \
            "${user}@${host}" "$cmd" 2>/dev/null; then
         log_success "Cle revoquee sur ${user}@${host}"
     else

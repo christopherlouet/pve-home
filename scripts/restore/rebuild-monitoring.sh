@@ -277,7 +277,7 @@ verify_docker_services() {
     # Verifier docker ps
     log_info "Verification conteneurs Docker (docker ps)..."
     local docker_ps
-    docker_ps=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no "root@${MONITORING_IP}" "docker ps --format '{{.Names}}'" 2>/dev/null || echo "")
+    docker_ps=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new "root@${MONITORING_IP}" "docker ps --format '{{.Names}}'" 2>/dev/null || echo "")
 
     if [[ -z "$docker_ps" ]]; then
         log_warn "Impossible de lister les conteneurs Docker"

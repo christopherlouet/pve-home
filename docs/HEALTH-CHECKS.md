@@ -120,7 +120,7 @@ systemctl enable --now pve-health-check.timer
 
 1. **Verifier la keypair monitoring** : `ls -la /root/.ssh/id_ed25519` sur la VM monitoring
 2. **Verifier les authorized_keys** : `grep "health_check" ~/.ssh/authorized_keys` sur les VMs cibles
-3. **Tester manuellement** : `sudo ssh -v -o StrictHostKeyChecking=no ubuntu@<ip> exit`
+3. **Tester manuellement** : `sudo ssh -v -o StrictHostKeyChecking=accept-new ubuntu@<ip> exit`
 4. **Si la keypair manque** : cloud-init ne se re-execute pas sur les VMs existantes. Copier manuellement la cle publique (output `health_check_ssh_public_key`) dans `~ubuntu/.ssh/authorized_keys` sur les VMs cibles
 
 ### Faux positifs sur SSH

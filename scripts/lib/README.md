@@ -20,7 +20,7 @@ check_prereqs || exit 1
 parse_common_args "$@"
 
 # Mode dry-run
-dry_run "echo 'Cette commande sera executee seulement si DRY_RUN=false'"
+dry_run echo 'Cette commande sera executee seulement si DRY_RUN=false'
 ```
 
 ## Fonctions disponibles

@@ -158,7 +158,8 @@ EOT
   cloud_config = {
     users = [
       {
-        name                = var.username
+        name = var.username
+        # SECURITY NOTE: NOPASSWD:ALL accepte pour homelab - restreindre en production
         sudo                = "ALL=(ALL) NOPASSWD:ALL"
         shell               = "/bin/bash"
         ssh_authorized_keys = var.ssh_keys
@@ -208,6 +209,8 @@ EOT
         permissions = "0644"
         content     = local.pve_exporter_config
       },
+      # SECURITY NOTE: Cle privee deployee via cloud-init et stockee dans le Terraform state.
+      # Acceptable pour homelab - en production, generer les cles en dehors de Terraform.
       {
         path        = "/root/.ssh/id_ed25519"
         permissions = "0600"

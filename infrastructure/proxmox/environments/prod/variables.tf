@@ -18,6 +18,8 @@ variable "proxmox_api_token" {
 }
 
 variable "proxmox_insecure" {
+  # SECURITY NOTE: true par defaut pour homelab avec certificats auto-signes.
+  # En production, configurer des certificats valides et passer a false.
   description = "Ignorer la verification SSL (true si certificat auto-signe)"
   type        = bool
   default     = true

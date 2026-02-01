@@ -77,8 +77,8 @@ locals {
     curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc
     chmod +x /usr/local/bin/mc
 
-    # Configurer l'alias
-    mc alias set local http://127.0.0.1:${var.minio_port} ${var.minio_root_user} ${var.minio_root_password}
+    # Configurer l'alias via variable d'environnement (evite les credentials en arguments CLI)
+    export MC_HOST_local="http://${var.minio_root_user}:${var.minio_root_password}@127.0.0.1:${var.minio_port}"
 
     # Creer les buckets avec versioning
     %{for bucket in var.buckets~}
