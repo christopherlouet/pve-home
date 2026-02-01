@@ -11,7 +11,7 @@ No requirements.
 
 | Name | Version |
 |------|---------|
-| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | n/a |
+| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.93.1 |
 
 ## Modules
 

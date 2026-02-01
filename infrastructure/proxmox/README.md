@@ -8,6 +8,8 @@ Gestion d'infrastructure Proxmox VE avec Terraform. Supporte plusieurs instances
 infrastructure/proxmox/
 ├── versions.tf                    # Versions de reference (provider + Terraform)
 ├── README.md                      # Ce fichier
+├── shared/
+│   └── common_variables.tf        # Variables communes symlinkes dans chaque environnement
 ├── _shared/
 │   ├── backend.tf.example         # Exemple de backend distant (S3, Consul)
 │   └── provider.tf.example        # Exemple de configuration provider
@@ -44,7 +46,8 @@ infrastructure/proxmox/
     │   ├── versions.tf            # Versions Terraform/provider
     │   ├── provider.tf            # Configuration provider Proxmox
     │   ├── main.tf                # VMs, LXC, outputs
-    │   ├── variables.tf           # Variables de l'environnement
+    │   ├── common_variables.tf    # -> ../../shared/common_variables.tf (symlink)
+    │   ├── variables.tf           # Variables specifiques a l'environnement
     │   ├── backup.tf              # Sauvegardes vzdump
     │   ├── backend.tf             # Backend S3 Minio (commente)
     │   └── terraform.tfvars.example
@@ -52,7 +55,8 @@ infrastructure/proxmox/
     │   ├── versions.tf
     │   ├── provider.tf
     │   ├── main.tf
-    │   ├── variables.tf
+    │   ├── common_variables.tf    # -> ../../shared/common_variables.tf (symlink)
+    │   ├── variables.tf           # Variables specifiques a l'environnement
     │   ├── backup.tf              # Sauvegardes vzdump
     │   ├── backend.tf             # Backend S3 Minio (commente)
     │   └── terraform.tfvars.example
@@ -64,7 +68,8 @@ infrastructure/proxmox/
         ├── minio.tf               # Conteneur Minio S3 + firewall
         ├── backup.tf              # Sauvegardes vzdump
         ├── backend.tf             # Backend S3 Minio (commente)
-        ├── variables.tf
+        ├── common_variables.tf    # -> ../../shared/common_variables.tf (symlink)
+        ├── variables.tf           # Variables specifiques a l'environnement
         └── terraform.tfvars.example
 ```
 
@@ -105,6 +110,7 @@ Chaque environnement correspond a une **instance Proxmox separee** (serveur diff
 - **State Terraform isole** : chaque environnement a son propre `terraform.tfstate`
 - **Credentials distincts** : chaque instance a son propre `terraform.tfvars`
 - **Modules partages** : les modules `vm`, `lxc` et `monitoring-stack` sont communs
+- **Variables communes** : 11 variables partagees via symlink (`shared/common_variables.tf`)
 
 ### Quand creer un nouvel environnement ?
 
