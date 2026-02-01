@@ -12,6 +12,7 @@ No requirements.
 | Name | Version |
 |------|---------|
 | <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | n/a |
+| <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
 ## Modules
 
@@ -22,6 +23,7 @@ No modules.
 | Name | Type |
 |------|------|
 | [proxmox_virtual_environment_container.this](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_container) | resource |
+| [terraform_data.security_updates](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) | resource |
 
 ## Inputs
 

@@ -12,6 +12,7 @@ No requirements.
 | Name | Version |
 |------|---------|
 | <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | n/a |
+| <a name="provider_tls"></a> [tls](#provider\_tls) | n/a |
 
 ## Modules
 
@@ -23,6 +24,7 @@ No modules.
 |------|------|
 | [proxmox_virtual_environment_file.cloud_config](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_file) | resource |
 | [proxmox_virtual_environment_vm.monitoring](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_vm) | resource |
+| [tls_private_key.health_check](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) | resource |
 
 ## Inputs
 
@@ -58,6 +60,7 @@ No modules.
 
 | Name | Description |
 |------|-------------|
+| <a name="output_health_check_ssh_public_key"></a> [health\_check\_ssh\_public\_key](#output\_health\_check\_ssh\_public\_key) | Cle SSH publique de la VM monitoring pour les health checks |
 | <a name="output_ip_address"></a> [ip\_address](#output\_ip\_address) | Adresse IP de la VM monitoring |
 | <a name="output_node_name"></a> [node\_name](#output\_node\_name) | Node Proxmox |
 | <a name="output_scrape_targets"></a> [scrape\_targets](#output\_scrape\_targets) | Liste des cibles Prometheus configurees |
