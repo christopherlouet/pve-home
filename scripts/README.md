@@ -30,6 +30,7 @@ scripts/
 │   ├── pve-health-check.*   # Health checks (toutes les 4h)
 │   ├── pve-cleanup-snapshots.* # Nettoyage snapshots (05:00 quotidien)
 │   └── pve-expire-lab.*     # Expiration VMs lab (07:00 quotidien)
+├── deploy.sh                # Deploiement des scripts sur la VM monitoring
 └── post-install-proxmox.sh  # Script post-installation Proxmox
 ```
 
@@ -72,12 +73,20 @@ Verifie la sante de l'infrastructure : ping/SSH des VMs, endpoints monitoring (P
 # Verifier un environnement
 ./health/check-health.sh --env prod
 
+# Verifier tout
+./health/check-health.sh --all --force
+
+# Specifier l'utilisateur SSH (defaut: ubuntu)
+./health/check-health.sh --env prod --ssh-user root
+
 # Verifier uniquement le monitoring
 ./health/check-health.sh --all --component monitoring
 
 # Exclure certaines VMs
 ./health/check-health.sh --env prod --exclude "192.168.1.20,192.168.1.21"
 ```
+
+**Note** : Les IPs des VMs sont extraites uniquement du bloc `vms = { ... }` dans les fichiers tfvars (les adresses DNS, gateway, etc. sont ignorees). L'utilisateur SSH par defaut est `ubuntu` (cloud-init VMs). L'Alertmanager est ignore si Telegram est desactive.
 
 Documentation : [docs/HEALTH-CHECKS.md](../docs/HEALTH-CHECKS.md)
 
@@ -132,6 +141,27 @@ Les VMs avec un tag `expires:YYYY-MM-DD` sont automatiquement arretees une fois 
 
 Documentation : [docs/VM-LIFECYCLE.md](../docs/VM-LIFECYCLE.md)
 
+## Deploiement sur la VM monitoring
+
+Le script `deploy.sh` provisionne automatiquement la VM monitoring avec les scripts, fichiers tfvars et timers systemd via rsync/SSH.
+
+```bash
+# Deployer tout (scripts, tfvars, systemd)
+./deploy.sh
+
+# Mode simulation
+./deploy.sh --dry-run
+
+# Specifier l'utilisateur SSH
+./deploy.sh --ssh-user ubuntu
+```
+
+Le script :
+1. Detecte l'IP de la VM monitoring depuis `environments/monitoring/terraform.tfvars`
+2. Synchronise les scripts et la bibliotheque commune vers `/opt/pve-home/`
+3. Deploie les fichiers tfvars de chaque environnement (prod, lab, monitoring)
+4. Installe et active les timers systemd
+
 ## Timers systemd
 
 Les operations recurentes sont automatisees via des timers systemd :
@@ -144,6 +174,8 @@ Les operations recurentes sont automatisees via des timers systemd :
 | `pve-health-check` | Toutes les 4h | `check-health.sh` | Health checks |
 
 ### Installation
+
+L'installation des timers est automatisee par `deploy.sh`. Pour une installation manuelle :
 
 ```bash
 # Copier les fichiers
