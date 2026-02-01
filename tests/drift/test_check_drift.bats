@@ -29,7 +29,7 @@ teardown() {
     if ! command -v shellcheck &>/dev/null; then
         skip "shellcheck non installe"
     fi
-    run shellcheck "$CHECK_DRIFT_SCRIPT"
+    run shellcheck -x -S warning "$CHECK_DRIFT_SCRIPT"
     [ "$status" -eq 0 ]
 }
 

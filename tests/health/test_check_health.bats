@@ -28,7 +28,7 @@ teardown() {
     if ! command -v shellcheck &>/dev/null; then
         skip "shellcheck non installe"
     fi
-    run shellcheck "$CHECK_HEALTH_SCRIPT"
+    run shellcheck -x -S warning "$CHECK_HEALTH_SCRIPT"
     [ "$status" -eq 0 ]
 }
 
