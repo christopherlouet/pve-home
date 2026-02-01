@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-02-01
+
+### Added
+- 5 Prometheus alert rules: `SystemdServiceFailed`, `HighLoadAverage`, `HighNetworkErrors`, `PrometheusRuleEvaluationFailures`, `NodeFilesystemAlmostOutOfInodes` (28 total alerts)
+- Regression test files (`regression.tftest.hcl`) for 4 modules: LXC (5 tests), Backup (4 tests), Minio (5 tests), Monitoring-stack (4 tests) — all 5 modules now covered
+- `retry_with_backoff()` function in `scripts/lib/common.sh` with exponential backoff (1s, 2s, 4s)
+- `ssh_exec_retry()` function wrapping SSH execution with 3 automatic retries
+- 7 BATS tests covering retry/backoff functions
+
+### Changed
+- `check_ssh_access()` now retries 3 times with backoff before declaring SSH failure
+
 ## [1.0.0] - 2026-02-01
 
 ### Security
