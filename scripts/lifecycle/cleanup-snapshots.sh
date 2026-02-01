@@ -66,7 +66,7 @@ parse_args() {
                 shift
                 ;;
             --force)
-                FORCE_MODE=true
+                export FORCE_MODE=true
                 shift
                 ;;
             --help|-h)
