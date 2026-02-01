@@ -10,8 +10,9 @@
 # -----------------------------------------------------------------------------
 
 locals {
-  environment = var.environment
-  common_tags = [local.environment, "terraform"]
+  environment  = var.environment
+  common_tags  = [local.environment, "terraform"]
+  all_ssh_keys = var.monitoring_ssh_public_key != "" ? concat(var.ssh_public_keys, [var.monitoring_ssh_public_key]) : var.ssh_public_keys
 }
 
 # -----------------------------------------------------------------------------
@@ -37,7 +38,7 @@ module "vms" {
   gateway        = var.network_gateway
   dns_servers    = var.network_dns
 
-  ssh_keys = var.ssh_public_keys
+  ssh_keys = local.all_ssh_keys
   tags     = sort(distinct(concat(local.common_tags, each.value.tags)))
 
   # Cloud-init options

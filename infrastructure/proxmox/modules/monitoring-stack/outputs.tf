@@ -42,3 +42,8 @@ output "scrape_targets" {
     for target in local.all_scrape_targets : "${target.ip}:${target.port}"
   ]
 }
+
+output "health_check_ssh_public_key" {
+  description = "Cle SSH publique de la VM monitoring pour les health checks"
+  value       = trimspace(tls_private_key.health_check.public_key_openssh)
+}

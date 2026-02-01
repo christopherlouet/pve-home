@@ -10,6 +10,9 @@ terraform {
     proxmox = {
       source = "bpg/proxmox"
     }
+    tls = {
+      source = "hashicorp/tls"
+    }
   }
 }
 

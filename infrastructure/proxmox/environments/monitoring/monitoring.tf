@@ -146,3 +146,8 @@ output "scrape_targets" {
   description = "Toutes les cibles Prometheus configurees"
   value       = module.monitoring.scrape_targets
 }
+
+output "health_check_ssh_public_key" {
+  description = "Cle SSH publique a ajouter aux ssh_public_keys des autres environnements"
+  value       = module.monitoring.health_check_ssh_public_key
+}

@@ -14,6 +14,7 @@
 #   --component TYPE   Filtrer par type (vm, lxc, monitoring, minio)
 #   --exclude LIST     Exclure des composants (separes par virgule)
 #   --timeout SEC      Timeout par verification en secondes (defaut: 10)
+#   --ssh-user USER    Utilisateur SSH pour les connexions (defaut: ubuntu)
 #   --dry-run          Afficher les verifications sans les executer
 #   --force            Mode non-interactif
 #   -h, --help         Afficher cette aide
@@ -61,6 +62,7 @@ CHECK_ALL=false
 COMPONENT_FILTER=""
 EXCLUDE_LIST=""
 TIMEOUT=10
+SSH_USER="ubuntu"
 
 # =============================================================================
 # Fonctions
@@ -78,6 +80,7 @@ Options:
   --component TYPE   Filtrer par type (vm, lxc, monitoring, minio)
   --exclude LIST     Exclure des composants (separes par virgule)
   --timeout SEC      Timeout par verification en secondes (defaut: 10)
+  --ssh-user USER    Utilisateur SSH pour les connexions (defaut: ubuntu)
   --dry-run          Afficher les verifications sans les executer
   --force            Mode non-interactif
   -h, --help         Afficher cette aide
@@ -85,6 +88,7 @@ Options:
 Examples:
   ./check-health.sh --env prod
   ./check-health.sh --all
+  ./check-health.sh --all --ssh-user root
   ./check-health.sh --env monitoring --component monitoring
 HELPEOF
 }
@@ -110,6 +114,10 @@ parse_args() {
                 ;;
             --timeout)
                 TIMEOUT="$2"
+                shift 2
+                ;;
+            --ssh-user)
+                SSH_USER="$2"
                 shift 2
                 ;;
             --dry-run)
@@ -199,13 +207,13 @@ check_ssh() {
     local ip="$1"
 
     if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY-RUN] ssh -o ConnectTimeout=${TIMEOUT} root@${ip} exit"
+        log_info "[DRY-RUN] ssh -o ConnectTimeout=${TIMEOUT} ${SSH_USER}@${ip} exit"
         return 0
     fi
 
     if ssh -o ConnectTimeout="${TIMEOUT}" -o StrictHostKeyChecking=no \
            -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
-           "root@${ip}" "exit" &>/dev/null; then
+           "${SSH_USER}@${ip}" "exit" &>/dev/null; then
         return 0
     else
         return 1
@@ -231,14 +239,14 @@ check_docker_service() {
     local ip="$1"
 
     if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY-RUN] ssh root@${ip} systemctl is-active docker"
+        log_info "[DRY-RUN] ssh ${SSH_USER}@${ip} systemctl is-active docker"
         return 0
     fi
 
     local result
     result=$(ssh -o ConnectTimeout="${TIMEOUT}" -o StrictHostKeyChecking=no \
                  -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
-                 "root@${ip}" "systemctl is-active docker" 2>/dev/null || echo "inactive")
+                 "${SSH_USER}@${ip}" "systemctl is-active docker" 2>/dev/null || echo "inactive")
 
     [[ "$result" == "active" ]]
 }
@@ -266,9 +274,9 @@ check_vm_health() {
         return 0
     fi
 
-    # Extraire les IPs des VMs depuis le tfvars (format simplifie)
+    # Extraire les IPs des VMs depuis le bloc "vms = { ... }" du tfvars
     local ips
-    ips=$(grep -oP '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' "$tfvars" 2>/dev/null | sort -u || echo "")
+    ips=$(awk '/^vms\s*=\s*\{/,/^\}/' "$tfvars" | grep -oP 'ip\s*=\s*"\K\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' 2>/dev/null | sort -u || echo "")
 
     for ip in $ips; do
         local name="vm-${ip}"
@@ -323,7 +331,7 @@ check_monitoring_health() {
     local tfvars="${ENVS_DIR}/monitoring/terraform.tfvars"
     local monitoring_ip=""
     if [[ -f "$tfvars" ]]; then
-        monitoring_ip=$(grep -oP '(?<=monitoring_ip\s*=\s*")\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' "$tfvars" 2>/dev/null || echo "")
+        monitoring_ip=$(awk '/^monitoring\s*=\s*\{/,/^\}/' "$tfvars" | grep -oP 'ip\s*=\s*"\K\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' 2>/dev/null | head -1 || echo "")
     fi
 
     if [[ -z "$monitoring_ip" ]]; then
@@ -349,14 +357,21 @@ check_monitoring_health() {
     results_ref+=("${env}|grafana|monitoring|${status}|${detail}|")
     [[ "$status" == "OK" ]] && log_success "  Grafana: OK" || log_error "  Grafana: ${detail}"
 
-    # Alertmanager
-    status="OK" detail=""
-    if ! check_http "http://${monitoring_ip}:9093/-/ready"; then
-        status="FAIL"
-        detail="Alertmanager unreachable"
+    # Alertmanager (deploye uniquement si telegram.enabled = true)
+    local telegram_enabled=""
+    telegram_enabled=$(awk '/^monitoring\s*=\s*\{/,/^\}/' "$tfvars" | grep -oP 'enabled\s*=\s*\K(true|false)' 2>/dev/null | head -1 || echo "")
+
+    if [[ "$telegram_enabled" == "true" ]]; then
+        status="OK" detail=""
+        if ! check_http "http://${monitoring_ip}:9093/-/ready"; then
+            status="FAIL"
+            detail="Alertmanager unreachable"
+        fi
+        results_ref+=("${env}|alertmanager|monitoring|${status}|${detail}|")
+        [[ "$status" == "OK" ]] && log_success "  Alertmanager: OK" || log_error "  Alertmanager: ${detail}"
+    else
+        log_info "  Alertmanager: skip (telegram non active)"
     fi
-    results_ref+=("${env}|alertmanager|monitoring|${status}|${detail}|")
-    [[ "$status" == "OK" ]] && log_success "  Alertmanager: OK" || log_error "  Alertmanager: ${detail}"
 }
 
 check_minio_health() {
@@ -377,7 +392,7 @@ check_minio_health() {
     local tfvars="${ENVS_DIR}/monitoring/terraform.tfvars"
     local minio_ip=""
     if [[ -f "$tfvars" ]]; then
-        minio_ip=$(grep -oP '(?<=minio_ip\s*=\s*")\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' "$tfvars" 2>/dev/null || echo "")
+        minio_ip=$(awk '/^minio\s*=\s*\{/,/^\}/' "$tfvars" | grep -oP 'ip\s*=\s*"\K\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' 2>/dev/null | head -1 || echo "")
     fi
 
     if [[ -z "$minio_ip" ]]; then
