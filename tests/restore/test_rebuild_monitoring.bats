@@ -12,12 +12,12 @@ SCRIPT="scripts/restore/rebuild-monitoring.sh"
 # =============================================================================
 
 @test "rebuild-monitoring.sh: le script existe" {
-    [ ! -f "$SCRIPT" ]
+    [ -f "$SCRIPT" ]
 }
 
 @test "rebuild-monitoring.sh: shellcheck doit passer sans erreur" {
-    skip "Script non implemente"
-    shellcheck "$SCRIPT"
+    # Ignorer SC1091 (info sur source non suivi)
+    shellcheck "$SCRIPT" 2>&1 | grep -v "SC1091" | grep -E "error|warning" && exit 1 || true
 }
 
 # =============================================================================
@@ -25,7 +25,6 @@ SCRIPT="scripts/restore/rebuild-monitoring.sh"
 # =============================================================================
 
 @test "rebuild-monitoring.sh: doit afficher l'aide avec --help" {
-    skip "Script non implemente"
     run bash "$SCRIPT" --help
     [ "$status" -eq 0 ]
     [[ "$output" =~ "Usage:" ]]
@@ -33,21 +32,21 @@ SCRIPT="scripts/restore/rebuild-monitoring.sh"
 }
 
 @test "rebuild-monitoring.sh: doit accepter --mode restore par defaut" {
-    skip "Script non implemente"
+    skip "Necessite terraform.tfvars valide et VMID"
     run bash "$SCRIPT" --dry-run --force
     [ "$status" -eq 0 ]
     [[ "$output" =~ "Mode: restore" ]]
 }
 
 @test "rebuild-monitoring.sh: doit accepter --mode rebuild" {
-    skip "Script non implemente"
+    skip "Necessite terraform.tfvars valide"
     run bash "$SCRIPT" --mode rebuild --dry-run --force
     [ "$status" -eq 0 ]
     [[ "$output" =~ "Mode: rebuild" ]]
 }
 
 @test "rebuild-monitoring.sh: doit accepter --dry-run" {
-    skip "Script non implemente"
+    skip "Necessite terraform.tfvars valide"
     run bash "$SCRIPT" --dry-run --force
     [ "$status" -eq 0 ]
     [[ "$output" =~ "DRY-RUN" ]]
