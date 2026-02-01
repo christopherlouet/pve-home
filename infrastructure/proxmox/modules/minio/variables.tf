@@ -95,6 +95,11 @@ variable "vlan_id" {
   description = "VLAN ID (null si pas de VLAN)"
   type        = number
   default     = null
+
+  validation {
+    condition     = var.vlan_id == null ? true : var.vlan_id >= 1 && var.vlan_id <= 4094
+    error_message = "vlan_id doit etre entre 1 et 4094 ou null."
+  }
 }
 
 variable "ip_address" {
@@ -133,6 +138,11 @@ variable "minio_root_password" {
   description = "Mot de passe root Minio"
   type        = string
   sensitive   = true
+
+  validation {
+    condition     = length(var.minio_root_password) >= 8
+    error_message = "minio_root_password doit contenir au moins 8 caracteres."
+  }
 }
 
 variable "minio_port" {

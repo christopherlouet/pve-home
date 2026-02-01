@@ -221,6 +221,11 @@ variable "grafana_admin_password" {
   description = "Mot de passe admin Grafana"
   type        = string
   sensitive   = true
+
+  validation {
+    condition     = length(var.grafana_admin_password) >= 8
+    error_message = "grafana_admin_password doit contenir au moins 8 caracteres."
+  }
 }
 
 # -----------------------------------------------------------------------------
