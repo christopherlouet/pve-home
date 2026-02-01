@@ -29,6 +29,7 @@ npm-debug.log*
 coverage/
 
 # Claude Code
+CLAUDE.md
 .claude/
 CLAUDE.local.md
 
@@ -70,6 +71,9 @@ override.tf.json
 # CLI configuration files
 .terraformrc
 terraform.rc
+
+# Lock files in test directories (generated during terraform init)
+tests/**/.terraform.lock.hcl
 
 # =============================================================================
 # Secrets et credentials

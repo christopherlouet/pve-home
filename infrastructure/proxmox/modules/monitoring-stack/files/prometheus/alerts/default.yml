@@ -95,12 +95,12 @@ groups:
           description: "Proxmox node memory usage is above 90% (current: {{ $value | printf \"%.1f\" }}%)"
 
       - alert: ProxmoxStorageAlmostFull
-        expr: (pve_storage_usage_bytes / pve_storage_size_bytes) * 100 > 85
+        expr: (pve_disk_usage_bytes{id=~"storage/.*"} / pve_disk_size_bytes{id=~"storage/.*"}) * 100 > 85
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "Storage {{ $labels.storage }} almost full on {{ $labels.node }}"
+          summary: "Storage almost full on {{ $labels.node }}"
           description: "Storage usage is above 85% (current: {{ $value | printf \"%.1f\" }}%)"
 
   # ---------------------------------------------------------------------------
@@ -125,3 +125,35 @@ groups:
         annotations:
           summary: "Prometheus config reload failed"
           description: "Prometheus configuration reload has failed."
+
+  # ---------------------------------------------------------------------------
+  # Backup Alerts - vzdump monitoring (pve-exporter >= 3.7.0)
+  # ---------------------------------------------------------------------------
+  - name: backup-alerts
+    rules:
+      - alert: GuestsNotBackedUp
+        expr: pve_backup_not_enabled_total > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} guest(s) not covered by any backup job"
+          description: "There are {{ $value }} VMs/CTs without backup enabled. Check pve_backup_not_enabled_info for details."
+
+      - alert: BackupStorageAlmostFull
+        expr: (pve_disk_usage_bytes{id=~"storage/.*", content=~".*backup.*"} / pve_disk_size_bytes{id=~"storage/.*", content=~".*backup.*"}) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backup storage almost full on {{ $labels.node }}"
+          description: "Backup storage usage is above 80% (current: {{ $value | printf \"%.1f\" }}%) on {{ $labels.node }}."
+
+      - alert: BackupStorageCritical
+        expr: (pve_disk_usage_bytes{id=~"storage/.*", content=~".*backup.*"} / pve_disk_size_bytes{id=~"storage/.*", content=~".*backup.*"}) * 100 > 95
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backup storage critically full on {{ $labels.node }}"
+          description: "Backup storage usage is above 95% (current: {{ $value | printf \"%.1f\" }}%) on {{ $labels.node }}. Backups will fail."

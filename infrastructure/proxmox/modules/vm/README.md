@@ -33,6 +33,7 @@ No modules.
 | <a name="input_additional_disks"></a> [additional\_disks](#input\_additional\_disks) | Disques additionnels | <pre>list(object({<br/>    size         = number<br/>    datastore_id = optional(string, "local-lvm")<br/>    interface    = optional(string, "scsi")<br/>  }))</pre> | `[]` | no |
 | <a name="input_additional_packages"></a> [additional\_packages](#input\_additional\_packages) | Packages supplementaires a installer via cloud-init | `list(string)` | `[]` | no |
 | <a name="input_agent_enabled"></a> [agent\_enabled](#input\_agent\_enabled) | Activer QEMU Guest Agent | `bool` | `true` | no |
+| <a name="input_backup_enabled"></a> [backup\_enabled](#input\_backup\_enabled) | Inclure les disques de cette VM dans les sauvegardes vzdump | `bool` | `true` | no |
 | <a name="input_cpu_cores"></a> [cpu\_cores](#input\_cpu\_cores) | Nombre de cores CPU | `number` | `2` | no |
 | <a name="input_cpu_type"></a> [cpu\_type](#input\_cpu\_type) | Type de CPU (host, kvm64, etc.) | `string` | `"host"` | no |
 | <a name="input_datastore"></a> [datastore](#input\_datastore) | Datastore pour le disque | `string` | `"local-lvm"` | no |

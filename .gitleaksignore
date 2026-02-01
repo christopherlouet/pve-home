@@ -1,0 +1,5 @@
+# Gitleaks ignore file
+# Format: fingerprint (from gitleaks report)
+
+# Test fixture: minio module test uses a dummy password, not a real secret
+9f69accab15716ef2cecf0de08506795abb95cdc:tests/minio-module/main.tf:hashicorp-tf-password:20

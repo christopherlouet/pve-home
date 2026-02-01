@@ -11,19 +11,41 @@
 # --- Backend local (defaut, suffisant pour un homelab) ---
 # Rien a configurer, Terraform utilise un fichier local par defaut.
 
-# --- Backend S3/Minio (recommande pour multi-utilisateur) ---
+# --- Backend Minio S3 (recommande - auto-heberge) ---
+# Utilise le conteneur Minio deploye via le module minio sur le PVE monitoring.
+# Prerequis : module minio deploye, buckets crees.
+#
+# Variables d'environnement requises :
+#   export AWS_ACCESS_KEY_ID="minioadmin"
+#   export AWS_SECRET_ACCESS_KEY="<votre-mot-de-passe-minio>"
+#
+# Migration depuis le backend local :
+#   terraform init -migrate-state
+#
+# terraform {
+#   backend "s3" {
+#     bucket = "tfstate-<ENVIRONMENT>"
+#     key    = "terraform.tfstate"
+#     region = "us-east-1"
+#
+#     # Configuration Minio
+#     endpoints = {
+#       s3 = "http://<MINIO_IP>:9000"
+#     }
+#     skip_credentials_validation = true
+#     skip_metadata_api_check     = true
+#     skip_requesting_account_id  = true
+#     use_path_style              = true
+#   }
+# }
+
+# --- Backend S3 AWS (alternative cloud) ---
 # terraform {
 #   backend "s3" {
 #     bucket         = "terraform-state"
 #     key            = "proxmox/<ENVIRONMENT>/terraform.tfstate"
-#     region         = "us-east-1"
+#     region         = "eu-west-1"
 #     encrypt        = true
-#
-#     # Pour Minio (auto-heberge)
-#     endpoint                    = "https://minio.example.com:9000"
-#     skip_credentials_validation = true
-#     skip_metadata_api_check     = true
-#     force_path_style            = true
 #   }
 # }
 

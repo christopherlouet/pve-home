@@ -92,6 +92,27 @@ vms = {
 # Conteneurs LXC
 # -----------------------------------------------------------------------------
 
+# -----------------------------------------------------------------------------
+# Sauvegardes vzdump
+# -----------------------------------------------------------------------------
+
+backup = {
+  enabled  = true
+  schedule = "sun 03:00"   # Hebdomadaire dimanche a 3h du matin
+  storage  = "local"       # Storage Proxmox pour les sauvegardes
+  mode     = "snapshot"    # snapshot (pas d'arret), suspend, ou stop
+  compress = "zstd"        # zstd (recommande), lzo, gzip, none
+  retention = {
+    keep_daily   = 0       # Pas de retention quotidienne
+    keep_weekly  = 3       # Garder 3 sauvegardes hebdomadaires
+    keep_monthly = 0       # Pas de retention mensuelle
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Conteneurs LXC
+# -----------------------------------------------------------------------------
+
 containers = {
   # Exemple de conteneur LXC
   # "dns-server" = {

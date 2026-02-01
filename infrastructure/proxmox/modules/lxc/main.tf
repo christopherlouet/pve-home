@@ -161,6 +161,12 @@ variable "mountpoints" {
   default = []
 }
 
+variable "backup_enabled" {
+  description = "Inclure ce conteneur dans les sauvegardes vzdump"
+  type        = bool
+  default     = true
+}
+
 # -----------------------------------------------------------------------------
 # Resource LXC
 # -----------------------------------------------------------------------------

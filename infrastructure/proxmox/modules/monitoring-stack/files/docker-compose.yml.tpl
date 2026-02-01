@@ -66,7 +66,7 @@ services:
 %{ endif }
 
   pve-exporter:
-    image: prompve/prometheus-pve-exporter:3.4.5
+    image: prompve/prometheus-pve-exporter:3.7.0
     container_name: pve-exporter
     restart: unless-stopped
     volumes:

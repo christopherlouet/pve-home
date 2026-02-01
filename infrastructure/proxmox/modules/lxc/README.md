@@ -29,6 +29,7 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_backup_enabled"></a> [backup\_enabled](#input\_backup\_enabled) | Inclure ce conteneur dans les sauvegardes vzdump | `bool` | `true` | no |
 | <a name="input_cpu_cores"></a> [cpu\_cores](#input\_cpu\_cores) | Nombre de cores CPU | `number` | `1` | no |
 | <a name="input_datastore"></a> [datastore](#input\_datastore) | Datastore pour le rootfs | `string` | `"local-lvm"` | no |
 | <a name="input_description"></a> [description](#input\_description) | Description du conteneur | `string` | `"Managed by Terraform"` | no |
