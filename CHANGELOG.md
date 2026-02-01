@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-02-01
+
+### Security
+- Replace `eval "$command"` with direct execution `"$@"` in `dry_run()` to prevent shell injection
+- SSH hardening: `StrictHostKeyChecking=accept-new` replaces `StrictHostKeyChecking=no` across all scripts (6 files)
+- SSH hardening: remove `UserKnownHostsFile=/dev/null` to persist known hosts
+- Minio credentials passed via `MC_HOST_local` env var instead of CLI arguments (avoids process list exposure)
+- Added SECURITY NOTE documentation on accepted homelab risks (NOPASSWD, firewall, SSH key in state)
+
+### Added
+- `shared/common_variables.tf` with 11 variables symlinked into all 3 environments (DRY)
+- `vlan_id` validation (1-4094 or null) on vm, lxc, and minio modules
+- `grafana_admin_password` minimum length validation (8 chars) on monitoring-stack module
+- `minio_root_password` minimum length validation (8 chars) on minio module
+- Backup module plan tests (`plan_resources.tftest.hcl`): 15 tests covering triggers, retention, VMIDs, custom config
+- Monitoring-stack module plan tests (`plan_resources.tftest.hcl`): 15 tests covering VM, disks, network, outputs, scrape targets
+- `tests/test_deploy.bats`: 19 tests for deploy.sh (existence, shellcheck, options, SSH config, structure)
+- `.terraform.lock.hcl` committed for all 5 modules (reproducible provider installs)
+
+### Changed
+- Environment `variables.tf` files reduced to environment-specific variables only (common variables via symlink)
+- Minio module outputs extracted from `main.tf` to dedicated `outputs.tf` for consistency
+- Module READMEs regenerated with terraform-docs to reflect new validations
+- Infrastructure README updated with `shared/` directory and symlink documentation
+
 ## [0.9.1] - 2026-02-01
 
 ### Changed
