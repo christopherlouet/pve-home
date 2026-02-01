@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2026-02-01
+
+### Fixed
+- Minio container recreation on plan due to `mount_point.size` expecting string with unit suffix ("50G") not bare number
+- Perpetual `terraform plan` drift on tags by sorting and deduplicating all tag concatenations to match Proxmox server-side behavior
+
 ## [0.7.1] - 2026-02-01
 
 ### Changed
