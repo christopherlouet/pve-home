@@ -229,6 +229,13 @@ teardown() {
     [[ "$output" == *"backup"* ]] || [[ "$output" == *"job"* ]]
 }
 
+@test "verify-backups.sh en mode --full teste la connectivite vers toutes les VMs/LXC connues" {
+    run bash "$VERIFY_SCRIPT" --node pve-test --full --dry-run
+    [ "$status" -eq 0 ]
+    # Doit afficher une section de verification de connectivite separee
+    [[ "$output" == *"Verification de la connectivite"* ]] || [[ "$output" == *"Test de connectivite"* ]]
+}
+
 # =============================================================================
 # Tests mode dry-run
 # =============================================================================

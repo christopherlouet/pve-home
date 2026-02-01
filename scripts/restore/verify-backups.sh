@@ -498,6 +498,80 @@ verify_backup_jobs() {
 }
 
 # =============================================================================
+# T025 - Verification connectivite VMs/LXC (mode --full)
+# =============================================================================
+
+verify_vm_connectivity() {
+    log_info "=== Verification de la connectivite vers les VMs/LXC ==="
+
+    # Lister toutes les VMs/LXC depuis Proxmox
+    local vms_cmd="pvesh get /cluster/resources --type vm --output-format json"
+
+    local vms_json
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "[DRY-RUN] SSH vers ${NODE}: ${vms_cmd}"
+        # Mock avec 2 VMs pour dry-run
+        vms_json='[{"vmid":100,"type":"qemu","status":"running","name":"vm-prod","ip":"192.168.1.110"},{"vmid":101,"type":"lxc","status":"running","name":"lxc-db","ip":"192.168.1.111"}]'
+    else
+        vms_json=$(ssh_exec "${NODE}" "${vms_cmd}" 2>/dev/null || echo "[]")
+    fi
+
+    local vm_count
+    vm_count=$(echo "$vms_json" | jq '. | length' 2>/dev/null || echo "0")
+
+    if [[ "$vm_count" -eq 0 ]]; then
+        log_warn "Aucune VM/LXC trouvee"
+        return 0
+    fi
+
+    log_info "${vm_count} VM(s)/LXC trouvee(s)"
+
+    # Tester la connectivite pour chaque VM/LXC running
+    local vmid name status type
+    while IFS='|' read -r vmid name status type; do
+        # Skip si status != running
+        if [[ "$status" != "running" ]]; then
+            log_info "VMID ${vmid} (${name}): skip (status: ${status})"
+            continue
+        fi
+
+        # Recuperer l'IP de la VM depuis la config (qm ou pct)
+        local ip_cmd
+        if [[ "$type" == "qemu" ]]; then
+            ip_cmd="qm config ${vmid} | grep -i ip= | head -1 | sed -E 's/.*ip=([0-9.]+).*/\1/'"
+        else
+            ip_cmd="pct config ${vmid} | grep -i ip= | head -1 | sed -E 's/.*ip=([0-9.]+).*/\1/'"
+        fi
+
+        local vm_ip
+        if [[ "$DRY_RUN" == true ]]; then
+            log_info "[DRY-RUN] SSH vers ${NODE}: ${ip_cmd}"
+            # Mock IP pour dry-run
+            vm_ip="192.168.1.$((100 + vmid % 50))"
+        else
+            vm_ip=$(ssh_exec "${NODE}" "${ip_cmd}" 2>/dev/null | xargs || echo "")
+        fi
+
+        if [[ -z "$vm_ip" ]]; then
+            log_warn "VMID ${vmid} (${name}): IP non trouvee, skip"
+            continue
+        fi
+
+        # Test ping
+        if [[ "$DRY_RUN" == true ]]; then
+            log_info "[DRY-RUN] ping -c 1 -W 2 ${vm_ip}"
+            log_success "VMID ${vmid} (${name}): ping OK (${vm_ip})"
+        else
+            if ping -c 1 -W 2 "${vm_ip}" &>/dev/null; then
+                log_success "VMID ${vmid} (${name}): ping OK (${vm_ip})"
+            else
+                log_warn "VMID ${vmid} (${name}): ping FAILED (${vm_ip})"
+            fi
+        fi
+    done < <(echo "$vms_json" | jq -r '.[] | "\(.vmid)|\(.name // "unnamed")|\(.status)|\(.type)"')
+}
+
+# =============================================================================
 # Main
 # =============================================================================
 
@@ -551,6 +625,7 @@ main() {
     # Mode full: verifications supplementaires
     if [[ "$FULL_MODE" == true ]]; then
         verify_backup_jobs
+        verify_vm_connectivity
         log_info "Verification complete terminee"
     fi
 
