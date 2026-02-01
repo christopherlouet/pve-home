@@ -112,11 +112,44 @@ ssh root@<ip-lxc>
 
 ## 3. Restaurer un etat Terraform depuis Minio
 
-### Prerequis
+### Script automatise (recommande)
+
+Le script `scripts/restore/restore-tfstate.sh` automatise toutes les operations de restauration du state Terraform.
+
+```bash
+# Lister les versions disponibles
+./scripts/restore/restore-tfstate.sh --env monitoring --list
+
+# Restaurer une version specifique
+./scripts/restore/restore-tfstate.sh --env monitoring --restore <version-id>
+
+# Mode fallback (si Minio est indisponible)
+./scripts/restore/restore-tfstate.sh --env monitoring --fallback
+
+# Retour au backend Minio apres reparation
+./scripts/restore/restore-tfstate.sh --env monitoring --return
+
+# Mode dry-run (afficher les actions sans executer)
+./scripts/restore/restore-tfstate.sh --env monitoring --list --dry-run
+
+# Aide complete
+./scripts/restore/restore-tfstate.sh --help
+```
+
+**Avantages du script**:
+- Configuration automatique du client mc depuis terraform.tfvars
+- Sauvegarde automatique de la version courante avant restauration (EF-006)
+- Verification avec `terraform plan` apres restauration
+- Support du mode dry-run pour tester sans risque
+- Gestion des erreurs avec messages clairs
+
+### Procedure manuelle (si script indisponible)
+
+#### Prerequis
 
 Le backend Minio S3 avec versioning active permet de restaurer les versions precedentes du state Terraform.
 
-### Lister les versions du state
+#### Lister les versions du state
 
 ```bash
 # Configurer le client mc (Minio Client)
@@ -128,7 +161,7 @@ mc ls --versions homelab/tfstate-lab/terraform.tfstate
 mc ls --versions homelab/tfstate-monitoring/terraform.tfstate
 ```
 
-### Restaurer une version precedente
+#### Restaurer une version precedente
 
 ```bash
 # Telecharger une version specifique
@@ -141,7 +174,7 @@ terraform show -json ./terraform.tfstate.backup | python3 -m json.tool | head -5
 mc cp ./terraform.tfstate.backup homelab/tfstate-prod/terraform.tfstate
 ```
 
-### Verification
+#### Verification
 
 ```bash
 cd infrastructure/proxmox/environments/prod
@@ -158,7 +191,31 @@ terraform plan
 
 Si le conteneur Minio est inaccessible, vous pouvez temporairement revenir au backend local.
 
-### Procedure de fallback
+### Script automatise (recommande)
+
+```bash
+# Basculer vers le backend local (si Minio indisponible)
+./scripts/restore/restore-tfstate.sh --env monitoring --fallback
+
+# Le script:
+# 1. Sauvegarde backend.tf original (backend.tf.minio-backup)
+# 2. Remplace backend.tf par un backend local vide
+# 3. Execute 'terraform init -migrate-state'
+# 4. Verifie avec 'terraform plan'
+
+# Une fois Minio retabli, retour au backend S3:
+./scripts/restore/restore-tfstate.sh --env monitoring --return
+
+# Le script:
+# 1. Verifie que Minio est accessible (healthcheck)
+# 2. Restore backend.tf depuis le backup
+# 3. Execute 'terraform init -migrate-state'
+# 4. Supprime le fichier backup
+```
+
+### Procedure manuelle (si script indisponible)
+
+#### Procedure de fallback
 
 ```bash
 cd infrastructure/proxmox/environments/<env>
@@ -177,7 +234,7 @@ terraform init -migrate-state
 terraform plan
 ```
 
-### Retour au backend Minio apres reparation
+#### Retour au backend Minio apres reparation
 
 ```bash
 # 1. Verifier que Minio est accessible
