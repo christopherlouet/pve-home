@@ -14,6 +14,7 @@
 #   --component TYPE   Filtrer par type (vm, lxc, monitoring, minio)
 #   --exclude LIST     Exclure des composants (separes par virgule)
 #   --timeout SEC      Timeout par verification en secondes (defaut: 10)
+#   --ssh-user USER    Utilisateur SSH pour les connexions (defaut: ubuntu)
 #   --dry-run          Afficher les verifications sans les executer
 #   --force            Mode non-interactif
 #   -h, --help         Afficher cette aide
@@ -61,6 +62,7 @@ CHECK_ALL=false
 COMPONENT_FILTER=""
 EXCLUDE_LIST=""
 TIMEOUT=10
+SSH_USER="ubuntu"
 
 # =============================================================================
 # Fonctions
@@ -78,6 +80,7 @@ Options:
   --component TYPE   Filtrer par type (vm, lxc, monitoring, minio)
   --exclude LIST     Exclure des composants (separes par virgule)
   --timeout SEC      Timeout par verification en secondes (defaut: 10)
+  --ssh-user USER    Utilisateur SSH pour les connexions (defaut: ubuntu)
   --dry-run          Afficher les verifications sans les executer
   --force            Mode non-interactif
   -h, --help         Afficher cette aide
@@ -85,6 +88,7 @@ Options:
 Examples:
   ./check-health.sh --env prod
   ./check-health.sh --all
+  ./check-health.sh --all --ssh-user root
   ./check-health.sh --env monitoring --component monitoring
 HELPEOF
 }
@@ -110,6 +114,10 @@ parse_args() {
                 ;;
             --timeout)
                 TIMEOUT="$2"
+                shift 2
+                ;;
+            --ssh-user)
+                SSH_USER="$2"
                 shift 2
                 ;;
             --dry-run)
@@ -199,13 +207,13 @@ check_ssh() {
     local ip="$1"
 
     if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY-RUN] ssh -o ConnectTimeout=${TIMEOUT} root@${ip} exit"
+        log_info "[DRY-RUN] ssh -o ConnectTimeout=${TIMEOUT} ${SSH_USER}@${ip} exit"
         return 0
     fi
 
     if ssh -o ConnectTimeout="${TIMEOUT}" -o StrictHostKeyChecking=no \
            -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
-           "root@${ip}" "exit" &>/dev/null; then
+           "${SSH_USER}@${ip}" "exit" &>/dev/null; then
         return 0
     else
         return 1
@@ -231,14 +239,14 @@ check_docker_service() {
     local ip="$1"
 
     if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY-RUN] ssh root@${ip} systemctl is-active docker"
+        log_info "[DRY-RUN] ssh ${SSH_USER}@${ip} systemctl is-active docker"
         return 0
     fi
 
     local result
     result=$(ssh -o ConnectTimeout="${TIMEOUT}" -o StrictHostKeyChecking=no \
                  -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
-                 "root@${ip}" "systemctl is-active docker" 2>/dev/null || echo "inactive")
+                 "${SSH_USER}@${ip}" "systemctl is-active docker" 2>/dev/null || echo "inactive")
 
     [[ "$result" == "active" ]]
 }
