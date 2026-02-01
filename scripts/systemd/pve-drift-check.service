@@ -1,0 +1,20 @@
+[Unit]
+Description=PVE Infrastructure Drift Detection
+Documentation=file:///opt/pve-home/docs/DRIFT-DETECTION.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/pve-home/scripts/drift/check-drift.sh --all --force
+User=root
+WorkingDirectory=/opt/pve-home
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pve-drift-check
+
+# Securite
+ProtectSystem=strict
+ReadWritePaths=/var/log/pve-drift /var/lib/prometheus/node-exporter
+PrivateTmp=true
+NoNewPrivileges=true
