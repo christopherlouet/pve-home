@@ -127,6 +127,7 @@ parse_args() {
                 shift
                 ;;
             --force)
+                # shellcheck disable=SC2034  # Used by confirm() in common.sh
                 FORCE_MODE=true
                 shift
                 ;;
