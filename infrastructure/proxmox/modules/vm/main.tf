@@ -48,7 +48,8 @@ locals {
   cloud_config = {
     users = [
       {
-        name                = var.username
+        name = var.username
+        # SECURITY NOTE: NOPASSWD:ALL accepte pour homelab - restreindre en production
         sudo                = "ALL=(ALL) NOPASSWD:ALL"
         shell               = "/bin/bash"
         ssh_authorized_keys = var.ssh_keys

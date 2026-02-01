@@ -77,8 +77,8 @@ locals {
     curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc
     chmod +x /usr/local/bin/mc
 
-    # Configurer l'alias
-    mc alias set local http://127.0.0.1:${var.minio_port} ${var.minio_root_user} ${var.minio_root_password}
+    # Configurer l'alias via variable d'environnement (evite les credentials en arguments CLI)
+    export MC_HOST_local="http://${var.minio_root_user}:${var.minio_root_password}@127.0.0.1:${var.minio_port}"
 
     # Creer les buckets avec versioning
     %{for bucket in var.buckets~}
@@ -186,28 +186,4 @@ resource "terraform_data" "minio_install" {
       agent   = true
     }
   }
-}
-
-# -----------------------------------------------------------------------------
-# Outputs
-# -----------------------------------------------------------------------------
-
-output "endpoint_url" {
-  description = "URL de l'API S3 Minio"
-  value       = "http://${local.minio_ip}:${var.minio_port}"
-}
-
-output "console_url" {
-  description = "URL de la console Minio"
-  value       = "http://${local.minio_ip}:${var.minio_console_port}"
-}
-
-output "container_id" {
-  description = "ID du conteneur LXC"
-  value       = proxmox_virtual_environment_container.minio.vm_id
-}
-
-output "ip_address" {
-  description = "Adresse IP du conteneur"
-  value       = var.ip_address
 }

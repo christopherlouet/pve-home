@@ -177,7 +177,7 @@ teardown() {
 
 @test "dry_run affiche la commande en mode DRY_RUN=true" {
     DRY_RUN=true
-    run dry_run "echo test"
+    run dry_run echo test
     [ "$status" -eq 0 ]
     [[ "$output" == *"[DRY-RUN]"* ]]
     [[ "$output" == *"echo test"* ]]
@@ -185,7 +185,7 @@ teardown() {
 
 @test "dry_run execute la commande en mode DRY_RUN=false" {
     DRY_RUN=false
-    run dry_run "echo test_execution"
+    run dry_run echo test_execution
     [ "$status" -eq 0 ]
     [[ "$output" == *"test_execution"* ]]
 }

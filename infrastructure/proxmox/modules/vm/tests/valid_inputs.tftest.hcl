@@ -189,6 +189,58 @@ run "disk_invalid_too_large" {
 }
 
 # -----------------------------------------------------------------------------
+# vlan_id validation (1-4094 or null)
+# -----------------------------------------------------------------------------
+
+run "vlan_id_valid_null" {
+  command = plan
+
+  variables {
+    vlan_id = null
+  }
+}
+
+run "vlan_id_valid_minimum" {
+  command = plan
+
+  variables {
+    vlan_id = 1
+  }
+}
+
+run "vlan_id_valid_maximum" {
+  command = plan
+
+  variables {
+    vlan_id = 4094
+  }
+}
+
+run "vlan_id_invalid_zero" {
+  command = plan
+
+  variables {
+    vlan_id = 0
+  }
+
+  expect_failures = [
+    var.vlan_id,
+  ]
+}
+
+run "vlan_id_invalid_too_high" {
+  command = plan
+
+  variables {
+    vlan_id = 4095
+  }
+
+  expect_failures = [
+    var.vlan_id,
+  ]
+}
+
+# -----------------------------------------------------------------------------
 # ip_address validation (CIDR format)
 # -----------------------------------------------------------------------------
 

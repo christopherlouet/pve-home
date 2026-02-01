@@ -372,6 +372,30 @@ run "retention_size_invalid_no_unit" {
 }
 
 # -----------------------------------------------------------------------------
+# grafana_admin_password validation (>= 8 chars)
+# -----------------------------------------------------------------------------
+
+run "grafana_password_valid" {
+  command = plan
+
+  variables {
+    grafana_admin_password = "12345678" # gitleaks:allow
+  }
+}
+
+run "grafana_password_invalid_too_short" {
+  command = plan
+
+  variables {
+    grafana_admin_password = "1234567" # gitleaks:allow
+  }
+
+  expect_failures = [
+    var.grafana_admin_password,
+  ]
+}
+
+# -----------------------------------------------------------------------------
 # Defaults verification
 # -----------------------------------------------------------------------------
 

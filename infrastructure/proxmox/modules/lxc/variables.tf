@@ -94,6 +94,11 @@ variable "vlan_id" {
   description = "VLAN ID (null si pas de VLAN)"
   type        = number
   default     = null
+
+  validation {
+    condition     = var.vlan_id == null ? true : var.vlan_id >= 1 && var.vlan_id <= 4094
+    error_message = "vlan_id doit etre entre 1 et 4094 ou null."
+  }
 }
 
 variable "ip_address" {

@@ -60,7 +60,7 @@ demo_dry_run() {
     log_info "=== Demonstration du mode dry-run ==="
 
     log_info "Execution d'une commande avec dry_run..."
-    dry_run "echo 'Cette commande est executee'"
+    dry_run echo 'Cette commande est executee'
 
     log_info "Execution d'une commande echo directe..."
     dry_run echo "Test direct"

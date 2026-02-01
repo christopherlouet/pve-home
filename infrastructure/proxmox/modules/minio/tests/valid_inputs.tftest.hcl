@@ -181,6 +181,82 @@ run "data_disk_invalid_zero" {
 }
 
 # -----------------------------------------------------------------------------
+# vlan_id validation (1-4094 or null)
+# -----------------------------------------------------------------------------
+
+run "vlan_id_valid_null" {
+  command = plan
+
+  variables {
+    vlan_id = null
+  }
+}
+
+run "vlan_id_valid_minimum" {
+  command = plan
+
+  variables {
+    vlan_id = 1
+  }
+}
+
+run "vlan_id_valid_maximum" {
+  command = plan
+
+  variables {
+    vlan_id = 4094
+  }
+}
+
+run "vlan_id_invalid_zero" {
+  command = plan
+
+  variables {
+    vlan_id = 0
+  }
+
+  expect_failures = [
+    var.vlan_id,
+  ]
+}
+
+run "vlan_id_invalid_too_high" {
+  command = plan
+
+  variables {
+    vlan_id = 4095
+  }
+
+  expect_failures = [
+    var.vlan_id,
+  ]
+}
+
+# -----------------------------------------------------------------------------
+# minio_root_password validation (>= 8 chars)
+# -----------------------------------------------------------------------------
+
+run "minio_root_password_valid" {
+  command = plan
+
+  variables {
+    minio_root_password = "12345678" # gitleaks:allow
+  }
+}
+
+run "minio_root_password_invalid_too_short" {
+  command = plan
+
+  variables {
+    minio_root_password = "1234567" # gitleaks:allow
+  }
+
+  expect_failures = [
+    var.minio_root_password,
+  ]
+}
+
+# -----------------------------------------------------------------------------
 # ip_address validation (CIDR format)
 # -----------------------------------------------------------------------------
 

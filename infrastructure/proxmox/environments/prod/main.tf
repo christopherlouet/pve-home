@@ -60,6 +60,8 @@ resource "proxmox_virtual_environment_firewall_options" "vms" {
   output_policy = "ACCEPT"
 }
 
+# SECURITY NOTE: Regles firewall sans filtrage IP source - accepte pour reseau homelab isole.
+# En production, ajouter "source" pour restreindre l'acces aux ports sensibles (9100, etc.).
 resource "proxmox_virtual_environment_firewall_rules" "vms" {
   for_each = var.vms
 
