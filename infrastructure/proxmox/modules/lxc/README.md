@@ -5,15 +5,13 @@ Module Terraform pour deployer des conteneurs LXC sur Proxmox VE.
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
-| Name | Version |
-|------|---------|
-| <a name="requirement_proxmox"></a> [proxmox](#requirement\_proxmox) | ~> 0.50 |
+No requirements.
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | ~> 0.50 |
+| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | n/a |
 
 ## Modules
 
