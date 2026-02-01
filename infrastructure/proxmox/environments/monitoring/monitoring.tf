@@ -49,7 +49,7 @@ module "monitoring" {
   telegram_bot_token = var.monitoring.telegram.bot_token
   telegram_chat_id   = var.monitoring.telegram.chat_id
 
-  tags = concat(local.common_tags, ["monitoring", "prometheus", "grafana"])
+  tags = sort(distinct(concat(local.common_tags, ["monitoring", "prometheus", "grafana"])))
 }
 
 # -----------------------------------------------------------------------------

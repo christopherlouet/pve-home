@@ -33,7 +33,7 @@ module "minio" {
 
   buckets = var.minio.buckets
 
-  tags = concat(local.common_tags, ["minio", "s3"])
+  tags = sort(distinct(concat(local.common_tags, ["minio", "s3"])))
 }
 
 # -----------------------------------------------------------------------------
