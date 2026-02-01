@@ -133,9 +133,9 @@ check_ssh_access() {
 
     log_info "Verification de l'acces SSH vers ${node}..."
 
-    if ! ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new \
+    if ! retry_with_backoff 3 ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new \
          "root@${node}" "exit" &>/dev/null; then
-        log_error "Impossible de se connecter en SSH a ${node}"
+        log_error "Impossible de se connecter en SSH a ${node} apres 3 tentatives"
         log_error "Verifiez que la cle SSH est configuree et que le noeud est accessible"
         return 1
     fi
@@ -143,6 +143,51 @@ check_ssh_access() {
     log_success "Acces SSH vers ${node} OK"
     return 0
 }
+
+# =============================================================================
+# Fonctions de retry avec backoff exponentiel
+# =============================================================================
+
+retry_with_backoff() {
+    local max_attempts="$1"
+    shift
+    local attempt=1
+    local delay=1
+
+    while [[ $attempt -le $max_attempts ]]; do
+        if "$@"; then
+            return 0
+        fi
+
+        if [[ $attempt -eq $max_attempts ]]; then
+            log_error "Echec apres ${max_attempts} tentatives: $*"
+            return 1
+        fi
+
+        log_warn "Tentative ${attempt}/${max_attempts} echouee, retry dans ${delay}s..."
+        sleep "$delay"
+        delay=$((delay * 2))
+        attempt=$((attempt + 1))
+    done
+}
+
+ssh_exec_retry() {
+    local node="$1"
+    local command="$2"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "[DRY-RUN] SSH vers ${node}: ${command}"
+        return 0
+    fi
+
+    retry_with_backoff 3 ssh -o StrictHostKeyChecking=accept-new \
+        -o LogLevel=ERROR \
+        "root@${node}" "${command}"
+}
+
+# =============================================================================
+# Fonctions de verification prerequis
+# =============================================================================
 
 check_command() {
     local cmd="$1"

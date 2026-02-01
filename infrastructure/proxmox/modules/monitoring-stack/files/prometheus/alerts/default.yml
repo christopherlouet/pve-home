@@ -53,6 +53,42 @@ groups:
           summary: "Disk almost full on {{ $labels.instance }}"
           description: "Disk usage on {{ $labels.mountpoint }} is above 95% (current: {{ $value | printf \"%.1f\" }}%)"
 
+      - alert: NodeFilesystemAlmostOutOfInodes
+        expr: (1 - (node_filesystem_files_free{fstype!~"tmpfs|overlay"} / node_filesystem_files{fstype!~"tmpfs|overlay"})) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Filesystem almost out of inodes on {{ $labels.instance }}"
+          description: "Inode usage on {{ $labels.mountpoint }} is above 90% (current: {{ $value | printf \"%.1f\" }}%)"
+
+      - alert: SystemdServiceFailed
+        expr: node_systemd_unit_state{state="failed"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Systemd service failed on {{ $labels.instance }}"
+          description: "Service {{ $labels.name }} has been in failed state for more than 5 minutes on {{ $labels.instance }}."
+
+      - alert: HighLoadAverage
+        expr: node_load15 / count without(cpu, mode) (node_cpu_seconds_total{mode="idle"}) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High load average on {{ $labels.instance }}"
+          description: "Load average (15m) is more than 2x the number of CPUs (current: {{ $value | printf \"%.2f\" }})"
+
+      - alert: HighNetworkErrors
+        expr: rate(node_network_receive_errs_total[5m]) + rate(node_network_transmit_errs_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High network errors on {{ $labels.instance }}"
+          description: "Network interface {{ $labels.device }} has more than 10 errors/s (current: {{ $value | printf \"%.1f\" }}/s)"
+
   # ---------------------------------------------------------------------------
   # Proxmox VE Alerts
   # ---------------------------------------------------------------------------
@@ -125,6 +161,15 @@ groups:
         annotations:
           summary: "Prometheus config reload failed"
           description: "Prometheus configuration reload has failed."
+
+      - alert: PrometheusRuleEvaluationFailures
+        expr: increase(prometheus_rule_evaluation_failures_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus rule evaluation failures"
+          description: "Prometheus has encountered {{ $value | printf \"%.0f\" }} rule evaluation failure(s) in the last 5 minutes."
 
   # ---------------------------------------------------------------------------
   # Backup Alerts - vzdump monitoring (pve-exporter >= 3.7.0)
