@@ -207,6 +207,12 @@ EOT
         path        = "/opt/monitoring/pve-exporter/pve.yml"
         permissions = "0644"
         content     = local.pve_exporter_config
+      },
+      {
+        path        = "/root/.ssh/id_ed25519"
+        permissions = "0600"
+        owner       = "root:root"
+        content     = tls_private_key.health_check.private_key_openssh
       }
     ]
     runcmd = concat(
@@ -214,6 +220,14 @@ EOT
       ["/opt/setup-monitoring.sh"]
     )
   }
+}
+
+# -----------------------------------------------------------------------------
+# SSH keypair for health checks (monitoring -> other VMs)
+# -----------------------------------------------------------------------------
+
+resource "tls_private_key" "health_check" {
+  algorithm = "ED25519"
 }
 
 # -----------------------------------------------------------------------------

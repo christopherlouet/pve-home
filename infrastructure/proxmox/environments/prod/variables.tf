@@ -89,6 +89,12 @@ variable "ssh_public_keys" {
   type        = list(string)
 }
 
+variable "monitoring_ssh_public_key" {
+  description = "Cle SSH publique de la VM monitoring pour les health checks (output de l'env monitoring)"
+  type        = string
+  default     = ""
+}
+
 # -----------------------------------------------------------------------------
 # Stockage
 # -----------------------------------------------------------------------------

@@ -66,6 +66,13 @@ ssh_public_keys = [
 environment = "prod"
 
 # -----------------------------------------------------------------------------
+# Monitoring SSH Key (health checks)
+# -----------------------------------------------------------------------------
+# Cle publique generee par l'env monitoring (terraform output health_check_ssh_public_key)
+# Permet a la VM monitoring de verifier l'etat des VMs prod via SSH
+# monitoring_ssh_public_key = "ssh-ed25519 AAAA..."
+
+# -----------------------------------------------------------------------------
 # VMs
 # -----------------------------------------------------------------------------
 
