@@ -16,6 +16,7 @@ terraform {
 
 locals {
   expiration_tag = var.expiration_days != null ? ["expires:${formatdate("YYYY-MM-DD", timeadd(timestamp(), "${var.expiration_days * 24}h"))}"] : []
+  container_ip   = split("/", var.ip_address)[0]
 }
 
 resource "proxmox_virtual_environment_container" "this" {
@@ -93,5 +94,32 @@ resource "proxmox_virtual_environment_container" "this" {
       initialization,
       disk[0].size,
     ]
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Automatic Security Updates (Ubuntu/Debian only)
+# -----------------------------------------------------------------------------
+
+resource "terraform_data" "security_updates" {
+  count      = var.auto_security_updates && contains(["ubuntu", "debian"], var.os_type) ? 1 : 0
+  depends_on = [proxmox_virtual_environment_container.this]
+
+  provisioner "remote-exec" {
+    inline = [
+      "apt-get update",
+      "apt-get install -y unattended-upgrades apt-listchanges",
+      "echo 'Unattended-Upgrade::Allowed-Origins { \"$${distro_id}:$${distro_codename}-security\"; };' > /etc/apt/apt.conf.d/50unattended-upgrades-local",
+      "echo 'Unattended-Upgrade::Automatic-Reboot \"false\";' >> /etc/apt/apt.conf.d/50unattended-upgrades-local",
+      "systemctl enable --now unattended-upgrades",
+    ]
+
+    connection {
+      type    = "ssh"
+      host    = local.container_ip
+      user    = "root"
+      timeout = "2m"
+      agent   = true
+    }
   }
 }
