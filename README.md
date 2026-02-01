@@ -15,7 +15,8 @@ Infrastructure as Code pour gérer un homelab Proxmox VE sur Intel NUC avec Terr
 - **Health checks** : Surveillance de la santé des VMs, monitoring et Minio (SSH automatise via keypair dediee)
 - **Deploiement monitoring** : Script `deploy.sh` pour provisionner scripts, tfvars et timers systemd sur la VM monitoring
 - **Cycle de vie VMs** : Snapshots, expiration automatique, mises à jour de sécurité, rotation SSH
-- **Tests Terraform natifs** : Validation des modules avec `terraform test` et `mock_provider`
+- **Tests Terraform natifs** : Validation, plan et non-regression des 5 modules avec `terraform test` et `mock_provider`
+- **Resilience SSH** : Retry avec backoff exponentiel pour les connexions SSH dans les scripts d'operation
 - **CI/CD** : Validation Terraform, tests, et scans de sécurité via GitHub Actions
 
 ## Prérequis
@@ -185,21 +186,70 @@ Les dashboards sont stockés dans `infrastructure/proxmox/modules/monitoring-sta
 
 ### Alertes Prometheus
 
-Les alertes suivantes supervisent l'infrastructure et les sauvegardes :
+28 alertes reparties en 7 groupes supervisent l'infrastructure :
+
+#### Node alerts (9)
 
 | Alerte | Sévérité | Description |
 |--------|----------|-------------|
-| `BackupJobFailed` | Critical | Un job vzdump a échoué dans les dernières 24h |
-| `BackupJobMissing` | Warning | Aucune sauvegarde réussie depuis 48h |
-| `BackupStorageAlmostFull` | Warning | Stockage backup utilisé à plus de 80% |
-| `DriftDetected` | Warning | Drift Terraform détecté sur un environnement |
-| `DriftCheckFailed` | Critical | Le check de drift a échoué |
+| `HostDown` | Critical | Host injoignable depuis > 2 min |
+| `HighCpuUsage` | Warning | CPU > 85% depuis 5 min |
+| `HighMemoryUsage` | Warning | RAM > 85% depuis 5 min |
+| `HighDiskUsage` | Warning | Disque > 85% depuis 5 min |
+| `DiskAlmostFull` | Critical | Disque > 95% depuis 1 min |
+| `NodeFilesystemAlmostOutOfInodes` | Warning | Inodes > 90% depuis 5 min |
+| `SystemdServiceFailed` | Warning | Service systemd en echec depuis 5 min |
+| `HighLoadAverage` | Warning | Load average (15m) > 2x le nombre de CPUs depuis 10 min |
+| `HighNetworkErrors` | Warning | Erreurs reseau > 10/s depuis 5 min |
+
+#### Proxmox alerts (5)
+
+| Alerte | Sévérité | Description |
+|--------|----------|-------------|
+| `ProxmoxNodeDown` | Critical | Node Proxmox injoignable depuis > 2 min |
+| `ProxmoxVMStopped` | Warning | VM arretee depuis > 10 min |
+| `ProxmoxHighCpuUsage` | Warning | CPU Proxmox > 90% depuis 10 min |
+| `ProxmoxHighMemoryUsage` | Warning | RAM Proxmox > 90% depuis 10 min |
+| `ProxmoxStorageAlmostFull` | Warning | Stockage Proxmox > 85% depuis 5 min |
+
+#### Prometheus alerts (3)
+
+| Alerte | Sévérité | Description |
+|--------|----------|-------------|
+| `PrometheusTargetMissing` | Warning | Target down depuis 5 min |
+| `PrometheusConfigReloadFailed` | Critical | Echec du rechargement de la config Prometheus |
+| `PrometheusRuleEvaluationFailures` | Warning | Erreurs d'evaluation des regles d'alerte |
+
+#### Backup alerts (3)
+
+| Alerte | Sévérité | Description |
+|--------|----------|-------------|
+| `GuestsNotBackedUp` | Warning | VMs/CTs sans sauvegarde configuree |
+| `BackupStorageAlmostFull` | Warning | Stockage backup > 80% |
+| `BackupStorageCritical` | Critical | Stockage backup > 95% |
+
+#### Drift alerts (3)
+
+| Alerte | Sévérité | Description |
+|--------|----------|-------------|
+| `DriftDetected` | Warning | Drift Terraform detecte sur un environnement |
+| `DriftCheckFailed` | Critical | Le check de drift a echoue |
 | `DriftCheckStale` | Warning | Aucun check de drift depuis > 48h |
-| `InfraHealthCheckFailed` | Warning | Un composant infrastructure est en échec |
+
+#### Health alerts (2)
+
+| Alerte | Sévérité | Description |
+|--------|----------|-------------|
+| `InfraHealthCheckFailed` | Warning | Un composant infrastructure est en echec |
 | `HealthCheckStale` | Warning | Aucun health check depuis > 8h |
-| `LabVMExpired` | Warning | VMs lab expirées et arrêtées |
-| `SnapshotOlderThanWeek` | Info | Snapshots anciens nettoyés |
-| `VMRebootRequired` | Warning | Reboot nécessaire depuis > 24h |
+
+#### Lifecycle alerts (3)
+
+| Alerte | Sévérité | Description |
+|--------|----------|-------------|
+| `LabVMExpired` | Warning | VMs lab expirees et arretees |
+| `SnapshotOlderThanWeek` | Info | Snapshots anciens nettoyes |
+| `VMRebootRequired` | Warning | Reboot necessaire depuis > 24h |
 
 Les alertes sont configurées dans `infrastructure/proxmox/modules/monitoring-stack/files/prometheus/alerts/default.yml`.
 
@@ -254,11 +304,17 @@ Index complet : [scripts/README.md](scripts/README.md) | Disaster Recovery : [do
 
 ## Tests
 
-Le projet utilise deux frameworks de test complémentaires :
+Le projet utilise deux frameworks de test complementaires totalisant **~270 tests Terraform** et **254 tests BATS**.
 
 ### Tests Terraform (modules)
 
-Les 5 modules Terraform sont testés avec le framework natif `terraform test` (>= 1.9) et `mock_provider` :
+Les 5 modules sont testes avec le framework natif `terraform test` (>= 1.9) et `mock_provider`, avec 3 types de tests par module :
+
+| Type | Fichier | Description |
+|------|---------|-------------|
+| **Validation** | `valid_inputs.tftest.hcl` | Validation des variables d'entree (types, bornes, formats) |
+| **Plan** | `plan_resources.tftest.hcl` | Verification des ressources generees par `terraform plan` |
+| **Non-regression** | `regression.tftest.hcl` | Protection contre la reintroduction de bugs corriges |
 
 ```bash
 # Tester un module
@@ -272,7 +328,15 @@ done
 
 ### Tests BATS (scripts shell)
 
-Les scripts shell sont testés avec [BATS](https://github.com/bats-core/bats-core) :
+Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (254 tests) :
+
+| Domaine | Tests | Couverture |
+|---------|-------|------------|
+| **restore/** | 169 | Restauration VMs, tfstate, Minio, monitoring, verification |
+| **drift/** | 14 | Detection de drift Terraform |
+| **health/** | 14 | Health checks infrastructure |
+| **lifecycle/** | 21 | Snapshots, expiration, rotation SSH |
+| **root** | 36 | deploy.sh, post-install Proxmox |
 
 ```bash
 # Tous les tests
@@ -285,7 +349,7 @@ bats tests/health/
 bats tests/lifecycle/
 ```
 
-Les tests Terraform sont exécutés en CI via le job `terraform-test` dans `.github/workflows/ci.yml`.
+Les tests Terraform sont executes en CI via le job `terraform-test` dans `.github/workflows/ci.yml`.
 
 ## Securite
 
@@ -293,6 +357,8 @@ Les tests Terraform sont exécutés en CI via le job `terraform-test` dans `.git
 - Ne jamais commiter de tokens ou cles SSH
 - Scans automatiques en CI : [Gitleaks](https://github.com/gitleaks/gitleaks) (secrets), [tfsec](https://github.com/aquasecurity/tfsec) (Terraform), [Checkov](https://www.checkov.io/) (policy-as-code), [Trivy](https://trivy.dev/) (IaC misconfigurations)
 - Resultats SARIF uploades dans l'onglet Security de GitHub
+- SSH hardening : `StrictHostKeyChecking=accept-new` sur tous les scripts, persistence des known hosts
+- Credentials Minio passes via variable d'environnement `MC_HOST_local` (evite l'exposition dans la liste des processus)
 
 ## Licence
 

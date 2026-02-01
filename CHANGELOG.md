@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-02-02
+
+### Changed
+- README: complete Prometheus alerts table (11 → 28 alerts, organized by 7 groups)
+- README: add resilience SSH feature (retry/backoff) to features list
+- README: detail test coverage (3 test types per module, BATS breakdown by domain with counts)
+- README: document SSH hardening and Minio credential security in security section
+
 ## [1.1.0] - 2026-02-01
 
 ### Added
