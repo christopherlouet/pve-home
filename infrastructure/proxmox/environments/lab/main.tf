@@ -38,7 +38,7 @@ module "vms" {
   dns_servers    = var.network_dns
 
   ssh_keys = var.ssh_public_keys
-  tags     = concat(local.common_tags, each.value.tags)
+  tags     = sort(distinct(concat(local.common_tags, each.value.tags)))
 
   # Cloud-init options
   install_docker = try(each.value.docker, false)
@@ -72,7 +72,7 @@ module "containers" {
   unprivileged = true
   nesting      = each.value.nesting
 
-  tags = concat(local.common_tags, each.value.tags)
+  tags = sort(distinct(concat(local.common_tags, each.value.tags)))
 }
 
 # -----------------------------------------------------------------------------
