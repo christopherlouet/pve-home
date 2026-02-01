@@ -17,7 +17,7 @@ variables {
   ip_address          = "192.168.1.200/24"
   gateway             = "192.168.1.1"
   ssh_keys            = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITEST test@test"]
-  minio_root_password = "testpassword123"
+  minio_root_password = "testpassword123" # gitleaks:allow
 }
 
 # -----------------------------------------------------------------------------
