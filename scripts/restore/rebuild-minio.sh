@@ -34,13 +34,19 @@ LIB_DIR="$(cd "${SCRIPT_DIR}/../lib" && pwd)"
 source "${LIB_DIR}/common.sh"
 
 # =============================================================================
-# Variables globales
+# Variables globales et constantes
 # =============================================================================
 
+# Constantes
+readonly DEFAULT_MINIO_PORT=9000
+readonly MINIO_HEALTHCHECK_MAX_RETRIES=12
+readonly MINIO_HEALTHCHECK_RETRY_INTERVAL=5
+
+# Variables
 ENV="monitoring"
 TERRAFORM_DIR=""
 MINIO_IP=""
-MINIO_PORT="9000"
+MINIO_PORT="${DEFAULT_MINIO_PORT}"
 START_TIME=$(date +%s)
 
 # =============================================================================
@@ -141,7 +147,7 @@ parse_minio_config() {
     fi
 
     if [[ -z "$MINIO_PORT" ]]; then
-        MINIO_PORT="9000"
+        MINIO_PORT="${DEFAULT_MINIO_PORT}"
     fi
 
     log_info "Configuration Minio: ${MINIO_IP}:${MINIO_PORT}"
@@ -191,19 +197,18 @@ rebuild_minio_terraform() {
 }
 
 wait_minio_ready() {
-    log_info "Attente demarrage Minio (retry loop avec timeout 60s)..."
+    local timeout=$((MINIO_HEALTHCHECK_MAX_RETRIES * MINIO_HEALTHCHECK_RETRY_INTERVAL))
+    log_info "Attente demarrage Minio (retry loop avec timeout ${timeout}s)..."
 
     if [[ "$DRY_RUN" == true ]]; then
         log_info "[DRY-RUN] Attente demarrage Minio"
         return 0
     fi
 
-    local max_retries=12
-    local retry_interval=5
     local retry=0
 
-    while [[ $retry -lt $max_retries ]]; do
-        log_info "Tentative $((retry + 1))/${max_retries}..."
+    while [[ $retry -lt $MINIO_HEALTHCHECK_MAX_RETRIES ]]; do
+        log_info "Tentative $((retry + 1))/${MINIO_HEALTHCHECK_MAX_RETRIES}..."
 
         if curl -sf --max-time 5 "http://${MINIO_IP}:${MINIO_PORT}/minio/health/live" &>/dev/null; then
             log_success "Minio est pret"
@@ -211,10 +216,10 @@ wait_minio_ready() {
         fi
 
         retry=$((retry + 1))
-        sleep $retry_interval
+        sleep $MINIO_HEALTHCHECK_RETRY_INTERVAL
     done
 
-    log_error "Timeout: Minio n'est pas pret apres ${max_retries} tentatives"
+    log_error "Timeout: Minio n'est pas pret apres ${MINIO_HEALTHCHECK_MAX_RETRIES} tentatives"
     exit 1
 }
 

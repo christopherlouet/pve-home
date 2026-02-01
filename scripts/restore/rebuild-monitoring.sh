@@ -38,9 +38,16 @@ LIB_DIR="$(cd "${SCRIPT_DIR}/../lib" && pwd)"
 source "${LIB_DIR}/common.sh"
 
 # =============================================================================
-# Variables globales
+# Variables globales et constantes
 # =============================================================================
 
+# Constantes
+readonly DEFAULT_PROMETHEUS_PORT=9090
+readonly DEFAULT_GRAFANA_PORT=3000
+readonly DEFAULT_ALERTMANAGER_PORT=9093
+readonly SSH_WAIT_TIME=30
+
+# Variables
 MODE="restore"
 NODE=""
 VMID=""
@@ -264,8 +271,8 @@ verify_docker_services() {
     fi
 
     # Attendre que SSH soit accessible
-    log_info "Attente SSH (30s)..."
-    sleep 30
+    log_info "Attente SSH (${SSH_WAIT_TIME}s)..."
+    sleep $SSH_WAIT_TIME
 
     # Verifier docker ps
     log_info "Verification conteneurs Docker (docker ps)..."
@@ -292,11 +299,11 @@ verify_prometheus() {
     log_info "Verification healthcheck Prometheus..."
 
     if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY-RUN] curl http://${MONITORING_IP}:9090/-/healthy"
+        log_info "[DRY-RUN] curl http://${MONITORING_IP}:${DEFAULT_PROMETHEUS_PORT}/-/healthy"
         return 0
     fi
 
-    if curl -sf --max-time 10 "http://${MONITORING_IP}:9090/-/healthy" &>/dev/null; then
+    if curl -sf --max-time 10 "http://${MONITORING_IP}:${DEFAULT_PROMETHEUS_PORT}/-/healthy" &>/dev/null; then
         log_success "Prometheus: healthy"
     else
         log_warn "Prometheus: healthcheck echoue"
@@ -307,11 +314,11 @@ verify_grafana() {
     log_info "Verification healthcheck Grafana..."
 
     if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY-RUN] curl http://${MONITORING_IP}:3000/api/health"
+        log_info "[DRY-RUN] curl http://${MONITORING_IP}:${DEFAULT_GRAFANA_PORT}/api/health"
         return 0
     fi
 
-    if curl -sf --max-time 10 "http://${MONITORING_IP}:3000/api/health" &>/dev/null; then
+    if curl -sf --max-time 10 "http://${MONITORING_IP}:${DEFAULT_GRAFANA_PORT}/api/health" &>/dev/null; then
         log_success "Grafana: healthy"
     else
         log_warn "Grafana: healthcheck echoue"
@@ -322,11 +329,11 @@ verify_alertmanager() {
     log_info "Verification healthcheck Alertmanager..."
 
     if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY-RUN] curl http://${MONITORING_IP}:9093/-/healthy"
+        log_info "[DRY-RUN] curl http://${MONITORING_IP}:${DEFAULT_ALERTMANAGER_PORT}/-/healthy"
         return 0
     fi
 
-    if curl -sf --max-time 10 "http://${MONITORING_IP}:9093/-/healthy" &>/dev/null; then
+    if curl -sf --max-time 10 "http://${MONITORING_IP}:${DEFAULT_ALERTMANAGER_PORT}/-/healthy" &>/dev/null; then
         log_success "Alertmanager: healthy"
     else
         log_warn "Alertmanager: healthcheck echoue"
