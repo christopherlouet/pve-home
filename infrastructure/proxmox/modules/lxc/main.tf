@@ -2,15 +2,6 @@
 # Module LXC Proxmox - Homelab
 # =============================================================================
 
-terraform {
-  required_providers {
-    proxmox = {
-      source  = "bpg/proxmox"
-      version = "~> 0.50"
-    }
-  }
-}
-
 variable "hostname" {
   description = "Hostname du conteneur"
   type        = string

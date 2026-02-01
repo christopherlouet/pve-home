@@ -2,15 +2,6 @@
 # Module VM Proxmox - Homelab
 # =============================================================================
 
-terraform {
-  required_providers {
-    proxmox = {
-      source  = "bpg/proxmox"
-      version = "~> 0.50"
-    }
-  }
-}
-
 variable "name" {
   description = "Nom de la VM"
   type        = string
