@@ -321,6 +321,8 @@ Par defaut, le state est stocke localement. Pour un usage multi-machine, voir `_
 
 ## Commandes utiles
 
+### Terraform
+
 ```bash
 # Se placer dans l'environnement souhaite
 cd infrastructure/proxmox/environments/prod
@@ -343,6 +345,46 @@ terraform destroy
 # Rafraichir l'etat depuis Proxmox
 terraform refresh
 ```
+
+### Tests
+
+```bash
+# Tests Terraform natifs (par module)
+cd infrastructure/proxmox/modules/vm
+terraform init -backend=false
+terraform test
+
+# Tests BATS (scripts shell)
+bats tests/drift/
+bats tests/health/
+bats tests/lifecycle/
+bats tests/restore/
+```
+
+### Operations
+
+```bash
+# Detection de drift
+./scripts/drift/check-drift.sh --env prod --dry-run
+./scripts/drift/check-drift.sh --all
+
+# Health checks
+./scripts/health/check-health.sh --env prod
+./scripts/health/check-health.sh --all --component monitoring
+
+# Snapshots
+./scripts/lifecycle/snapshot-vm.sh create 100
+./scripts/lifecycle/snapshot-vm.sh list 100
+./scripts/lifecycle/cleanup-snapshots.sh --max-age 7
+
+# Expiration des VMs lab
+./scripts/lifecycle/expire-lab-vms.sh --dry-run
+
+# Rotation des cles SSH
+./scripts/lifecycle/rotate-ssh-keys.sh --add-key ~/.ssh/key.pub --env prod
+```
+
+Documentation des scripts : [scripts/README.md](../../scripts/README.md)
 
 ## Connexion aux VMs/LXC
 
@@ -424,6 +466,16 @@ Chaque module contient un repertoire `tests/` avec :
 ### CI
 
 Les tests sont executes automatiquement en CI via le job `terraform-test` dans `.github/workflows/ci.yml`. Le job s'execute apres la validation et teste les 5 modules en matrice parallele.
+
+## Documentation associee
+
+| Document | Description |
+|----------|-------------|
+| [Detection de drift](../../docs/DRIFT-DETECTION.md) | Detection automatique des derives Terraform |
+| [Health Checks](../../docs/HEALTH-CHECKS.md) | Verification de sante de l'infrastructure |
+| [Cycle de vie VMs](../../docs/VM-LIFECYCLE.md) | Snapshots, expiration, mises a jour, rotation SSH |
+| [Sauvegarde & Restauration](../../docs/BACKUP-RESTORE.md) | Procedures de restauration |
+| [Disaster Recovery](../../docs/DISASTER-RECOVERY.md) | Runbook reconstruction complete |
 
 ## Ressources
 
