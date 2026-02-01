@@ -114,6 +114,45 @@ monitoring = {
 }
 
 # -----------------------------------------------------------------------------
+# Minio S3 (Backend Terraform State)
+# -----------------------------------------------------------------------------
+# Stockage S3 auto-heberge pour l'etat Terraform.
+# Le conteneur est deploye sur le PVE monitoring.
+# Apres deploiement, configurer backend.tf dans chaque environnement.
+# -----------------------------------------------------------------------------
+
+minio = {
+  ip               = "192.168.1.52"
+  template_file_id = "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
+  cpu_cores        = 1
+  memory_mb        = 512
+  disk_size_gb     = 8
+  data_disk_size_gb = 50
+  root_user        = "minioadmin"
+  root_password    = "${MINIO_ROOT_PASSWORD:?required}"
+  port             = 9000
+  console_port     = 9001
+  buckets          = ["tfstate-prod", "tfstate-lab", "tfstate-monitoring"]
+}
+
+# -----------------------------------------------------------------------------
+# Sauvegardes vzdump
+# -----------------------------------------------------------------------------
+
+backup = {
+  enabled  = true
+  schedule = "02:00"       # Quotidien a 2h du matin
+  storage  = "local"       # Storage Proxmox pour les sauvegardes
+  mode     = "snapshot"    # snapshot (pas d'arret), suspend, ou stop
+  compress = "zstd"        # zstd (recommande), lzo, gzip, none
+  retention = {
+    keep_daily   = 7       # Garder 7 sauvegardes quotidiennes
+    keep_weekly  = 0       # Pas de retention hebdomadaire
+    keep_monthly = 0       # Pas de retention mensuelle
+  }
+}
+
+# -----------------------------------------------------------------------------
 # Cibles distantes (VMs sur d'autres PVE)
 # -----------------------------------------------------------------------------
 # VMs avec node_exporter sur d'autres PVE.

@@ -129,6 +129,12 @@ variable "additional_disks" {
   default = []
 }
 
+variable "backup_enabled" {
+  description = "Inclure les disques de cette VM dans les sauvegardes vzdump"
+  type        = bool
+  default     = true
+}
+
 variable "install_docker" {
   description = "Installer Docker via cloud-init"
   type        = bool
@@ -234,6 +240,7 @@ resource "proxmox_virtual_environment_vm" "this" {
     iothread     = true
     discard      = "on"
     ssd          = true
+    backup       = var.backup_enabled
   }
 
   dynamic "disk" {
@@ -244,6 +251,7 @@ resource "proxmox_virtual_environment_vm" "this" {
       interface    = "${disk.value.interface}${disk.key + 1}"
       iothread     = true
       discard      = "on"
+      backup       = var.backup_enabled
     }
   }
 

@@ -16,6 +16,14 @@ infrastructure/proxmox/
 │   │   └── main.tf               # Module VM avec cloud-init et Docker
 │   ├── lxc/
 │   │   └── main.tf               # Module conteneur LXC
+│   ├── backup/
+│   │   ├── main.tf               # Jobs vzdump via pvesh
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   ├── minio/
+│   │   ├── main.tf               # Conteneur LXC Minio S3
+│   │   ├── variables.tf
+│   │   └── outputs.tf
 │   └── monitoring-stack/
 │       ├── main.tf               # Stack Prometheus + Grafana + Alertmanager
 │       ├── variables.tf
@@ -32,18 +40,25 @@ infrastructure/proxmox/
     │   ├── provider.tf            # Configuration provider Proxmox
     │   ├── main.tf                # VMs, LXC, outputs
     │   ├── variables.tf           # Variables de l'environnement
+    │   ├── backup.tf              # Sauvegardes vzdump
+    │   ├── backend.tf             # Backend S3 Minio (commente)
     │   └── terraform.tfvars.example
     ├── lab/                       # Instance PVE "lab/test" (workloads)
     │   ├── versions.tf
     │   ├── provider.tf
     │   ├── main.tf
     │   ├── variables.tf
+    │   ├── backup.tf              # Sauvegardes vzdump
+    │   ├── backend.tf             # Backend S3 Minio (commente)
     │   └── terraform.tfvars.example
     └── monitoring/                # Instance PVE dediee monitoring
         ├── versions.tf
         ├── provider.tf
         ├── main.tf                # Locals et outputs (pas de workloads)
         ├── monitoring.tf          # Stack monitoring centralisee
+        ├── minio.tf               # Conteneur Minio S3 + firewall
+        ├── backup.tf              # Sauvegardes vzdump
+        ├── backend.tf             # Backend S3 Minio (commente)
         ├── variables.tf
         └── terraform.tfvars.example
 ```
@@ -274,6 +289,26 @@ remote_targets = [
   },
 ]
 ```
+
+## Sauvegardes
+
+Chaque environnement inclut un module de sauvegarde vzdump avec des schedules et retentions configurables. Le monitoring est equipe d'un conteneur Minio S3 pour stocker les etats Terraform de facon resiliente.
+
+### Configuration par defaut
+
+| Environnement | Schedule | Retention | Storage |
+|---------------|----------|-----------|---------|
+| **prod** | Quotidien 01:00 | 7 daily, 4 weekly | local |
+| **lab** | Dimanche 03:00 | 3 weekly | local |
+| **monitoring** | Quotidien 02:00 | 7 daily | local |
+
+### Minio S3 (Backend Terraform)
+
+Un conteneur LXC Minio est deploye sur le PVE monitoring pour servir de backend S3 aux etats Terraform. Voir `environments/monitoring/minio.tf`.
+
+### Documentation complete
+
+Pour les procedures de restauration, diagnostics et bonnes pratiques, voir **[docs/BACKUP-RESTORE.md](../../docs/BACKUP-RESTORE.md)**.
 
 ## Backend distant (optionnel)
 

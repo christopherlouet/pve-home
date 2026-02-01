@@ -125,3 +125,35 @@ groups:
         annotations:
           summary: "Prometheus config reload failed"
           description: "Prometheus configuration reload has failed."
+
+  # ---------------------------------------------------------------------------
+  # Backup Alerts - vzdump monitoring
+  # ---------------------------------------------------------------------------
+  - name: backup-alerts
+    rules:
+      - alert: BackupJobFailed
+        expr: increase(pve_backup_duration_seconds{status="failed"}[24h]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backup job failed on {{ $labels.node }}"
+          description: "A vzdump backup job has failed on node {{ $labels.node }} in the last 24 hours."
+
+      - alert: BackupJobMissing
+        expr: time() - pve_backup_last_successful_timestamp > 172800
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No successful backup for {{ $labels.node }} in 48h"
+          description: "No successful vzdump backup has been recorded for node {{ $labels.node }} for more than 48 hours."
+
+      - alert: BackupStorageAlmostFull
+        expr: (pve_storage_usage_bytes{storage=~".*backup.*|local"} / pve_storage_size_bytes{storage=~".*backup.*|local"}) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backup storage {{ $labels.storage }} almost full on {{ $labels.node }}"
+          description: "Backup storage usage is above 80% (current: {{ $value | printf \"%.1f\" }}%) on {{ $labels.node }}."

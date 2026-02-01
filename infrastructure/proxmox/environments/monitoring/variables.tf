@@ -137,6 +137,52 @@ variable "monitoring" {
 # Cibles distantes (VMs sur d'autres PVE)
 # -----------------------------------------------------------------------------
 
+# -----------------------------------------------------------------------------
+# Minio S3 (Backend Terraform State)
+# -----------------------------------------------------------------------------
+
+variable "minio" {
+  description = "Configuration du conteneur Minio S3"
+  type = object({
+    ip                = string
+    template_file_id  = optional(string, "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst")
+    cpu_cores         = optional(number, 1)
+    memory_mb         = optional(number, 512)
+    disk_size_gb      = optional(number, 8)
+    data_disk_size_gb = optional(number, 50)
+    root_user         = optional(string, "minioadmin")
+    root_password     = string
+    port              = optional(number, 9000)
+    console_port      = optional(number, 9001)
+    buckets           = optional(list(string), ["tfstate-prod", "tfstate-lab", "tfstate-monitoring"])
+  })
+}
+
+# -----------------------------------------------------------------------------
+# Backup
+# -----------------------------------------------------------------------------
+
+variable "backup" {
+  description = "Configuration des sauvegardes vzdump"
+  type = object({
+    enabled  = optional(bool, true)
+    schedule = optional(string, "02:00")
+    storage  = optional(string, "local")
+    mode     = optional(string, "snapshot")
+    compress = optional(string, "zstd")
+    retention = optional(object({
+      keep_daily   = optional(number, 7)
+      keep_weekly  = optional(number, 0)
+      keep_monthly = optional(number, 0)
+    }), {})
+  })
+  default = {}
+}
+
+# -----------------------------------------------------------------------------
+# Cibles distantes (VMs sur d'autres PVE)
+# -----------------------------------------------------------------------------
+
 variable "remote_targets" {
   description = "VMs hebergees sur d'autres PVE a monitorer via node_exporter"
   type = list(object({

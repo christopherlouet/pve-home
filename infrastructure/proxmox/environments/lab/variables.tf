@@ -108,6 +108,31 @@ variable "environment" {
 # Configuration des VMs et Conteneurs
 # -----------------------------------------------------------------------------
 
+# -----------------------------------------------------------------------------
+# Backup
+# -----------------------------------------------------------------------------
+
+variable "backup" {
+  description = "Configuration des sauvegardes vzdump"
+  type = object({
+    enabled  = optional(bool, true)
+    schedule = optional(string, "sun 03:00")
+    storage  = optional(string, "local")
+    mode     = optional(string, "snapshot")
+    compress = optional(string, "zstd")
+    retention = optional(object({
+      keep_daily   = optional(number, 0)
+      keep_weekly  = optional(number, 3)
+      keep_monthly = optional(number, 0)
+    }), {})
+  })
+  default = {}
+}
+
+# -----------------------------------------------------------------------------
+# Configuration des VMs et Conteneurs
+# -----------------------------------------------------------------------------
+
 variable "vms" {
   description = "Configuration des VMs a creer"
   type = map(object({
