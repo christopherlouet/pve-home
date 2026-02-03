@@ -95,7 +95,7 @@ groups:
   - name: proxmox-alerts
     rules:
       - alert: ProxmoxNodeDown
-        expr: pve_up == 0
+        expr: pve_up{id=~"node/.*"} == 0
         for: 2m
         labels:
           severity: critical
