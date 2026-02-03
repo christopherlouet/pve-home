@@ -39,7 +39,8 @@ readonly MONITORING_TFVARS="${PROJECT_ROOT}/infrastructure/proxmox/environments/
 readonly REMOTE_BASE="/opt/pve-home"
 
 SSH_USER="ubuntu"
-SSH_OPTS="-o StrictHostKeyChecking=accept-new -o LogLevel=ERROR"
+# Options SSH securisees via common.sh (get_ssh_opts)
+SSH_OPTS="$(get_ssh_opts)"
 
 readonly TIMERS=(
     "pve-health-check"

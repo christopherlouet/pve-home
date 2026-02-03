@@ -42,6 +42,87 @@ NC='\033[0m'
 DRY_RUN=false
 FORCE_MODE=false
 
+# Fichier known_hosts dedie pour le homelab (securite SSH)
+# Utiliser un fichier separe evite de polluer ~/.ssh/known_hosts
+HOMELAB_KNOWN_HOSTS="${HOMELAB_KNOWN_HOSTS:-${HOME}/.ssh/homelab_known_hosts}"
+
+# Mode d'initialisation SSH (permet accept-new uniquement lors de l'init)
+SSH_INIT_MODE="${SSH_INIT_MODE:-false}"
+
+# =============================================================================
+# Fonctions SSH known_hosts (securite)
+# =============================================================================
+
+# Initialise le fichier known_hosts avec les cles SSH des hotes
+# Usage: init_known_hosts "192.168.1.10" "192.168.1.11"
+# Cette fonction doit etre appelee une fois lors du setup initial
+init_known_hosts() {
+    local hosts=("$@")
+
+    if [[ ${#hosts[@]} -eq 0 ]]; then
+        echo -e "${RED}[ERROR]${NC} init_known_hosts: au moins un hote requis"
+        return 1
+    fi
+
+    # Creer le repertoire si necessaire
+    mkdir -p "$(dirname "$HOMELAB_KNOWN_HOSTS")"
+
+    echo -e "${BLUE}[INFO]${NC} Initialisation du fichier known_hosts: ${HOMELAB_KNOWN_HOSTS}"
+
+    for host in "${hosts[@]}"; do
+        echo -e "${BLUE}[INFO]${NC} Scan des cles SSH pour ${host}..."
+
+        # Scanner les cles SSH de l'hote
+        if ssh-keyscan -H "$host" >> "$HOMELAB_KNOWN_HOSTS" 2>/dev/null; then
+            echo -e "${GREEN}[OK]${NC} Cles ajoutees pour ${host}"
+        else
+            echo -e "${YELLOW}[WARN]${NC} Impossible de scanner ${host} (hote inaccessible?)"
+        fi
+    done
+
+    # Supprimer les doublons
+    if [[ -f "$HOMELAB_KNOWN_HOSTS" ]]; then
+        sort -u "$HOMELAB_KNOWN_HOSTS" -o "$HOMELAB_KNOWN_HOSTS"
+        echo -e "${GREEN}[OK]${NC} Fichier known_hosts initialise avec $(wc -l < "$HOMELAB_KNOWN_HOSTS") entrees"
+    fi
+
+    return 0
+}
+
+# Verifie si un hote est dans le fichier known_hosts
+# Usage: is_host_known "192.168.1.10"
+is_host_known() {
+    local host="$1"
+
+    if [[ ! -f "$HOMELAB_KNOWN_HOSTS" ]]; then
+        return 1
+    fi
+
+    # Verifier si l'hote est present (hash ou IP directe)
+    if ssh-keygen -F "$host" -f "$HOMELAB_KNOWN_HOSTS" &>/dev/null; then
+        return 0
+    fi
+
+    return 1
+}
+
+# Retourne les options SSH securisees
+# Usage: ssh $(get_ssh_opts) root@host "command"
+get_ssh_opts() {
+    local opts="-o LogLevel=ERROR"
+    opts+=" -o UserKnownHostsFile=${HOMELAB_KNOWN_HOSTS}"
+
+    if [[ "$SSH_INIT_MODE" == "true" ]]; then
+        # Mode init: accepter les nouvelles cles (premiere connexion)
+        opts+=" -o StrictHostKeyChecking=accept-new"
+    else
+        # Mode normal: verifier strictement les cles
+        opts+=" -o StrictHostKeyChecking=yes"
+    fi
+
+    echo "$opts"
+}
+
 # =============================================================================
 # Fonctions de logging (T002)
 # =============================================================================
@@ -122,10 +203,9 @@ ssh_exec() {
         return 0
     fi
 
-    # Options SSH: accepter les nouvelles cles automatiquement (homelab)
-    ssh -o StrictHostKeyChecking=accept-new \
-        -o LogLevel=ERROR \
-        "root@${node}" "${command}"
+    # Options SSH securisees avec known_hosts dedie
+    # shellcheck disable=SC2046
+    ssh $(get_ssh_opts) "root@${node}" "${command}"
 }
 
 check_ssh_access() {
@@ -133,10 +213,19 @@ check_ssh_access() {
 
     log_info "Verification de l'acces SSH vers ${node}..."
 
-    if ! retry_with_backoff 3 ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new \
+    # Verifier si l'hote est connu, sinon suggerer l'initialisation
+    if [[ ! -f "$HOMELAB_KNOWN_HOSTS" ]] || ! is_host_known "$node"; then
+        log_warn "Hote ${node} non trouve dans ${HOMELAB_KNOWN_HOSTS}"
+        log_warn "Executez: init_known_hosts '${node}' pour ajouter la cle SSH"
+        log_warn "Ou exportez SSH_INIT_MODE=true pour accepter la cle automatiquement"
+    fi
+
+    # shellcheck disable=SC2046
+    if ! retry_with_backoff 3 ssh -o ConnectTimeout=5 $(get_ssh_opts) \
          "root@${node}" "exit" &>/dev/null; then
         log_error "Impossible de se connecter en SSH a ${node} apres 3 tentatives"
         log_error "Verifiez que la cle SSH est configuree et que le noeud est accessible"
+        log_error "Si c'est une nouvelle machine, initialisez known_hosts: init_known_hosts '${node}'"
         return 1
     fi
 
@@ -180,9 +269,8 @@ ssh_exec_retry() {
         return 0
     fi
 
-    retry_with_backoff 3 ssh -o StrictHostKeyChecking=accept-new \
-        -o LogLevel=ERROR \
-        "root@${node}" "${command}"
+    # shellcheck disable=SC2046
+    retry_with_backoff 3 ssh $(get_ssh_opts) "root@${node}" "${command}"
 }
 
 # =============================================================================

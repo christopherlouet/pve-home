@@ -2,19 +2,21 @@ version: "3.8"
 
 services:
   prometheus:
-    image: prom/prometheus:v2.50.1
+    image: prom/prometheus:v3.5.1
     container_name: prometheus
     restart: unless-stopped
     user: "65534:65534"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/alerts/:/etc/prometheus/alerts/:ro
+      - ./prometheus/recording/:/etc/prometheus/recording/:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=${retention_days}d'
       - '--storage.tsdb.retention.size=${retention_size}'
+      - '--storage.tsdb.wal-compression'
       - '--web.enable-lifecycle'
       - '--web.enable-admin-api'
       - '--web.external-url=http://${monitoring_ip}:9090'
@@ -24,7 +26,7 @@ services:
       - monitoring
 
   grafana:
-    image: grafana/grafana:11.0.0
+    image: grafana/grafana:12.1.1
     container_name: grafana
     restart: unless-stopped
     user: "472:472"
@@ -49,7 +51,7 @@ services:
 
 %{ if telegram_enabled }
   alertmanager:
-    image: prom/alertmanager:v0.27.0
+    image: prom/alertmanager:v0.30.1
     container_name: alertmanager
     restart: unless-stopped
     volumes:
@@ -77,7 +79,7 @@ services:
       - monitoring
 
   node-exporter:
-    image: prom/node-exporter:v1.8.2
+    image: prom/node-exporter:v1.10.2
     container_name: node-exporter
     restart: unless-stopped
     command:

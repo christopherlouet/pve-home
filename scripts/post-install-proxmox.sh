@@ -47,6 +47,9 @@ TERRAFORM_TOKEN=""
 PROMETHEUS_TOKEN=""
 NEEDS_REBOOT=false
 
+# Repertoire securise pour les tokens (chmod 700)
+TOKENS_DIR="/root/.pve-tokens"
+
 # =============================================================================
 # Couleurs et fonctions de log
 # =============================================================================
@@ -454,16 +457,21 @@ create_terraform_user() {
     TERRAFORM_TOKEN=$(echo "$token_output" | grep -oP '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 
     log_success "Utilisateur terraform@pve cree"
-    echo ""
-    echo "$token_output"
-    echo ""
+
     if [[ -n "$TERRAFORM_TOKEN" ]]; then
-        log_info "Token complet : terraform@pve!terraform-token=${TERRAFORM_TOKEN}"
+        # Sauvegarder le token dans un fichier securise (ne pas logger en clair)
+        mkdir -p "$TOKENS_DIR"
+        chmod 700 "$TOKENS_DIR"
+        local token_file="${TOKENS_DIR}/terraform.token"
+        echo "terraform@pve!terraform-token=${TERRAFORM_TOKEN}" > "$token_file"
+        chmod 600 "$token_file"
+        log_success "Token Terraform sauvegarde dans ${token_file} (chmod 600)"
+        log_info "Utilisez: cat ${token_file}"
     else
-        log_warn "Impossible d'extraire le token automatiquement. Copiez-le depuis la sortie ci-dessus."
+        log_warn "Impossible d'extraire le token automatiquement."
+        log_warn "Sortie de la commande pveum:"
+        echo "$token_output"
     fi
-    echo ""
-    log_warn "IMPORTANT : Notez ce token, il ne sera plus affichable ensuite !"
     echo ""
 }
 
@@ -504,16 +512,21 @@ create_prometheus_user() {
     PROMETHEUS_TOKEN=$(echo "$token_output" | grep -oP '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 
     log_success "Utilisateur prometheus@pve cree"
-    echo ""
-    echo "$token_output"
-    echo ""
+
     if [[ -n "$PROMETHEUS_TOKEN" ]]; then
-        log_info "Token complet : prometheus@pve!prometheus=${PROMETHEUS_TOKEN}"
+        # Sauvegarder le token dans un fichier securise (ne pas logger en clair)
+        mkdir -p "$TOKENS_DIR"
+        chmod 700 "$TOKENS_DIR"
+        local token_file="${TOKENS_DIR}/prometheus.token"
+        echo "prometheus@pve!prometheus=${PROMETHEUS_TOKEN}" > "$token_file"
+        chmod 600 "$token_file"
+        log_success "Token Prometheus sauvegarde dans ${token_file} (chmod 600)"
+        log_info "Utilisez: cat ${token_file}"
     else
-        log_warn "Impossible d'extraire le token automatiquement. Copiez-le depuis la sortie ci-dessus."
+        log_warn "Impossible d'extraire le token automatiquement."
+        log_warn "Sortie de la commande pveum:"
+        echo "$token_output"
     fi
-    echo ""
-    log_warn "IMPORTANT : Notez ce token, il ne sera plus affichable ensuite !"
     echo ""
 }
 
@@ -703,17 +716,23 @@ show_summary() {
     echo ""
 
     if [[ -n "$TERRAFORM_TOKEN" ]]; then
-        echo "  Token Terraform :      terraform@pve!terraform-token=${TERRAFORM_TOKEN}"
+        echo "  Token Terraform :      ${TOKENS_DIR}/terraform.token"
     else
         echo "  Token Terraform :      (deja existant ou etape ignoree)"
     fi
 
     if [[ -n "$PROMETHEUS_TOKEN" ]]; then
-        echo "  Token Prometheus :     prometheus@pve!prometheus=${PROMETHEUS_TOKEN}"
+        echo "  Token Prometheus :     ${TOKENS_DIR}/prometheus.token"
     elif [[ "$NO_PROMETHEUS" == true ]]; then
         echo "  Token Prometheus :     (non configure, --no-prometheus)"
     else
         echo "  Token Prometheus :     (deja existant ou etape ignoree)"
+    fi
+
+    if [[ -d "$TOKENS_DIR" ]]; then
+        echo ""
+        echo "  Pour afficher les tokens : ls -la ${TOKENS_DIR}/"
+        echo "  Exemple: cat ${TOKENS_DIR}/terraform.token"
     fi
 
     echo ""

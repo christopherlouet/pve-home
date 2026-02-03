@@ -271,3 +271,91 @@ teardown() {
     func_def=$(declare -f check_ssh_access)
     [[ "$func_def" == *"retry_with_backoff"* ]]
 }
+
+# =============================================================================
+# Tests securite SSH - known_hosts et StrictHostKeyChecking
+# =============================================================================
+
+@test "HOMELAB_KNOWN_HOSTS est defini avec valeur par defaut" {
+    [ -n "$HOMELAB_KNOWN_HOSTS" ]
+    [[ "$HOMELAB_KNOWN_HOSTS" == *"homelab_known_hosts"* ]]
+}
+
+@test "SSH_INIT_MODE est defini avec valeur false par defaut" {
+    [ "$SSH_INIT_MODE" = "false" ]
+}
+
+@test "init_known_hosts existe comme fonction" {
+    declare -f init_known_hosts > /dev/null
+}
+
+@test "init_known_hosts requiert au moins un hote" {
+    run init_known_hosts
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"au moins un hote requis"* ]]
+}
+
+@test "is_host_known existe comme fonction" {
+    declare -f is_host_known > /dev/null
+}
+
+@test "is_host_known retourne 1 si fichier known_hosts n'existe pas" {
+    local old_known_hosts="$HOMELAB_KNOWN_HOSTS"
+    HOMELAB_KNOWN_HOSTS="/fichier/inexistant/known_hosts"
+    run is_host_known "192.168.1.1"
+    [ "$status" -eq 1 ]
+    HOMELAB_KNOWN_HOSTS="$old_known_hosts"
+}
+
+@test "get_ssh_opts existe comme fonction" {
+    declare -f get_ssh_opts > /dev/null
+}
+
+@test "get_ssh_opts retourne StrictHostKeyChecking=yes en mode normal" {
+    SSH_INIT_MODE=false
+    run get_ssh_opts
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"StrictHostKeyChecking=yes"* ]]
+    [[ "$output" == *"UserKnownHostsFile="* ]]
+}
+
+@test "get_ssh_opts retourne StrictHostKeyChecking=accept-new en mode init" {
+    SSH_INIT_MODE=true
+    run get_ssh_opts
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"StrictHostKeyChecking=accept-new"* ]]
+    SSH_INIT_MODE=false
+}
+
+@test "get_ssh_opts inclut le fichier known_hosts dedie" {
+    run get_ssh_opts
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"UserKnownHostsFile=${HOMELAB_KNOWN_HOSTS}"* ]]
+}
+
+@test "ssh_exec utilise get_ssh_opts" {
+    local func_def
+    func_def=$(declare -f ssh_exec)
+    [[ "$func_def" == *"get_ssh_opts"* ]]
+}
+
+@test "ssh_exec_retry utilise get_ssh_opts" {
+    local func_def
+    func_def=$(declare -f ssh_exec_retry)
+    [[ "$func_def" == *"get_ssh_opts"* ]]
+}
+
+@test "check_ssh_access utilise get_ssh_opts" {
+    local func_def
+    func_def=$(declare -f check_ssh_access)
+    [[ "$func_def" == *"get_ssh_opts"* ]]
+}
+
+@test "common.sh n'utilise pas StrictHostKeyChecking hardcode dans les fonctions SSH" {
+    # Verifier qu'il n'y a pas de StrictHostKeyChecking hardcode (sauf dans get_ssh_opts)
+    # On compte les occurrences hors de get_ssh_opts
+    local hardcoded_count
+    hardcoded_count=$(grep -c "StrictHostKeyChecking=" "${SCRIPT_DIR}/common.sh" | head -1)
+    # Il devrait y avoir exactement 2 occurrences dans get_ssh_opts (yes et accept-new)
+    [ "$hardcoded_count" -eq 2 ]
+}

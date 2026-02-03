@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-02-03
+
+### Added
+- **SSH security hardening** with dedicated known_hosts file
+  - New `HOMELAB_KNOWN_HOSTS` file at `~/.ssh/homelab_known_hosts`
+  - `init_known_hosts()` function for first-time setup with `ssh-keyscan`
+  - `is_host_known()` validation before SSH connections
+  - `get_ssh_opts()` centralized SSH options with `StrictHostKeyChecking=yes`
+  - All scripts updated to use secure SSH pattern (deploy, health-check, rebuild-monitoring, rotate-ssh-keys)
+- **Prometheus recording rules** (`prometheus/recording/aggregations.yml`)
+  - CPU, RAM, disk, network aggregations for improved query performance
+  - Proxmox-specific aggregations (VM count, storage usage, uptime)
+- **Test suite for lifecycle scripts** (59 new tests)
+  - `test_cleanup_snapshots.bats`: 27 tests covering date parsing, JSON handling, dry-run mode
+  - `test_expire_lab.bats`: 32 tests covering tag parsing, expiration logic, security
+- **Test suite for post-install-proxmox.sh** (55 new tests)
+  - Coverage for CLI options, PVE version detection, token security
+  - Validation of fail2ban config, Terraform roles, VM template creation
+- **14 new tests for SSH security** in `test_common.bats`
+
+### Changed
+- **Token security**: tokens saved to secure files (`/root/.pve-tokens/`) instead of logging in plaintext
+  - Terraform token: `~/.pve-tokens/terraform.token` (chmod 600)
+  - Prometheus token: `~/.pve-tokens/prometheus.token` (chmod 600)
+  - Token directory created with chmod 700
+
+### Security
+- SSH connections now use `StrictHostKeyChecking=yes` (was `accept-new`)
+- Dedicated known_hosts file prevents host key pollution
+- API tokens no longer exposed in logs
+
+### Dependencies
+- Bumped `bpg/proxmox` from 0.93 to **0.94**
+- Bumped `prom/prometheus` from v2.50.1 to **v3.5.1**
+- Bumped `grafana/grafana` from 11.0.0 to **12.1.1**
+- Bumped `prom/alertmanager` from v0.27.0 to **v0.30.1**
+- Bumped `prom/node-exporter` from v1.8.2 to **v1.10.2**
+
 ## [1.2.0] - 2026-02-03
 
 ### Added

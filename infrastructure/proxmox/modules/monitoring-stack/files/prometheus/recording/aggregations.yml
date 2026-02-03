@@ -1,0 +1,154 @@
+# =============================================================================
+# Prometheus Recording Rules
+# =============================================================================
+# Pre-calcule les metriques frequemment utilisees pour ameliorer les performances
+# des dashboards Grafana et reduire la charge CPU de Prometheus.
+#
+# Gain estime: 30-50% reduction CPU, dashboards 2-3x plus rapides
+# =============================================================================
+
+groups:
+  # ---------------------------------------------------------------------------
+  # Node Exporter - Agregations systeme
+  # ---------------------------------------------------------------------------
+  - name: node_recording_rules
+    interval: 15s
+    rules:
+      # CPU usage par instance (utilise partout dans les dashboards)
+      - record: instance:node_cpu_utilization:ratio
+        expr: |
+          1 - avg by(instance) (
+            irate(node_cpu_seconds_total{mode="idle"}[5m])
+          )
+
+      # RAM usage par instance (MemAvailable pour Linux moderne)
+      - record: instance:node_memory_utilization:ratio
+        expr: |
+          1 - (
+            node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes
+          )
+
+      # RAM usage absolue en bytes
+      - record: instance:node_memory_used:bytes
+        expr: |
+          node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes
+
+      # Disk usage par device (exclut tmpfs et overlay)
+      - record: instance:node_filesystem_utilization:ratio
+        expr: |
+          1 - (
+            node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"}
+            /
+            node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs"}
+          )
+
+      # Network throughput total par instance (transmit)
+      - record: instance:node_network_transmit_bytes:rate5m
+        expr: |
+          sum by(instance) (
+            rate(node_network_transmit_bytes_total{device!~"lo|veth.*|docker.*|br-.*"}[5m])
+          )
+
+      # Network throughput total par instance (receive)
+      - record: instance:node_network_receive_bytes:rate5m
+        expr: |
+          sum by(instance) (
+            rate(node_network_receive_bytes_total{device!~"lo|veth.*|docker.*|br-.*"}[5m])
+          )
+
+      # Load average normalise par CPU
+      - record: instance:node_load1_per_cpu:ratio
+        expr: |
+          node_load1 / count by(instance) (node_cpu_seconds_total{mode="idle"})
+
+      # Disk I/O time (saturation)
+      - record: instance:node_disk_io_utilization:ratio
+        expr: |
+          rate(node_disk_io_time_seconds_total[5m])
+
+  # ---------------------------------------------------------------------------
+  # Proxmox VE - Agregations cluster
+  # ---------------------------------------------------------------------------
+  - name: pve_recording_rules
+    interval: 30s
+    rules:
+      # Total VMs running par node
+      - record: node:pve_vms_running:count
+        expr: |
+          count by(node) (
+            pve_guest_info{status="running", type="qemu"}
+          )
+
+      # Total containers running par node
+      - record: node:pve_lxc_running:count
+        expr: |
+          count by(node) (
+            pve_guest_info{status="running", type="lxc"}
+          )
+
+      # CPU utilisation moyenne par node Proxmox
+      - record: node:pve_cpu_usage:ratio
+        expr: |
+          avg by(node) (pve_cpu_usage_ratio)
+
+      # RAM utilisation par node Proxmox
+      - record: node:pve_memory_usage:ratio
+        expr: |
+          pve_memory_usage_bytes / pve_memory_size_bytes
+
+      # Storage utilization par storage
+      - record: storage:pve_storage_utilization:ratio
+        expr: |
+          pve_disk_usage_bytes{id=~"storage/.*"}
+          /
+          pve_disk_size_bytes{id=~"storage/.*"}
+
+      # Total guests (VMs + LXC) par node
+      - record: node:pve_guests_total:count
+        expr: |
+          count by(node) (pve_guest_info)
+
+  # ---------------------------------------------------------------------------
+  # Monitoring Stack - Sante interne
+  # ---------------------------------------------------------------------------
+  - name: monitoring_recording_rules
+    interval: 30s
+    rules:
+      # Targets up ratio (pour alerting)
+      - record: job:prometheus_targets_up:ratio
+        expr: |
+          sum by(job) (up) / count by(job) (up)
+
+      # Scrape duration moyenne par job
+      - record: job:prometheus_scrape_duration:avg
+        expr: |
+          avg by(job) (scrape_duration_seconds)
+
+      # Samples scraped par seconde
+      - record: instance:prometheus_samples_scraped:rate5m
+        expr: |
+          rate(prometheus_tsdb_head_samples_appended_total[5m])
+
+  # ---------------------------------------------------------------------------
+  # Capacite Planning - Projections
+  # ---------------------------------------------------------------------------
+  - name: capacity_recording_rules
+    interval: 5m
+    rules:
+      # Projection disque plein dans N jours (basee sur croissance 7j)
+      - record: instance:node_filesystem_days_until_full:prediction
+        expr: |
+          (
+            node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"}
+            /
+            clamp_min(
+              predict_linear(node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"}[7d], 0)
+              - node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"},
+              1
+            )
+          ) * -1
+
+      # Croissance RAM sur 24h
+      - record: instance:node_memory_growth:rate24h
+        expr: |
+          delta(node_memory_MemAvailable_bytes[24h])

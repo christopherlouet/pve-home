@@ -66,13 +66,19 @@ teardown() {
 # Tests configuration SSH
 # =============================================================================
 
-@test "deploy.sh utilise StrictHostKeyChecking=accept-new" {
-    run grep -q "StrictHostKeyChecking=accept-new" "$DEPLOY_SCRIPT"
+@test "deploy.sh utilise get_ssh_opts pour les options SSH securisees" {
+    run grep -q "get_ssh_opts" "$DEPLOY_SCRIPT"
     [ "$status" -eq 0 ]
 }
 
 @test "deploy.sh n'utilise pas StrictHostKeyChecking=no" {
     run grep "StrictHostKeyChecking=no" "$DEPLOY_SCRIPT"
+    [ "$status" -ne 0 ]
+}
+
+@test "deploy.sh n'utilise pas StrictHostKeyChecking en dur" {
+    # Verifier qu'il n'y a pas de StrictHostKeyChecking hardcode (sauf dans les commentaires)
+    run grep -E "^\s*[^#].*-o\s+StrictHostKeyChecking=" "$DEPLOY_SCRIPT"
     [ "$status" -ne 0 ]
 }
 

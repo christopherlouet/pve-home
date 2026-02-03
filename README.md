@@ -359,7 +359,7 @@ Les tests Terraform sont executes en CI via le job `terraform-test` dans `.githu
 - Ne jamais commiter de tokens ou cles SSH
 - Scans automatiques en CI : [Gitleaks](https://github.com/gitleaks/gitleaks) (secrets), [tfsec](https://github.com/aquasecurity/tfsec) (Terraform), [Checkov](https://www.checkov.io/) (policy-as-code), [Trivy](https://trivy.dev/) (IaC misconfigurations)
 - Resultats SARIF uploades dans l'onglet Security de GitHub
-- SSH hardening : `StrictHostKeyChecking=accept-new` sur tous les scripts, persistence des known hosts
+- SSH hardening : Fichier `known_hosts` dédié (`~/.ssh/homelab_known_hosts`) avec `StrictHostKeyChecking=yes` par défaut. Mode init disponible via `SSH_INIT_MODE=true` pour les nouveaux hôtes
 - Credentials Minio passes via variable d'environnement `MC_HOST_local` (evite l'exposition dans la liste des processus)
 
 ## Licence
