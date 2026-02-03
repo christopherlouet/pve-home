@@ -211,6 +211,11 @@ EOT
         content     = file("${path.module}/files/prometheus/alerts/default.yml")
       },
       {
+        path        = "/opt/monitoring/prometheus/recording/aggregations.yml"
+        permissions = "0644"
+        content     = file("${path.module}/files/prometheus/recording/aggregations.yml")
+      },
+      {
         path        = "/opt/monitoring/pve-exporter/pve.yml"
         permissions = "0644"
         content     = local.pve_exporter_config

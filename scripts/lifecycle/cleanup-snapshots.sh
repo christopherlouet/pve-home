@@ -103,7 +103,7 @@ cleanup_snapshots() {
     log_info "Nettoyage des snapshots de plus de ${MAX_AGE_DAYS} jours..."
 
     local cutoff_date
-    cutoff_date=$(date -d "-${MAX_AGE_DAYS} days" +%Y%m%d 2>/dev/null || date -v-${MAX_AGE_DAYS}d +%Y%m%d 2>/dev/null || echo "")
+    cutoff_date=$(date -d "-${MAX_AGE_DAYS} days" +%Y%m%d 2>/dev/null || date -v-"${MAX_AGE_DAYS}"d +%Y%m%d 2>/dev/null || echo "")
 
     if [[ -z "$cutoff_date" ]]; then
         log_error "Impossible de calculer la date limite"

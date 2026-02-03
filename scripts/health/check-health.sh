@@ -211,8 +211,8 @@ check_ssh() {
         return 0
     fi
 
-    if ssh -o ConnectTimeout="${TIMEOUT}" -o StrictHostKeyChecking=accept-new \
-           -o LogLevel=ERROR \
+    # shellcheck disable=SC2046
+    if ssh -o ConnectTimeout="${TIMEOUT}" $(get_ssh_opts) \
            "${SSH_USER}@${ip}" "exit" &>/dev/null; then
         return 0
     else
@@ -244,8 +244,8 @@ check_docker_service() {
     fi
 
     local result
-    result=$(ssh -o ConnectTimeout="${TIMEOUT}" -o StrictHostKeyChecking=accept-new \
-                 -o LogLevel=ERROR \
+    # shellcheck disable=SC2046
+    result=$(ssh -o ConnectTimeout="${TIMEOUT}" $(get_ssh_opts) \
                  "${SSH_USER}@${ip}" "systemctl is-active docker" 2>/dev/null || echo "inactive")
 
     [[ "$result" == "active" ]]
