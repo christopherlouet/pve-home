@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-03
+
+### Added
+- **Alerting Overview Grafana dashboard** (`alerting-overview.json`)
+  - Real-time alert counters by severity (Critical, Warning, Info)
+  - Active alerts table with links to Prometheus
+  - Collapsible sections: Distribution, Timeline, Alerts by Category, Meta-Monitoring
+  - Top 10 most frequent alerts visualization
+  - Alert duration tracking (longest, average)
+  - Prometheus/Alertmanager health monitoring panels
+  - Quick links to Prometheus, Alertmanager, and Silences
+- Dashboard provisioning in monitoring-stack module (`main.tf`)
+
+### Fixed
+- ProxmoxNodeDown alert false positives on template VMs (`qemu/9000`)
+  - Changed expression from `pve_up == 0` to `pve_up{id=~"node/.*"} == 0`
+
 ## [1.1.3] - 2026-02-03
 
 ### Added
