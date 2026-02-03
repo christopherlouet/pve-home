@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-02-03
+
+### Added
+- Telegram alerting configuration guide (`docs/ALERTING.md`)
+  - Step-by-step bot creation with @BotFather
+  - Chat ID retrieval for private chats and groups
+  - Terraform configuration examples
+  - Manual testing procedures (curl, Alertmanager API)
+  - Troubleshooting section for common issues
+  - Security best practices for bot tokens
+
+### Changed
+- README: add ALERTING.md to documentation table and project structure
+- README: reference alerting guide in Monitoring & Alertes section
+
 ## [1.1.2] - 2026-02-03
 
 ### Added

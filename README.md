@@ -54,6 +54,7 @@ pve-home/
 │   ├── DISASTER-RECOVERY.md
 │   ├── DRIFT-DETECTION.md
 │   ├── HEALTH-CHECKS.md
+│   ├── ALERTING.md
 │   └── VM-LIFECYCLE.md
 ├── scripts/
 │   ├── lib/                     # Bibliotheque commune (common.sh)
@@ -95,6 +96,7 @@ terraform apply
 | [Disaster Recovery](docs/DISASTER-RECOVERY.md) | Runbook pas-à-pas pour reconstruction complète après défaillance majeure |
 | [Détection de drift](docs/DRIFT-DETECTION.md) | Détection automatique des dérives Terraform avec métriques Prometheus |
 | [Health Checks](docs/HEALTH-CHECKS.md) | Vérification de santé de l'infrastructure (VMs, monitoring, Minio) |
+| [Alertes Telegram](docs/ALERTING.md) | Configuration des notifications Telegram (création bot, chat_id, troubleshooting) |
 | [Cycle de vie VMs](docs/VM-LIFECYCLE.md) | Snapshots, expiration, mises à jour de sécurité, rotation SSH |
 | [Index des scripts](scripts/README.md) | Index complet de tous les scripts d'opération |
 
@@ -253,7 +255,7 @@ Les dashboards sont stockés dans `infrastructure/proxmox/modules/monitoring-sta
 
 Les alertes sont configurées dans `infrastructure/proxmox/modules/monitoring-stack/files/prometheus/alerts/default.yml`.
 
-Voir [environments/monitoring/terraform.tfvars.example](infrastructure/proxmox/environments/monitoring/terraform.tfvars.example) pour la configuration.
+Voir [environments/monitoring/terraform.tfvars.example](infrastructure/proxmox/environments/monitoring/terraform.tfvars.example) pour la configuration et [docs/ALERTING.md](docs/ALERTING.md) pour le guide de configuration Telegram.
 
 ## Modules Terraform
 
