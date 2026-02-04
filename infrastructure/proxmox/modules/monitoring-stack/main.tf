@@ -87,11 +87,11 @@ locals {
 
   # Configuration Prometheus
   prometheus_config = templatefile("${path.module}/files/prometheus.yml.tpl", {
-    proxmox_nodes          = var.proxmox_nodes
-    scrape_targets         = local.all_scrape_targets
-    monitoring_ip          = var.ip_address
-    alertmanager_enabled   = var.telegram_enabled
-    custom_scrape_configs  = var.custom_scrape_configs
+    proxmox_nodes         = var.proxmox_nodes
+    scrape_targets        = local.all_scrape_targets
+    monitoring_ip         = var.ip_address
+    alertmanager_enabled  = var.telegram_enabled
+    custom_scrape_configs = var.custom_scrape_configs
   })
 
   # Dashboards Grafana

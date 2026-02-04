@@ -42,8 +42,10 @@ No modules.
 | <a name="input_expiration_days"></a> [expiration\_days](#input\_expiration\_days) | Nombre de jours avant expiration de la VM (null = pas d'expiration) | `number` | `null` | no |
 | <a name="input_gateway"></a> [gateway](#input\_gateway) | Passerelle par défaut | `string` | n/a | yes |
 | <a name="input_install_docker"></a> [install\_docker](#input\_install\_docker) | Installer Docker via cloud-init | `bool` | `false` | no |
+| <a name="input_install_promtail"></a> [install\_promtail](#input\_install\_promtail) | Installer Promtail pour envoyer les logs vers Loki | `bool` | `false` | no |
 | <a name="input_install_qemu_agent"></a> [install\_qemu\_agent](#input\_install\_qemu\_agent) | Installer QEMU Guest Agent via cloud-init | `bool` | `true` | no |
 | <a name="input_ip_address"></a> [ip\_address](#input\_ip\_address) | Adresse IP en notation CIDR (ex: 192.168.1.10/24) | `string` | n/a | yes |
+| <a name="input_loki_url"></a> [loki\_url](#input\_loki\_url) | URL du serveur Loki (ex: http://192.168.1.51:3100) | `string` | `""` | no |
 | <a name="input_memory_mb"></a> [memory\_mb](#input\_memory\_mb) | RAM en MB | `number` | `2048` | no |
 | <a name="input_name"></a> [name](#input\_name) | Nom de la VM | `string` | n/a | yes |
 | <a name="input_network_bridge"></a> [network\_bridge](#input\_network\_bridge) | Bridge réseau | `string` | `"vmbr0"` | no |
