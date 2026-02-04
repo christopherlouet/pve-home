@@ -245,11 +245,15 @@ run "monitoring_creates_ssh_keypair" {
 }
 
 # -----------------------------------------------------------------------------
-# Outputs
+# Outputs (sans Traefik)
 # -----------------------------------------------------------------------------
 
-run "monitoring_outputs" {
+run "monitoring_outputs_without_traefik" {
   command = plan
+
+  variables {
+    traefik_enabled = false
+  }
 
   assert {
     condition     = output.ip_address == "192.168.1.50"
@@ -263,17 +267,70 @@ run "monitoring_outputs" {
 
   assert {
     condition     = output.urls.prometheus == "http://192.168.1.50:9090"
-    error_message = "Prometheus URL should be correct"
+    error_message = "Prometheus URL should be correct (without Traefik)"
   }
 
   assert {
     condition     = output.urls.grafana == "http://192.168.1.50:3000"
-    error_message = "Grafana URL should be correct"
+    error_message = "Grafana URL should be correct (without Traefik)"
   }
 
   assert {
     condition     = output.urls.alertmanager == "http://192.168.1.50:9093"
-    error_message = "Alertmanager URL should be correct"
+    error_message = "Alertmanager URL should be correct (without Traefik)"
+  }
+
+  assert {
+    condition     = output.traefik_enabled == false
+    error_message = "traefik_enabled should be false"
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Outputs (avec Traefik)
+# -----------------------------------------------------------------------------
+
+run "monitoring_outputs_with_traefik" {
+  command = plan
+
+  variables {
+    traefik_enabled = true
+    domain_suffix   = "home.lan"
+  }
+
+  assert {
+    condition     = output.ip_address == "192.168.1.50"
+    error_message = "Output ip_address should be 192.168.1.50"
+  }
+
+  assert {
+    condition     = output.urls.prometheus == "http://prometheus.home.lan"
+    error_message = "Prometheus URL should use domain with Traefik"
+  }
+
+  assert {
+    condition     = output.urls.grafana == "http://grafana.home.lan"
+    error_message = "Grafana URL should use domain with Traefik"
+  }
+
+  assert {
+    condition     = output.urls.alertmanager == "http://alertmanager.home.lan"
+    error_message = "Alertmanager URL should use domain with Traefik"
+  }
+
+  assert {
+    condition     = output.urls.traefik == "http://traefik.home.lan"
+    error_message = "Traefik URL should be present when enabled"
+  }
+
+  assert {
+    condition     = output.traefik_enabled == true
+    error_message = "traefik_enabled should be true"
+  }
+
+  assert {
+    condition     = output.domain_suffix == "home.lan"
+    error_message = "domain_suffix should be home.lan"
   }
 }
 

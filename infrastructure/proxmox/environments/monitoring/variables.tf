@@ -104,3 +104,13 @@ variable "remote_targets" {
   }))
   default = []
 }
+
+# -----------------------------------------------------------------------------
+# Custom Prometheus Scrape Configs
+# -----------------------------------------------------------------------------
+
+variable "custom_scrape_configs" {
+  description = "Configurations scrape Prometheus personnalisees (YAML brut pour configs avancees)"
+  type        = string
+  default     = ""
+}

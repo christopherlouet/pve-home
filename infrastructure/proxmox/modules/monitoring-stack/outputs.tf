@@ -24,11 +24,54 @@ output "node_name" {
 
 output "urls" {
   description = "URLs des services monitoring"
-  value = {
-    prometheus   = "http://${var.ip_address}:9090"
-    grafana      = "http://${var.ip_address}:3000"
-    alertmanager = "http://${var.ip_address}:9093"
-  }
+  value = var.traefik_enabled ? merge(
+    {
+      grafana      = "http://grafana.${var.domain_suffix}"
+      prometheus   = "http://prometheus.${var.domain_suffix}"
+      alertmanager = "http://alertmanager.${var.domain_suffix}"
+      traefik      = "http://traefik.${var.domain_suffix}"
+    },
+    var.loki_enabled ? { loki = "http://loki.${var.domain_suffix}" } : {},
+    var.uptime_kuma_enabled ? { uptime = "http://uptime.${var.domain_suffix}" } : {}
+    ) : merge(
+    {
+      prometheus   = "http://${var.ip_address}:9090"
+      grafana      = "http://${var.ip_address}:3000"
+      alertmanager = "http://${var.ip_address}:9093"
+    },
+    var.loki_enabled ? { loki = "http://${var.ip_address}:3100" } : {},
+    var.uptime_kuma_enabled ? { uptime = "http://${var.ip_address}:3001" } : {}
+  )
+}
+
+output "traefik_enabled" {
+  description = "Indique si Traefik est active"
+  value       = var.traefik_enabled
+}
+
+output "loki_enabled" {
+  description = "Indique si Loki est active"
+  value       = var.loki_enabled
+}
+
+output "loki_url" {
+  description = "URL du serveur Loki pour les agents Promtail distants"
+  value       = var.loki_enabled ? "http://${var.ip_address}:3100" : ""
+}
+
+output "uptime_kuma_enabled" {
+  description = "Indique si Uptime Kuma est active"
+  value       = var.uptime_kuma_enabled
+}
+
+output "uptime_kuma_url" {
+  description = "URL du serveur Uptime Kuma"
+  value       = var.uptime_kuma_enabled ? "http://${var.ip_address}:3001" : ""
+}
+
+output "domain_suffix" {
+  description = "Suffixe de domaine utilise pour les URLs"
+  value       = var.domain_suffix
 }
 
 output "ssh_command" {

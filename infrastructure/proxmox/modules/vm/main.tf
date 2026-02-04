@@ -42,6 +42,79 @@ locals {
     "systemctl enable --now unattended-upgrades"
   ] : []
 
+  # Promtail enabled check
+  promtail_enabled = var.install_promtail && var.loki_url != ""
+
+  # Promtail configuration
+  promtail_config = local.promtail_enabled ? templatefile("${path.module}/files/promtail-agent.yml.tpl", {
+    loki_url    = var.loki_url
+    hostname    = var.name
+    environment = length(var.tags) > 0 ? var.tags[0] : "default"
+  }) : ""
+
+  # Promtail installation script (defined separately to avoid heredoc in ternary)
+  promtail_install_script_content = <<-EOT
+#!/bin/bash
+set -e
+
+echo "=== Installing Promtail ==="
+
+# Create directories
+mkdir -p /var/lib/promtail
+mkdir -p /etc/promtail
+
+# Download Promtail binary
+PROMTAIL_VERSION="3.5.0"
+curl -fsSL -o /tmp/promtail.zip "https://github.com/grafana/loki/releases/download/v$${PROMTAIL_VERSION}/promtail-linux-amd64.zip"
+unzip -o /tmp/promtail.zip -d /tmp
+mv /tmp/promtail-linux-amd64 /usr/local/bin/promtail
+chmod +x /usr/local/bin/promtail
+rm /tmp/promtail.zip
+
+# Create systemd service
+cat > /etc/systemd/system/promtail.service << 'SERVICE'
+[Unit]
+Description=Promtail Log Collector
+Documentation=https://grafana.com/docs/loki/latest/clients/promtail/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/promtail -config.file=/etc/promtail/config.yml
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+# Enable and start Promtail
+systemctl daemon-reload
+systemctl enable promtail
+systemctl start promtail
+
+echo "=== Promtail installed and started ==="
+EOT
+
+  promtail_packages = local.promtail_enabled ? ["unzip"] : []
+
+  promtail_runcmd = local.promtail_enabled ? ["/opt/install-promtail.sh"] : []
+
+  promtail_write_files = local.promtail_enabled ? [
+    {
+      path        = "/etc/promtail/config.yml"
+      permissions = "0644"
+      content     = local.promtail_config
+    },
+    {
+      path        = "/opt/install-promtail.sh"
+      permissions = "0755"
+      content     = local.promtail_install_script_content
+    }
+  ] : []
+
   # Tag d'expiration pour le lifecycle management
   expiration_tag = var.expiration_days != null ? ["expires:${formatdate("YYYY-MM-DD", timeadd(timestamp(), "${var.expiration_days * 24}h"))}"] : []
 
@@ -57,13 +130,14 @@ locals {
     ]
     package_update  = true
     package_upgrade = false
-    packages        = concat(local.all_packages, local.security_updates_packages)
-    runcmd          = concat(local.docker_runcmd, local.qemu_agent_runcmd, local.security_updates_runcmd)
+    packages        = concat(local.all_packages, local.security_updates_packages, local.promtail_packages)
+    write_files     = local.promtail_write_files
+    runcmd          = concat(local.docker_runcmd, local.qemu_agent_runcmd, local.security_updates_runcmd, local.promtail_runcmd)
   }
 }
 
 resource "proxmox_virtual_environment_file" "cloud_config" {
-  count = var.install_docker || var.install_qemu_agent || var.auto_security_updates || length(var.additional_packages) > 0 ? 1 : 0
+  count = var.install_docker || var.install_qemu_agent || var.auto_security_updates || length(var.additional_packages) > 0 || local.promtail_enabled ? 1 : 0
 
   content_type = "snippets"
   datastore_id = "local"

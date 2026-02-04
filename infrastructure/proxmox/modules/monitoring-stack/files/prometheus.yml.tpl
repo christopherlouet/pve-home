@@ -75,3 +75,10 @@ scrape_configs:
         labels:
           instance: 'monitoring-stack'
           role: 'monitoring'
+
+%{ if custom_scrape_configs != "" }
+  # -------------------------------------------------------------------------
+  # Custom Scrape Configurations (injected via Terraform)
+  # -------------------------------------------------------------------------
+${custom_scrape_configs}
+%{ endif }

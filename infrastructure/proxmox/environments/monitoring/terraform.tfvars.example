@@ -183,3 +183,36 @@ remote_targets = [
   #   }
   # },
 ]
+
+# -----------------------------------------------------------------------------
+# Custom Prometheus Scrape Configs (optionnel)
+# -----------------------------------------------------------------------------
+# Pour les configs avancees (relabel_configs, blackbox, metrics_path, params)
+# Utiliser YAML inline avec heredoc:
+#
+# custom_scrape_configs = <<-YAML
+#   - job_name: 'my-app-node'
+#     static_configs:
+#       - targets: ['192.168.1.101:9100']
+#         labels:
+#           app: 'my-app'
+#     relabel_configs:
+#       - source_labels: [__address__]
+#         target_label: instance
+#         replacement: 'my-app'
+#
+#   - job_name: 'my-app-blackbox'
+#     metrics_path: /probe
+#     params:
+#       module: [http_2xx]
+#     static_configs:
+#       - targets: ['http://192.168.1.101/health']
+#     relabel_configs:
+#       - source_labels: [__address__]
+#         target_label: __param_target
+#       - target_label: __address__
+#         replacement: '192.168.1.101:9115'
+# YAML
+# -----------------------------------------------------------------------------
+
+custom_scrape_configs = ""

@@ -350,4 +350,67 @@ run "defaults_are_applied" {
     condition     = var.username == "ubuntu"
     error_message = "Default username should be ubuntu"
   }
+
+  # Promtail defaults
+  assert {
+    condition     = var.install_promtail == false
+    error_message = "Default install_promtail should be false"
+  }
+
+  assert {
+    condition     = var.loki_url == ""
+    error_message = "Default loki_url should be empty string"
+  }
+}
+
+# -----------------------------------------------------------------------------
+# loki_url validation (valid URL or empty)
+# -----------------------------------------------------------------------------
+
+run "loki_url_valid_http" {
+  command = plan
+
+  variables {
+    loki_url = "http://192.168.1.51:3100"
+  }
+}
+
+run "loki_url_valid_https" {
+  command = plan
+
+  variables {
+    loki_url = "https://loki.home.lan:3100"
+  }
+}
+
+run "loki_url_valid_empty" {
+  command = plan
+
+  variables {
+    loki_url = ""
+  }
+}
+
+run "loki_url_invalid_no_protocol" {
+  command = plan
+
+  variables {
+    loki_url = "192.168.1.51:3100"
+  }
+
+  expect_failures = [
+    var.loki_url,
+  ]
+}
+
+run "loki_url_invalid_ftp" {
+  command = plan
+
+  variables {
+    loki_url = "ftp://192.168.1.51:3100"
+  }
+
+  expect_failures = [
+    var.loki_url,
+  ]
 }
