@@ -95,12 +95,16 @@ locals {
   })
 
   # Dashboards Grafana
-  dashboard_node_exporter     = file("${path.module}/files/grafana/dashboards/node-exporter.json")
-  dashboard_pve_exporter      = file("${path.module}/files/grafana/dashboards/pve-exporter.json")
-  dashboard_prometheus        = file("${path.module}/files/grafana/dashboards/prometheus.json")
-  dashboard_nodes_overview    = file("${path.module}/files/grafana/dashboards/nodes-overview.json")
-  dashboard_backup_overview   = file("${path.module}/files/grafana/dashboards/backup-overview.json")
-  dashboard_alerting_overview = file("${path.module}/files/grafana/dashboards/alerting-overview.json")
+  dashboard_node_exporter        = file("${path.module}/files/grafana/dashboards/node-exporter.json")
+  dashboard_pve_exporter         = file("${path.module}/files/grafana/dashboards/pve-exporter.json")
+  dashboard_prometheus           = file("${path.module}/files/grafana/dashboards/prometheus.json")
+  dashboard_nodes_overview       = file("${path.module}/files/grafana/dashboards/nodes-overview.json")
+  dashboard_backup_overview      = file("${path.module}/files/grafana/dashboards/backup-overview.json")
+  dashboard_alerting_overview    = file("${path.module}/files/grafana/dashboards/alerting-overview.json")
+  dashboard_application_overview = file("${path.module}/files/grafana/dashboards/application-overview.json")
+  dashboard_http_probes          = file("${path.module}/files/grafana/dashboards/http-probes.json")
+  dashboard_postgresql           = file("${path.module}/files/grafana/dashboards/postgresql.json")
+  dashboard_docker_containers    = file("${path.module}/files/grafana/dashboards/docker-containers.json")
 
   # Configuration Alertmanager
   alertmanager_config = templatefile("${path.module}/files/alertmanager.yml.tpl", {
@@ -117,7 +121,7 @@ set -e
 echo "=== Configuration Stack Monitoring ==="
 
 # Creer les repertoires
-mkdir -p /opt/monitoring/{prometheus,alertmanager,grafana/provisioning/{datasources,dashboards},grafana/dashboards,pve-exporter}
+mkdir -p /opt/monitoring/{prometheus,alertmanager,grafana/provisioning/{datasources,dashboards},grafana/dashboards/{infrastructure,observability,applications},pve-exporter}
 mkdir -p /opt/monitoring/prometheus/data
 mkdir -p /opt/monitoring/grafana/data
 %{if var.traefik_enabled}
@@ -201,24 +205,40 @@ cat > /opt/monitoring/grafana/provisioning/datasources/loki.yml << 'LOKIDATASOUR
 ${local.grafana_datasource_loki}
 LOKIDATASOURCE
 
-# Dashboard Logs Overview
-cat > /opt/monitoring/grafana/dashboards/logs-overview.json << 'LOGSDASHBOARD'
+# Dashboard Logs Overview (Observability folder)
+cat > /opt/monitoring/grafana/dashboards/observability/logs-overview.json << 'LOGSDASHBOARD'
 ${local.dashboard_logs_overview}
 LOGSDASHBOARD
 %{endif}
 
-# Grafana dashboard provisioning
+# Grafana dashboard provisioning with folders
 cat > /opt/monitoring/grafana/provisioning/dashboards/default.yml << 'DASHPROV'
 apiVersion: 1
 providers:
-  - name: 'default'
+  - name: 'Infrastructure'
     orgId: 1
-    folder: ''
+    folder: 'Infrastructure'
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30
     options:
-      path: /var/lib/grafana/dashboards
+      path: /var/lib/grafana/dashboards/infrastructure
+  - name: 'Observability'
+    orgId: 1
+    folder: 'Observability'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards/observability
+  - name: 'Applications'
+    orgId: 1
+    folder: 'Applications'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards/applications
 DASHPROV
 
 # Demarrer la stack
@@ -275,35 +295,58 @@ EOT
         permissions = "0755"
         content     = local.monitoring_setup_script
       },
+      # Infrastructure dashboards
       {
-        path        = "/opt/monitoring/grafana/dashboards/node-exporter.json"
+        path        = "/opt/monitoring/grafana/dashboards/infrastructure/node-exporter.json"
         permissions = "0644"
         content     = local.dashboard_node_exporter
       },
       {
-        path        = "/opt/monitoring/grafana/dashboards/pve-exporter.json"
+        path        = "/opt/monitoring/grafana/dashboards/infrastructure/pve-exporter.json"
         permissions = "0644"
         content     = local.dashboard_pve_exporter
       },
       {
-        path        = "/opt/monitoring/grafana/dashboards/prometheus.json"
+        path        = "/opt/monitoring/grafana/dashboards/infrastructure/prometheus.json"
         permissions = "0644"
         content     = local.dashboard_prometheus
       },
       {
-        path        = "/opt/monitoring/grafana/dashboards/nodes-overview.json"
+        path        = "/opt/monitoring/grafana/dashboards/infrastructure/nodes-overview.json"
         permissions = "0644"
         content     = local.dashboard_nodes_overview
       },
+      # Observability dashboards
       {
-        path        = "/opt/monitoring/grafana/dashboards/backup-overview.json"
+        path        = "/opt/monitoring/grafana/dashboards/observability/backup-overview.json"
         permissions = "0644"
         content     = local.dashboard_backup_overview
       },
       {
-        path        = "/opt/monitoring/grafana/dashboards/alerting-overview.json"
+        path        = "/opt/monitoring/grafana/dashboards/observability/alerting-overview.json"
         permissions = "0644"
         content     = local.dashboard_alerting_overview
+      },
+      # Applications dashboards
+      {
+        path        = "/opt/monitoring/grafana/dashboards/applications/application-overview.json"
+        permissions = "0644"
+        content     = local.dashboard_application_overview
+      },
+      {
+        path        = "/opt/monitoring/grafana/dashboards/applications/http-probes.json"
+        permissions = "0644"
+        content     = local.dashboard_http_probes
+      },
+      {
+        path        = "/opt/monitoring/grafana/dashboards/applications/postgresql.json"
+        permissions = "0644"
+        content     = local.dashboard_postgresql
+      },
+      {
+        path        = "/opt/monitoring/grafana/dashboards/applications/docker-containers.json"
+        permissions = "0644"
+        content     = local.dashboard_docker_containers
       },
       {
         path        = "/opt/monitoring/prometheus/alerts/default.yml"
