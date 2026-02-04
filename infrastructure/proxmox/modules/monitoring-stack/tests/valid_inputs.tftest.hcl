@@ -596,3 +596,30 @@ run "loki_retention_days_invalid_too_high" {
     var.loki_retention_days,
   ]
 }
+
+# -----------------------------------------------------------------------------
+# custom_scrape_configs validation
+# -----------------------------------------------------------------------------
+
+run "custom_scrape_configs_empty_default" {
+  command = plan
+
+  assert {
+    condition     = var.custom_scrape_configs == ""
+    error_message = "Default custom_scrape_configs should be empty"
+  }
+}
+
+run "custom_scrape_configs_with_content" {
+  command = plan
+
+  variables {
+    custom_scrape_configs = <<-YAML
+  - job_name: 'custom-app'
+    static_configs:
+      - targets: ['192.168.1.101:9100']
+        labels:
+          app: 'test'
+YAML
+  }
+}

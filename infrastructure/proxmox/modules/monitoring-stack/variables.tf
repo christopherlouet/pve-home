@@ -213,6 +213,12 @@ variable "prometheus_retention_size" {
   }
 }
 
+variable "custom_scrape_configs" {
+  description = "Configurations scrape Prometheus personnalisees (YAML brut, sans indentation)"
+  type        = string
+  default     = ""
+}
+
 # -----------------------------------------------------------------------------
 # Grafana Configuration
 # -----------------------------------------------------------------------------

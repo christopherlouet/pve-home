@@ -76,6 +76,15 @@ terraform.rc
 tests/**/.terraform.lock.hcl
 
 # =============================================================================
+# Prometheus - Fichiers de configuration externes
+# =============================================================================
+
+# Configurations Prometheus spécifiques à l'environnement
+# (contiennent des IPs internes, endpoints, etc.)
+prometheus-*.yml
+!**/files/prometheus.yml.tpl
+
+# =============================================================================
 # Secrets et credentials
 # =============================================================================
 

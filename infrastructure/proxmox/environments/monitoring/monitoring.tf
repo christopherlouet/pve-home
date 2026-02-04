@@ -40,6 +40,7 @@ module "monitoring" {
   # Prometheus
   prometheus_retention_days = var.monitoring.retention_days
   prometheus_retention_size = "${var.monitoring.vm.data_disk - 10}GB"
+  custom_scrape_configs     = var.custom_scrape_configs
 
   # Grafana
   grafana_admin_password = var.monitoring.grafana_admin_password

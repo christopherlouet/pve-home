@@ -2,6 +2,54 @@
 
 Module Terraform pour deployer une stack de monitoring (Prometheus, Grafana, Alertmanager) sur Proxmox VE.
 
+## Fonctionnalités
+
+- **Prometheus** : Collecte de métriques avec alertes
+- **Grafana** : Visualisation avec dashboards pré-configurés
+- **Alertmanager** : Notifications Telegram
+- **PVE Exporter** : Métriques Proxmox
+- **Traefik** : Reverse proxy (optionnel)
+- **Loki** : Centralisation des logs (optionnel)
+- **Uptime Kuma** : Surveillance de disponibilité (optionnel)
+
+## Configuration Prometheus personnalisée
+
+Pour ajouter des scrape configs avancés (relabel_configs, blackbox, etc.), utiliser la variable `custom_scrape_configs` avec du YAML inline :
+
+```hcl
+custom_scrape_configs = <<-YAML
+  - job_name: 'mon-app-node-exporter'
+    static_configs:
+      - targets: ['192.168.1.101:9100']
+        labels:
+          app: 'mon-app'
+          env: 'staging'
+
+  - job_name: 'mon-app-postgres'
+    static_configs:
+      - targets: ['192.168.1.101:9187']
+        labels:
+          app: 'mon-app'
+
+  - job_name: 'blackbox-http'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - https://mon-app.example.com
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 192.168.1.101:9115
+YAML
+```
+
+> **Note** : Le YAML doit être indenté avec 2 espaces et commencer au niveau des jobs (tiret `-`).
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
