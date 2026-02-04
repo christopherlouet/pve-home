@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-02-04
+
+### Changed
+- **Docker Containers dashboard** enhanced with new features
+  - Added **Top Consumers** section with horizontal bar gauges for CPU and Memory
+  - Added **Avg Memory % of Limit** stat in Overview section
+  - Enhanced **All Containers** table:
+    - New Memory % column with color thresholds (green/orange/red)
+    - New Uptime column showing container uptime
+    - Conditional coloring for CPU % and Mem % columns
+  - Changed CPU rate window from 1m to 5m for more reliable metrics
+  - Cleaned up table to show only essential columns (removed redundant labels)
+
 ## [1.4.0] - 2026-02-04
 
 ### Added
