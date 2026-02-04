@@ -91,7 +91,7 @@ locals {
     scrape_targets        = local.all_scrape_targets
     monitoring_ip         = var.ip_address
     alertmanager_enabled  = var.telegram_enabled
-    custom_scrape_configs = var.custom_scrape_configs
+    custom_scrape_configs = var.custom_scrape_configs != "" ? indent(2, var.custom_scrape_configs) : ""
   })
 
   # Dashboards Grafana
