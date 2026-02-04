@@ -262,6 +262,64 @@ variable "backup_alerting_enabled" {
 }
 
 # -----------------------------------------------------------------------------
+# Traefik Configuration (Reverse Proxy)
+# -----------------------------------------------------------------------------
+
+variable "traefik_enabled" {
+  description = "Activer Traefik comme reverse proxy pour les services"
+  type        = bool
+  default     = true
+}
+
+variable "domain_suffix" {
+  description = "Suffixe de domaine pour les URLs locales (ex: home.lan)"
+  type        = string
+  default     = "home.lan"
+
+  validation {
+    condition     = can(regex("^[a-z0-9][a-z0-9.-]*[a-z0-9]$", var.domain_suffix))
+    error_message = "domain_suffix doit etre un nom de domaine valide (ex: home.lan, homelab.local)."
+  }
+}
+
+variable "tls_enabled" {
+  description = "Activer HTTPS avec certificats auto-signes locaux"
+  type        = bool
+  default     = false
+}
+
+# -----------------------------------------------------------------------------
+# Loki Configuration (Log Aggregation)
+# -----------------------------------------------------------------------------
+
+variable "loki_enabled" {
+  description = "Activer Loki pour la centralisation des logs"
+  type        = bool
+  default     = true
+}
+
+variable "loki_retention_days" {
+  description = "Duree de retention des logs en jours"
+  type        = number
+  default     = 7
+
+  validation {
+    condition     = var.loki_retention_days >= 1 && var.loki_retention_days <= 90
+    error_message = "loki_retention_days doit etre entre 1 et 90."
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Uptime Kuma Configuration (Status Page)
+# -----------------------------------------------------------------------------
+
+variable "uptime_kuma_enabled" {
+  description = "Activer Uptime Kuma pour la surveillance de disponibilite"
+  type        = bool
+  default     = true
+}
+
+# -----------------------------------------------------------------------------
 # Tags
 # -----------------------------------------------------------------------------
 

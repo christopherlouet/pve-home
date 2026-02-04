@@ -83,6 +83,30 @@ resource "proxmox_virtual_environment_firewall_rules" "monitoring" {
     type    = "in"
     action  = "ACCEPT"
     proto   = "tcp"
+    dport   = "80"
+    comment = "HTTP (Traefik)"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "443"
+    comment = "HTTPS (Traefik)"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "8080"
+    comment = "Traefik Dashboard"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
     dport   = "3000"
     comment = "Grafana"
   }
@@ -117,6 +141,30 @@ resource "proxmox_virtual_environment_firewall_rules" "monitoring" {
     proto   = "tcp"
     dport   = "9221"
     comment = "PVE Exporter"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "3100"
+    comment = "Loki API"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "9080"
+    comment = "Promtail"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "3001"
+    comment = "Uptime Kuma"
   }
 
   rule {

@@ -1,0 +1,2 @@
+# Promtail configuration files
+# - promtail-config.yml.tpl: Local Promtail agent configuration

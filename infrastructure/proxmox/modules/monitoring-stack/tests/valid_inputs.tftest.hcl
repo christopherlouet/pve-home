@@ -456,4 +456,143 @@ run "defaults_are_applied" {
     condition     = var.username == "ubuntu"
     error_message = "Default username should be ubuntu"
   }
+
+  # New observability tools defaults
+  assert {
+    condition     = var.traefik_enabled == true
+    error_message = "Default traefik_enabled should be true"
+  }
+
+  assert {
+    condition     = var.loki_enabled == true
+    error_message = "Default loki_enabled should be true"
+  }
+
+  assert {
+    condition     = var.uptime_kuma_enabled == true
+    error_message = "Default uptime_kuma_enabled should be true"
+  }
+
+  assert {
+    condition     = var.domain_suffix == "home.lan"
+    error_message = "Default domain_suffix should be home.lan"
+  }
+
+  assert {
+    condition     = var.loki_retention_days == 7
+    error_message = "Default loki_retention_days should be 7"
+  }
+
+  assert {
+    condition     = var.tls_enabled == false
+    error_message = "Default tls_enabled should be false"
+  }
+}
+
+# -----------------------------------------------------------------------------
+# domain_suffix validation (valid domain name)
+# -----------------------------------------------------------------------------
+
+run "domain_suffix_valid_simple" {
+  command = plan
+
+  variables {
+    domain_suffix = "home.lan"
+  }
+}
+
+run "domain_suffix_valid_subdomain" {
+  command = plan
+
+  variables {
+    domain_suffix = "homelab.local"
+  }
+}
+
+run "domain_suffix_valid_longer" {
+  command = plan
+
+  variables {
+    domain_suffix = "my.home.network"
+  }
+}
+
+run "domain_suffix_invalid_starts_with_dot" {
+  command = plan
+
+  variables {
+    domain_suffix = ".home.lan"
+  }
+
+  expect_failures = [
+    var.domain_suffix,
+  ]
+}
+
+run "domain_suffix_invalid_ends_with_dot" {
+  command = plan
+
+  variables {
+    domain_suffix = "home.lan."
+  }
+
+  expect_failures = [
+    var.domain_suffix,
+  ]
+}
+
+run "domain_suffix_invalid_uppercase" {
+  command = plan
+
+  variables {
+    domain_suffix = "HOME.LAN"
+  }
+
+  expect_failures = [
+    var.domain_suffix,
+  ]
+}
+
+# -----------------------------------------------------------------------------
+# loki_retention_days validation (1-90)
+# -----------------------------------------------------------------------------
+
+run "loki_retention_days_valid_minimum" {
+  command = plan
+
+  variables {
+    loki_retention_days = 1
+  }
+}
+
+run "loki_retention_days_valid_maximum" {
+  command = plan
+
+  variables {
+    loki_retention_days = 90
+  }
+}
+
+run "loki_retention_days_invalid_zero" {
+  command = plan
+
+  variables {
+    loki_retention_days = 0
+  }
+
+  expect_failures = [
+    var.loki_retention_days,
+  ]
+}
+
+run "loki_retention_days_invalid_too_high" {
+  command = plan
+
+  variables {
+    loki_retention_days = 91
+  }
+
+  expect_failures = [
+    var.loki_retention_days,
+  ]
 }

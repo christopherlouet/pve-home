@@ -190,3 +190,24 @@ variable "expiration_days" {
     error_message = "expiration_days doit etre > 0 ou null."
   }
 }
+
+# -----------------------------------------------------------------------------
+# Promtail Configuration (Log Collection Agent)
+# -----------------------------------------------------------------------------
+
+variable "install_promtail" {
+  description = "Installer Promtail pour envoyer les logs vers Loki"
+  type        = bool
+  default     = false
+}
+
+variable "loki_url" {
+  description = "URL du serveur Loki (ex: http://192.168.1.51:3100)"
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.loki_url == "" ? true : can(regex("^https?://", var.loki_url))
+    error_message = "loki_url doit etre une URL valide commencant par http:// ou https://."
+  }
+}

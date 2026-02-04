@@ -6,6 +6,9 @@
 # - Grafana (visualisation)
 # - Alertmanager (alertes Telegram)
 # - PVE Exporter (metriques Proxmox)
+# - Traefik (reverse proxy) - optionnel
+# - Loki (centralisation logs) - optionnel
+# - Uptime Kuma (surveillance disponibilite) - optionnel
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -34,7 +37,43 @@ locals {
     telegram_enabled       = var.telegram_enabled
     retention_days         = var.prometheus_retention_days
     retention_size         = var.prometheus_retention_size
+    # Traefik
+    traefik_enabled = var.traefik_enabled
+    domain_suffix   = var.domain_suffix
+    tls_enabled     = var.tls_enabled
+    # Loki
+    loki_enabled = var.loki_enabled
+    # Uptime Kuma
+    uptime_kuma_enabled = var.uptime_kuma_enabled
   })
+
+  # Configuration Traefik (static)
+  traefik_static_config = var.traefik_enabled ? templatefile("${path.module}/files/traefik/traefik.yml.tpl", {
+    tls_enabled = var.tls_enabled
+  }) : ""
+
+  # Configuration Traefik (dynamic routes)
+  traefik_dynamic_config = var.traefik_enabled ? templatefile("${path.module}/files/traefik/dynamic.yml.tpl", {
+    domain_suffix        = var.domain_suffix
+    tls_enabled          = var.tls_enabled
+    alertmanager_enabled = var.telegram_enabled
+    loki_enabled         = var.loki_enabled
+    uptime_kuma_enabled  = var.uptime_kuma_enabled
+  }) : ""
+
+  # Configuration Loki
+  loki_config = var.loki_enabled ? file("${path.module}/files/loki/loki-config.yml") : ""
+
+  # Configuration Promtail (local)
+  promtail_config = var.loki_enabled ? templatefile("${path.module}/files/promtail/promtail-config.yml.tpl", {
+    hostname = local.vm_name
+  }) : ""
+
+  # Datasource Loki pour Grafana
+  grafana_datasource_loki = var.loki_enabled ? file("${path.module}/files/grafana/provisioning/datasources/loki.yml") : ""
+
+  # Dashboard Logs Overview
+  dashboard_logs_overview = var.loki_enabled ? file("${path.module}/files/grafana/dashboards/logs-overview.json") : ""
 
   # Configuration PVE Exporter (un module par node)
   pve_exporter_config = yamlencode({
@@ -80,6 +119,16 @@ echo "=== Configuration Stack Monitoring ==="
 mkdir -p /opt/monitoring/{prometheus,alertmanager,grafana/provisioning/{datasources,dashboards},grafana/dashboards,pve-exporter}
 mkdir -p /opt/monitoring/prometheus/data
 mkdir -p /opt/monitoring/grafana/data
+%{if var.traefik_enabled}
+mkdir -p /opt/monitoring/traefik
+%{if var.tls_enabled}
+mkdir -p /opt/monitoring/traefik/certs
+%{endif}
+%{endif}
+%{if var.loki_enabled}
+mkdir -p /opt/monitoring/loki/{chunks,rules,wal,compactor}
+mkdir -p /opt/monitoring/promtail
+%{endif}
 
 # Permissions pour Prometheus (user 65534 = nobody)
 chown -R 65534:65534 /opt/monitoring/prometheus/data
@@ -87,6 +136,11 @@ chown -R 65534:65534 /opt/monitoring/prometheus/data
 # Permissions pour Grafana (user 472)
 chown -R 472:472 /opt/monitoring/grafana/data
 chown -R 472:472 /opt/monitoring/grafana/dashboards
+
+%{if var.loki_enabled}
+# Permissions pour Loki (user 10001)
+chown -R 10001:10001 /opt/monitoring/loki
+%{endif}
 
 # Docker Compose
 cat > /opt/monitoring/docker-compose.yml << 'COMPOSE'
@@ -103,6 +157,30 @@ cat > /opt/monitoring/alertmanager/alertmanager.yml << 'ALERTCONFIG'
 ${local.alertmanager_config}
 ALERTCONFIG
 
+%{if var.traefik_enabled}
+# Traefik static config
+cat > /opt/monitoring/traefik/traefik.yml << 'TRAEFIKSTATIC'
+${local.traefik_static_config}
+TRAEFIKSTATIC
+
+# Traefik dynamic config
+cat > /opt/monitoring/traefik/dynamic.yml << 'TRAEFIKDYNAMIC'
+${local.traefik_dynamic_config}
+TRAEFIKDYNAMIC
+%{endif}
+
+%{if var.loki_enabled}
+# Loki config
+cat > /opt/monitoring/loki/loki-config.yml << 'LOKICONFIG'
+${local.loki_config}
+LOKICONFIG
+
+# Promtail config
+cat > /opt/monitoring/promtail/promtail-config.yml << 'PROMTAILCONFIG'
+${local.promtail_config}
+PROMTAILCONFIG
+%{endif}
+
 # Grafana datasource provisioning
 cat > /opt/monitoring/grafana/provisioning/datasources/prometheus.yml << 'DATASOURCE'
 apiVersion: 1
@@ -115,6 +193,18 @@ datasources:
     isDefault: true
     editable: false
 DATASOURCE
+
+%{if var.loki_enabled}
+# Grafana datasource Loki
+cat > /opt/monitoring/grafana/provisioning/datasources/loki.yml << 'LOKIDATASOURCE'
+${local.grafana_datasource_loki}
+LOKIDATASOURCE
+
+# Dashboard Logs Overview
+cat > /opt/monitoring/grafana/dashboards/logs-overview.json << 'LOGSDASHBOARD'
+${local.dashboard_logs_overview}
+LOGSDASHBOARD
+%{endif}
 
 # Grafana dashboard provisioning
 cat > /opt/monitoring/grafana/provisioning/dashboards/default.yml << 'DASHPROV'
@@ -135,9 +225,18 @@ cd /opt/monitoring
 docker compose up -d
 
 echo "=== Stack Monitoring deployee ==="
+%{if var.traefik_enabled}
+echo "Traefik Dashboard: http://traefik.${var.domain_suffix}"
+echo "Grafana: http://grafana.${var.domain_suffix}"
+echo "Prometheus: http://prometheus.${var.domain_suffix}"
+echo "Alertmanager: http://alertmanager.${var.domain_suffix}"
+echo ""
+echo "Note: Configure DNS to resolve *.${var.domain_suffix} to ${var.ip_address}"
+%{else}
 echo "Prometheus: http://${var.ip_address}:9090"
 echo "Grafana: http://${var.ip_address}:3000"
 echo "Alertmanager: http://${var.ip_address}:9093"
+%{endif}
 EOT
 
   # Packages necessaires
