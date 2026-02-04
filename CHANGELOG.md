@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-02-04
+
+### Added
+- **Observability tools** for monitoring-stack module
+  - **Traefik** reverse proxy with optional TLS support
+  - **Loki** log aggregation with Promtail
+  - **Uptime Kuma** availability monitoring
+- **Custom Prometheus scrape configs** (`custom_scrape_configs` variable)
+  - Support for relabel_configs, metric_relabel_configs
+  - Blackbox exporter HTTP probes configuration
+  - Advanced scrape parameters (metrics_path, params)
+- **Application monitoring dashboards**
+  - `application-overview`: Main dashboard with health summary and drill-down links
+  - `http-probes`: Blackbox exporter metrics (latency, SSL, success rate)
+  - `postgresql`: Database metrics (connections, transactions, cache hit ratio)
+  - `docker-containers`: cAdvisor metrics (CPU, memory, network, disk I/O)
+- **Grafana folder organization** for better dashboard navigation
+  - Infrastructure: nodes-overview, node-exporter, pve-exporter, prometheus
+  - Observability: alerting-overview, backup-overview, logs-overview
+  - Applications: application-overview, http-probes, postgresql, docker-containers
+
+### Changed
+- Dashboard provisioning now uses multiple providers for folder organization
+
 ## [1.3.0] - 2026-02-03
 
 ### Added
