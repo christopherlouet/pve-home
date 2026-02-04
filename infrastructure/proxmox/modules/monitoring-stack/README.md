@@ -12,6 +12,35 @@ Module Terraform pour deployer une stack de monitoring (Prometheus, Grafana, Ale
 - **Loki** : Centralisation des logs (optionnel)
 - **Uptime Kuma** : Surveillance de disponibilité (optionnel)
 
+## Dashboards Grafana
+
+Les dashboards sont organisés en 3 dossiers pour une navigation simplifiée :
+
+### Infrastructure
+| Dashboard | Description |
+|-----------|-------------|
+| nodes-overview | Vue d'ensemble des nodes Proxmox |
+| node-exporter | Métriques système (CPU, mémoire, disque, réseau) |
+| pve-exporter | Métriques Proxmox VE (VMs, stockage, cluster) |
+| prometheus | État et performances de Prometheus |
+
+### Observability
+| Dashboard | Description |
+|-----------|-------------|
+| alerting-overview | Vue d'ensemble des alertes actives |
+| backup-overview | Supervision des sauvegardes vzdump |
+| logs-overview | Exploration des logs (si Loki activé) |
+
+### Applications
+| Dashboard | Description |
+|-----------|-------------|
+| application-overview | Vue d'ensemble par application ($app, $environment) |
+| http-probes | Métriques blackbox exporter (latence, SSL, succès) |
+| postgresql | Métriques PostgreSQL (connexions, transactions, cache) |
+| docker-containers | Métriques cAdvisor (CPU, mémoire, I/O conteneurs) |
+
+> **Note** : Les dashboards Applications utilisent les variables `$app` et `$environment` pour filtrer les métriques par application. Ajoutez ces labels dans vos scrape configs via `custom_scrape_configs`.
+
 ## Configuration Prometheus personnalisée
 
 Pour ajouter des scrape configs avancés (relabel_configs, blackbox, etc.), utiliser la variable `custom_scrape_configs` avec du YAML inline :
