@@ -8,7 +8,7 @@ Infrastructure as Code pour gérer un homelab Proxmox VE sur Intel NUC avec Terr
 - **Conteneurs LXC** : Support des conteneurs légers avec option nesting
 - **Sauvegardes automatiques** : Vzdump quotidien/hebdomadaire avec rétention configurable par environnement
 - **State Terraform sécurisé** : Backend S3 Minio avec versioning pour récupération en cas d'erreur
-- **Stack Monitoring** : Prometheus, Grafana, Alertmanager sur PVE dédié avec dashboards et alertes backup
+- **Stack Monitoring** : Prometheus, Grafana, Alertmanager, Traefik, Loki, Uptime Kuma sur PVE dédié avec dashboards et alertes
 - **Scripts de restauration** : Restauration automatisée de VMs, state Terraform et composants critiques
 - **Modules réutilisables** : Modules Terraform pour VM, LXC, backup, Minio et monitoring
 - **Détection de drift** : Vérification automatique des dérives Terraform avec métriques Prometheus
@@ -174,17 +174,32 @@ PVE Mon  (192.168.1.50)   ──┘              └─ Prometheus + Grafana + A
 
 ### Dashboards Grafana
 
-5 dashboards sont auto-provisionnés au déploiement :
+11 dashboards sont auto-provisionnés et organisés en 3 dossiers :
 
-| Dashboard | Source | Description |
-|-----------|--------|-------------|
-| **Nodes Overview** | Custom | Vue d'ensemble de tous les noeuds (CPU, RAM, Disk, Network) |
-| **Node Exporter Full** | [#1860](https://grafana.com/grafana/dashboards/1860) | Métriques détaillées par noeud (CPU, disque, réseau) |
-| **PVE Exporter** | [#10347](https://grafana.com/grafana/dashboards/10347) | VMs, LXC, stockage, statut par node Proxmox |
-| **Backup Overview** | Custom | Supervision des sauvegardes (espace, alertes, statut) |
-| **Prometheus** | [#3662](https://grafana.com/grafana/dashboards/3662) | Self-monitoring (targets, règles, samples) |
+#### Infrastructure
+| Dashboard | Description |
+|-----------|-------------|
+| **Nodes Overview** | Vue d'ensemble de tous les noeuds (CPU, RAM, Disk, Network) |
+| **Node Exporter** | Métriques détaillées par noeud (CPU, disque, réseau) |
+| **PVE Exporter** | VMs, LXC, stockage, statut par node Proxmox |
+| **Prometheus** | Self-monitoring (targets, règles, samples) |
 
-Les dashboards sont stockés dans `infrastructure/proxmox/modules/monitoring-stack/files/grafana/dashboards/` et déployés via le provisioning Grafana.
+#### Observability
+| Dashboard | Description |
+|-----------|-------------|
+| **Alerting Overview** | Vue d'ensemble des alertes actives et historique |
+| **Backup Overview** | Supervision des sauvegardes (espace, alertes, statut) |
+| **Logs Overview** | Exploration des logs centralisés (si Loki activé) |
+
+#### Applications
+| Dashboard | Description |
+|-----------|-------------|
+| **Application Overview** | Vue d'ensemble par application avec drill-down |
+| **HTTP Probes** | Métriques blackbox exporter (latence, SSL, succès) |
+| **PostgreSQL** | Métriques base de données (connexions, transactions, cache) |
+| **Docker Containers** | Métriques cAdvisor (CPU, mémoire, I/O conteneurs) |
+
+Les dashboards sont stockés dans `infrastructure/proxmox/modules/monitoring-stack/files/grafana/dashboards/` et déployés via le provisioning Grafana. Les dashboards Applications utilisent les variables `$app` et `$environment` pour filtrer par application.
 
 ### Alertes Prometheus
 
@@ -267,7 +282,7 @@ Les modules réutilisables permettent de provisionner l'infrastructure rapidemen
 | **lxc** | `modules/lxc/` | Conteneur LXC léger |
 | **backup** | `modules/backup/` | Sauvegardes automatiques vzdump avec scheduling |
 | **minio** | `modules/minio/` | Conteneur Minio S3 pour backend Terraform (versioning) |
-| **monitoring-stack** | `modules/monitoring-stack/` | Stack Prometheus + Grafana + Alertmanager |
+| **monitoring-stack** | `modules/monitoring-stack/` | Stack Prometheus + Grafana + Alertmanager + Traefik + Loki + Uptime Kuma |
 
 Documentation complète : [infrastructure/proxmox/README.md](infrastructure/proxmox/README.md)
 
