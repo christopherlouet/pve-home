@@ -8,3 +8,7 @@
 8344ddf8c832e54ea0fe8928a40da8bdd97d601b:infrastructure/proxmox/modules/minio/tests/regression.tftest.hcl:hashicorp-tf-password:19
 8344ddf8c832e54ea0fe8928a40da8bdd97d601b:infrastructure/proxmox/modules/monitoring-stack/tests/regression.tftest.hcl:hashicorp-tf-password:20
 
+# Tooling stack: test fixtures and documentation examples, not real secrets
+af0f43c56ccb1fb327972e3a9e126e3aec8c7174:infrastructure/proxmox/modules/monitoring-stack/tests/tooling.tftest.hcl:hashicorp-tf-password:22
+af0f43c56ccb1fb327972e3a9e126e3aec8c7174:docs/TOOLING-STACK.md:curl-auth-user:224
+
