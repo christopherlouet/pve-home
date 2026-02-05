@@ -116,11 +116,11 @@ locals {
 
   # Tooling Scrape Config
   tooling_scrape_config = var.tooling_enabled && var.tooling_ip != "" ? templatefile("${path.module}/files/prometheus/scrape/tooling.yml.tpl", {
-    tooling_ip         = var.tooling_ip
-    step_ca_enabled    = var.tooling_step_ca_enabled
-    harbor_enabled     = var.tooling_harbor_enabled
-    authentik_enabled  = var.tooling_authentik_enabled
-    traefik_enabled    = var.tooling_traefik_enabled
+    tooling_ip        = var.tooling_ip
+    step_ca_enabled   = var.tooling_step_ca_enabled
+    harbor_enabled    = var.tooling_harbor_enabled
+    authentik_enabled = var.tooling_authentik_enabled
+    traefik_enabled   = var.tooling_traefik_enabled
   }) : ""
 
   # Configuration Alertmanager

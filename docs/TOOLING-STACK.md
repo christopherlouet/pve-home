@@ -221,7 +221,7 @@ Trivy est activé par défaut. Les images sont scannées automatiquement après 
 open https://registry.home.arpa/harbor/projects/1/repositories/myapp
 
 # Ou via API
-curl -s -u admin:PASSWORD \
+curl -s -u "admin:$HARBOR_PASSWORD" \
     "https://registry.home.arpa/api/v2.0/projects/library/repositories/myapp/artifacts/v1/vulnerabilities"
 ```
 

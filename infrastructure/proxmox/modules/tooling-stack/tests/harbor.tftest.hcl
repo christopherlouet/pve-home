@@ -17,10 +17,10 @@ variables {
   gateway                      = "192.168.1.1"
   ssh_keys                     = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITEST test@test"]
   domain_suffix                = "home.arpa"
-  step_ca_password             = "testpassword123"             # gitleaks:allow
-  harbor_admin_password        = "Harbor12345!"                # gitleaks:allow
+  step_ca_password             = "testpassword123"               # gitleaks:allow
+  harbor_admin_password        = "Harbor12345!"                  # gitleaks:allow
   authentik_secret_key         = "testsecretkey1234567890123456" # gitleaks:allow
-  authentik_bootstrap_password = "Authentik123!"               # gitleaks:allow
+  authentik_bootstrap_password = "Authentik123!"                 # gitleaks:allow
 }
 
 # -----------------------------------------------------------------------------

@@ -13,14 +13,14 @@ mock_provider "tls" {}
 # -----------------------------------------------------------------------------
 
 variables {
-  name            = "monitoring-test"
-  target_node     = "pve1"
-  template_id     = 9000
-  ip_address      = "192.168.1.50"
-  gateway         = "192.168.1.1"
-  ssh_keys        = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExample test@test"]
-  grafana_admin_password = "test-password-123"
-  proxmox_nodes   = [
+  name                   = "monitoring-test"
+  target_node            = "pve1"
+  template_id            = 9000
+  ip_address             = "192.168.1.50"
+  gateway                = "192.168.1.1"
+  ssh_keys               = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExample test@test"]
+  grafana_admin_password = "test-password-123" # gitleaks:allow
+  proxmox_nodes = [
     {
       name        = "pve1"
       ip          = "192.168.1.10"

@@ -15,6 +15,7 @@ HARBOR_PASSWORD="${HARBOR_PASSWORD:-}"
 HARBOR_COMPOSE_DIR="${HARBOR_COMPOSE_DIR:-/data/tooling}"
 DRY_RUN=false
 DELETE_UNTAGGED=false
+GC_WORKERS=1
 
 # Colors
 RED='\033[0;31m'
@@ -125,7 +126,7 @@ trigger_gc_api() {
     "parameters": {
         "delete_untagged": $DELETE_UNTAGGED,
         "dry_run": $DRY_RUN,
-        "workers": 1
+        "workers": $GC_WORKERS
     },
     "schedule": {
         "type": "Manual"
@@ -236,7 +237,6 @@ monitor_gc() {
 
 main() {
     local use_docker=false
-    local workers=1
 
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -249,7 +249,7 @@ main() {
                 shift
                 ;;
             --workers)
-                workers="$2"
+                GC_WORKERS="$2"
                 shift 2
                 ;;
             --docker)

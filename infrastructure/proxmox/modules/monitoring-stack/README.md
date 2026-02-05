@@ -88,7 +88,7 @@ No requirements.
 
 | Name | Version |
 |------|---------|
-| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.93.1 |
+| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.94.0 |
 | <a name="provider_tls"></a> [tls](#provider\_tls) | 4.2.1 |
 
 ## Modules
@@ -135,6 +135,12 @@ No modules.
 | <a name="input_telegram_enabled"></a> [telegram\_enabled](#input\_telegram\_enabled) | Activer les notifications Telegram | `bool` | `true` | no |
 | <a name="input_template_id"></a> [template\_id](#input\_template\_id) | ID du template VM cloud-init | `number` | n/a | yes |
 | <a name="input_tls_enabled"></a> [tls\_enabled](#input\_tls\_enabled) | Activer HTTPS avec certificats auto-signes locaux | `bool` | `false` | no |
+| <a name="input_tooling_authentik_enabled"></a> [tooling\_authentik\_enabled](#input\_tooling\_authentik\_enabled) | Activer les dashboards et métriques Authentik (SSO) | `bool` | `false` | no |
+| <a name="input_tooling_enabled"></a> [tooling\_enabled](#input\_tooling\_enabled) | Activer l'intégration des dashboards et métriques du tooling stack | `bool` | `false` | no |
+| <a name="input_tooling_harbor_enabled"></a> [tooling\_harbor\_enabled](#input\_tooling\_harbor\_enabled) | Activer les dashboards et métriques Harbor (Registry) | `bool` | `false` | no |
+| <a name="input_tooling_ip"></a> [tooling\_ip](#input\_tooling\_ip) | Adresse IP de la VM tooling (sans CIDR) | `string` | `""` | no |
+| <a name="input_tooling_step_ca_enabled"></a> [tooling\_step\_ca\_enabled](#input\_tooling\_step\_ca\_enabled) | Activer les dashboards et métriques Step-ca (PKI) | `bool` | `false` | no |
+| <a name="input_tooling_traefik_enabled"></a> [tooling\_traefik\_enabled](#input\_tooling\_traefik\_enabled) | Activer les dashboards et métriques Traefik sur tooling VM | `bool` | `false` | no |
 | <a name="input_traefik_enabled"></a> [traefik\_enabled](#input\_traefik\_enabled) | Activer Traefik comme reverse proxy pour les services | `bool` | `true` | no |
 | <a name="input_uptime_kuma_enabled"></a> [uptime\_kuma\_enabled](#input\_uptime\_kuma\_enabled) | Activer Uptime Kuma pour la surveillance de disponibilite | `bool` | `true` | no |
 | <a name="input_username"></a> [username](#input\_username) | Utilisateur cloud-init | `string` | `"ubuntu"` | no |
@@ -152,6 +158,9 @@ No modules.
 | <a name="output_node_name"></a> [node\_name](#output\_node\_name) | Node Proxmox |
 | <a name="output_scrape_targets"></a> [scrape\_targets](#output\_scrape\_targets) | Liste des cibles Prometheus configurees |
 | <a name="output_ssh_command"></a> [ssh\_command](#output\_ssh\_command) | Commande SSH pour se connecter |
+| <a name="output_tooling_dashboards"></a> [tooling\_dashboards](#output\_tooling\_dashboards) | Dashboards tooling actives |
+| <a name="output_tooling_enabled"></a> [tooling\_enabled](#output\_tooling\_enabled) | Indique si l'integration tooling est activee |
+| <a name="output_tooling_scrape_config"></a> [tooling\_scrape\_config](#output\_tooling\_scrape\_config) | Configuration scrape Prometheus pour le tooling stack (a ajouter via custom\_scrape\_configs) |
 | <a name="output_traefik_enabled"></a> [traefik\_enabled](#output\_traefik\_enabled) | Indique si Traefik est active |
 | <a name="output_uptime_kuma_enabled"></a> [uptime\_kuma\_enabled](#output\_uptime\_kuma\_enabled) | Indique si Uptime Kuma est active |
 | <a name="output_uptime_kuma_url"></a> [uptime\_kuma\_url](#output\_uptime\_kuma\_url) | URL du serveur Uptime Kuma |
