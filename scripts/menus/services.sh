@@ -198,6 +198,29 @@ _check_service_in_tfvars() {
     echo "unknown"
 }
 
+# Cache des services par host (evite SSH multiples)
+declare -A _SERVICES_CACHE=()
+
+# Recupere la liste des services running d'un host (docker + systemd, avec cache)
+_get_host_services() {
+    local ssh_target="$1"
+
+    # Utiliser le cache si disponible
+    if [[ -n "${_SERVICES_CACHE[$ssh_target]:-}" ]]; then
+        echo "${_SERVICES_CACHE[$ssh_target]}"
+        return 0
+    fi
+
+    # Recuperer containers docker ET services systemd running
+    local services
+    services=$(ssh -n -o ConnectTimeout=3 -o BatchMode=yes "${ssh_target}" \
+        "{ docker ps --format '{{.Names}}' 2>/dev/null; systemctl list-units --type=service --state=running --no-legend 2>/dev/null | awk '{gsub(/\.service/,\"\"); print \$1}'; } | sort -u" 2>/dev/null || echo "")
+
+    # Mettre en cache
+    _SERVICES_CACHE[$ssh_target]="$services"
+    echo "$services"
+}
+
 # Verifie si un service est en cours d'execution
 get_service_running() {
     local service="$1"
@@ -214,17 +237,26 @@ get_service_running() {
         return 0
     fi
 
-    # Verifier via SSH (-n pour eviter de consommer stdin)
-    local status
-    status=$(ssh -n -o ConnectTimeout=5 -o BatchMode=yes "${ssh_target}" \
-        "docker ps --filter 'name=${service}' --format '{{.Status}}' 2>/dev/null || systemctl is-active ${service} 2>/dev/null" 2>/dev/null || echo "")
+    # Pour le service "monitoring", verifier si grafana OU prometheus OU loki tourne
+    local check_name="$service"
+    if [[ "$service" == "monitoring" ]]; then
+        check_name="grafana|prometheus|loki"
+    fi
 
-    if [[ "$status" == *"Up"* ]] || [[ "$status" == "active" ]]; then
-        echo "running"
-    elif [[ -n "$status" ]]; then
-        echo "stopped"
-    else
+    # Recuperer les services (docker + systemd, avec cache)
+    local services
+    services=$(_get_host_services "$ssh_target")
+
+    if [[ -z "$services" ]]; then
         echo "unknown"
+        return 0
+    fi
+
+    # Verifier si le service est dans la liste
+    if echo "$services" | grep -qE "^(${check_name})$"; then
+        echo "running"
+    else
+        echo "stopped"
     fi
 }
 
