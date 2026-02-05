@@ -22,6 +22,10 @@ TUI_HISTORY_MAX="${TUI_HISTORY_MAX:-50}"
 
 # Initialiser les raccourcis par defaut
 _init_default_keybindings() {
+    # Desactiver nounset pour les affectations de tableau associatif
+    local _old_opts=""
+    [[ -o nounset ]] && _old_opts="u" && set +u
+
     TUI_KEYBINDINGS[quit]="q"
     TUI_KEYBINDINGS[back]="b"
     TUI_KEYBINDINGS[help]="?"
@@ -37,10 +41,17 @@ _init_default_keybindings() {
     TUI_KEYBINDINGS[bottom]="G"
     TUI_KEYBINDINGS[page_up]="ctrl+u"
     TUI_KEYBINDINGS[page_down]="ctrl+d"
+
+    # Restaurer nounset si necessaire
+    [[ "$_old_opts" == "u" ]] && set -u
 }
 
 # Initialiser les touches vim
 _init_vim_keys() {
+    # Desactiver nounset pour les affectations de tableau associatif
+    local _old_opts=""
+    [[ -o nounset ]] && _old_opts="u" && set +u
+
     TUI_VIM_KEYS[up]="k"
     TUI_VIM_KEYS[down]="j"
     TUI_VIM_KEYS[left]="h"
@@ -51,6 +62,9 @@ _init_vim_keys() {
     TUI_VIM_KEYS[page_down]="ctrl+d"
     TUI_VIM_KEYS[delete]="x"
     TUI_VIM_KEYS[yank]="y"
+
+    # Restaurer nounset si necessaire
+    [[ "$_old_opts" == "u" ]] && set -u
 }
 
 # Initialiser au chargement
