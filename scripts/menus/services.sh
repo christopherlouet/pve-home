@@ -198,37 +198,44 @@ _check_service_in_tfvars() {
     echo "unknown"
 }
 
-# Cache des services par host (evite SSH multiples)
-# Format: "IP1:service1,service2;IP2:service3,service4"
-_SERVICES_CACHE_DATA=""
+# Cache fichier pour les services (persiste entre subshells)
+_SERVICES_CACHE_FILE="/tmp/.tui-services-cache"
 
-# Recupere la liste des services running d'un host (docker + systemd, avec cache)
+# Nettoie le cache au demarrage (expire apres 30s)
+_init_services_cache() {
+    if [[ -f "$_SERVICES_CACHE_FILE" ]]; then
+        local age=$(($(date +%s) - $(stat -c %Y "$_SERVICES_CACHE_FILE" 2>/dev/null || echo 0)))
+        if [[ $age -gt 30 ]]; then
+            rm -f "$_SERVICES_CACHE_FILE"
+        fi
+    fi
+}
+_init_services_cache
+
+# Recupere la liste des services running d'un host (docker + systemd, avec cache fichier)
 _get_host_services() {
     local ssh_target="$1"
-    # Extraire l'IP pour la cle du cache
     local cache_key="${ssh_target##*@}"
 
-    # Chercher dans le cache (format IP:services)
-    local cached
-    cached=$(echo "$_SERVICES_CACHE_DATA" | tr ';' '\n' | grep "^${cache_key}:" | cut -d: -f2-)
-    if [[ -n "$cached" ]]; then
-        echo "$cached" | tr ',' '\n'
-        return 0
+    # Chercher dans le cache fichier
+    if [[ -f "$_SERVICES_CACHE_FILE" ]]; then
+        local cached
+        cached=$(grep "^${cache_key}:" "$_SERVICES_CACHE_FILE" 2>/dev/null | cut -d: -f2-)
+        if [[ -n "$cached" ]]; then
+            echo "$cached" | tr ',' '\n'
+            return 0
+        fi
     fi
 
     # Recuperer containers docker ET services systemd running
     local services
-    services=$(ssh -n -o ConnectTimeout=3 -o BatchMode=yes "${ssh_target}" \
+    services=$(ssh -n -o ConnectTimeout=2 -o BatchMode=yes "${ssh_target}" \
         "{ docker ps --format '{{.Names}}' 2>/dev/null; systemctl list-units --type=service --state=running --no-legend 2>/dev/null | awk '{gsub(/\.service/,\"\"); print \$1}'; } | sort -u" 2>/dev/null || echo "")
 
-    # Mettre en cache (format IP:service1,service2)
+    # Mettre en cache fichier
     local services_csv
     services_csv=$(echo "$services" | tr '\n' ',' | sed 's/,$//')
-    if [[ -n "$_SERVICES_CACHE_DATA" ]]; then
-        _SERVICES_CACHE_DATA="${_SERVICES_CACHE_DATA};${cache_key}:${services_csv}"
-    else
-        _SERVICES_CACHE_DATA="${cache_key}:${services_csv}"
-    fi
+    echo "${cache_key}:${services_csv}" >> "$_SERVICES_CACHE_FILE"
 
     echo "$services"
 }
@@ -236,6 +243,14 @@ _get_host_services() {
 # Verifie si un service est en cours d'execution
 get_service_running() {
     local service="$1"
+
+    # Services config-only : pas de check running (retour immediat)
+    case "$service" in
+        backup|telegram|harbor)
+            echo "unknown"
+            return 0
+            ;;
+    esac
 
     # Auto-detection du host si MONITORING_HOST non defini
     local ssh_target="${MONITORING_HOST:-}"
