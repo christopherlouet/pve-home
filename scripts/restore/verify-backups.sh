@@ -594,7 +594,7 @@ main() {
         log_info "Mode FULL active: verification complete (vzdump + Minio + connectivite + jobs)"
     fi
 
-    # Verification des prerequis (SSH et jq obligatoires, mc uniquement si verification Minio)
+    # Verification des prerequis (SSH et jq obligatoires)
     local missing=()
     for cmd in "ssh" "jq"; do
         if ! check_command "$cmd"; then
@@ -602,15 +602,18 @@ main() {
         fi
     done
 
-    # mc est necessaire uniquement si on verifie Minio (et pas en dry-run)
-    if [[ "$DRY_RUN" != true ]] && ! check_command "mc"; then
-        missing+=("mc")
-    fi
-
     if [[ ${#missing[@]} -gt 0 ]]; then
         log_error "Outils manquants: ${missing[*]}"
         log_error "Installez les prerequis avant de continuer"
         exit 2
+    fi
+
+    # mc est optionnel - on skip la verification Minio si absent
+    local MC_AVAILABLE=true
+    if [[ "$DRY_RUN" != true ]] && ! check_command "mc"; then
+        log_warn "mc (Minio Client) non installe - verification Minio desactivee"
+        log_info "Pour installer: https://min.io/docs/minio/linux/reference/minio-mc.html"
+        MC_AVAILABLE=false
     fi
 
     # Detection du noeud
@@ -619,8 +622,12 @@ main() {
     # Verification vzdump
     verify_vzdump_backups
 
-    # Verification Minio
-    verify_minio_states
+    # Verification Minio (seulement si mc est disponible)
+    if [[ "$MC_AVAILABLE" == true ]]; then
+        verify_minio_states
+    else
+        log_info "=== Verification Minio skippee (mc non disponible) ==="
+    fi
 
     # Mode full: verifications supplementaires
     if [[ "$FULL_MODE" == true ]]; then
