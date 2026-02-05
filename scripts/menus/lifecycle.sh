@@ -655,6 +655,283 @@ menu_snapshots() {
     done
 }
 
+# =============================================================================
+# Gestion des cles SSH (US9)
+# =============================================================================
+
+# Fichier known_hosts dedie au homelab
+LIFECYCLE_KNOWN_HOSTS="${HOMELAB_KNOWN_HOSTS:-${HOME}/.ssh/homelab_known_hosts}"
+
+# Liste les hotes connus
+list_known_hosts() {
+    if [[ ! -f "$LIFECYCLE_KNOWN_HOSTS" ]]; then
+        tui_log_warn "Fichier known_hosts non trouve: ${LIFECYCLE_KNOWN_HOSTS}"
+        return 0
+    fi
+
+    local count
+    count=$(wc -l < "$LIFECYCLE_KNOWN_HOSTS" 2>/dev/null) || count=0
+
+    tui_log_info "Fichier: ${LIFECYCLE_KNOWN_HOSTS}"
+    tui_log_info "Nombre d'entrees: ${count}"
+    echo ""
+
+    # Afficher les hotes (les IPs sont hashees, donc on montre juste le nombre)
+    if [[ "$count" -gt 0 ]]; then
+        echo -e "${TUI_COLOR_INFO}Entrees (hashees pour securite):${TUI_COLOR_NC}"
+        head -5 "$LIFECYCLE_KNOWN_HOSTS" | while read -r line; do
+            echo "  ${line:0:60}..."
+        done
+        if [[ "$count" -gt 5 ]]; then
+            echo "  ... et $((count - 5)) autres entrees"
+        fi
+    fi
+}
+
+# Decouvre les hotes depuis les tfvars
+discover_hosts_from_tfvars() {
+    local hosts=()
+    local envs_dir="${TUI_PROJECT_ROOT}/infrastructure/proxmox/environments"
+
+    for env_dir in "$envs_dir"/*/; do
+        local tfvars="${env_dir}terraform.tfvars"
+        if [[ -f "$tfvars" ]]; then
+            # Extraire proxmox_endpoint
+            local endpoint
+            endpoint=$(grep -E "^proxmox_endpoint\s*=" "$tfvars" 2>/dev/null | sed 's/.*"\([^"]*\)".*/\1/' | head -1) || true
+            if [[ -n "$endpoint" ]]; then
+                local ip
+                ip=$(echo "$endpoint" | sed -E 's|https?://([0-9.]+).*|\1|') || true
+                if [[ -n "$ip" ]] && [[ ! " ${hosts[*]} " =~ " ${ip} " ]]; then
+                    hosts+=("$ip")
+                fi
+            fi
+
+            # Extraire les IPs des VMs
+            local vm_ips
+            vm_ips=$(grep -oP 'ip\s*=\s*"\K[0-9.]+' "$tfvars" 2>/dev/null | sort -u) || true
+            for ip in $vm_ips; do
+                if [[ -n "$ip" ]] && [[ ! " ${hosts[*]} " =~ " ${ip} " ]]; then
+                    hosts+=("$ip")
+                fi
+            done
+        fi
+    done
+
+    printf '%s\n' "${hosts[@]}"
+}
+
+# Ajoute un hote au known_hosts
+add_host_to_known_hosts() {
+    local host="$1"
+
+    if [[ -z "$host" ]]; then
+        tui_log_error "Hote non specifie"
+        return 0
+    fi
+
+    mkdir -p "$(dirname "$LIFECYCLE_KNOWN_HOSTS")"
+
+    tui_log_info "Scan de la cle SSH pour ${host}..."
+
+    if ssh-keyscan -H "$host" >> "$LIFECYCLE_KNOWN_HOSTS" 2>/dev/null; then
+        sort -u "$LIFECYCLE_KNOWN_HOSTS" -o "$LIFECYCLE_KNOWN_HOSTS"
+        tui_log_success "Cle ajoutee pour ${host}"
+    else
+        tui_log_error "Impossible de scanner ${host} (hote inaccessible?)"
+    fi
+}
+
+# Supprime toutes les entrees pour un hote
+remove_host_from_known_hosts() {
+    local host="$1"
+
+    if [[ -z "$host" ]]; then
+        tui_log_error "Hote non specifie"
+        return 0
+    fi
+
+    if [[ ! -f "$LIFECYCLE_KNOWN_HOSTS" ]]; then
+        tui_log_warn "Fichier known_hosts non trouve"
+        return 0
+    fi
+
+    if ssh-keygen -R "$host" -f "$LIFECYCLE_KNOWN_HOSTS" &>/dev/null; then
+        tui_log_success "Entrees supprimees pour ${host}"
+    else
+        tui_log_warn "Aucune entree trouvee pour ${host}"
+    fi
+}
+
+# Teste la connectivite SSH vers un hote
+test_host_connectivity() {
+    local host="$1"
+    local user="${2:-root}"
+
+    tui_log_info "Test SSH vers ${user}@${host}..."
+
+    if ssh -n -o ConnectTimeout=5 -o BatchMode=yes "${user}@${host}" "echo OK" &>/dev/null; then
+        tui_log_success "Connexion OK"
+        return 0
+    else
+        tui_log_error "Echec de connexion"
+        return 0
+    fi
+}
+
+# Initialise known_hosts avec tous les hotes decouverts
+init_all_known_hosts() {
+    local hosts
+    hosts=$(discover_hosts_from_tfvars)
+
+    if [[ -z "$hosts" ]]; then
+        tui_log_warn "Aucun hote decouvert depuis les tfvars"
+        return 0
+    fi
+
+    tui_log_info "Hotes decouverts:"
+    echo "$hosts" | while read -r h; do
+        echo "  - ${h}"
+    done
+    echo ""
+
+    if ! tui_confirm "Ajouter tous ces hotes au known_hosts?"; then
+        tui_log_info "Operation annulee"
+        return 0
+    fi
+
+    mkdir -p "$(dirname "$LIFECYCLE_KNOWN_HOSTS")"
+
+    echo "$hosts" | while read -r host; do
+        if [[ -n "$host" ]]; then
+            tui_log_info "Scan de ${host}..."
+            ssh-keyscan -H "$host" >> "$LIFECYCLE_KNOWN_HOSTS" 2>/dev/null || true
+        fi
+    done
+
+    sort -u "$LIFECYCLE_KNOWN_HOSTS" -o "$LIFECYCLE_KNOWN_HOSTS"
+    local count
+    count=$(wc -l < "$LIFECYCLE_KNOWN_HOSTS" 2>/dev/null) || count=0
+    tui_log_success "Known_hosts initialise avec ${count} entrees"
+}
+
+# Menu gestion des cles SSH
+menu_ssh_keys() {
+    local running=true
+
+    while $running; do
+        clear
+        tui_banner "Gestion des cles SSH"
+
+        # Afficher le statut du fichier known_hosts
+        if [[ -f "$LIFECYCLE_KNOWN_HOSTS" ]]; then
+            local count
+            count=$(wc -l < "$LIFECYCLE_KNOWN_HOSTS" 2>/dev/null) || count=0
+            echo -e "${TUI_COLOR_WHITE}Fichier: ${LIFECYCLE_KNOWN_HOSTS}${TUI_COLOR_NC}"
+            echo -e "${TUI_COLOR_SUCCESS}Entrees: ${count}${TUI_COLOR_NC}"
+        else
+            echo -e "${TUI_COLOR_WARN}Fichier known_hosts non initialise${TUI_COLOR_NC}"
+        fi
+        echo ""
+
+        local options=(
+            "1. 📋 Voir les hotes connus"
+            "2. 🔍 Decouvrir les hotes (depuis tfvars)"
+            "3. ➕ Ajouter un hote manuellement"
+            "4. ➖ Supprimer un hote"
+            "5. 🔄 Initialiser avec tous les hotes"
+            "6. 🧪 Tester la connectivite"
+            "$(tui_back_option)"
+        )
+
+        local choice
+        choice=$(tui_menu "Que voulez-vous faire?" "${options[@]}")
+
+        case "$choice" in
+            "1."*|*"Voir"*)
+                clear
+                tui_banner "Hotes connus"
+                list_known_hosts
+                echo ""
+                tui_log_info "Appuyez sur Entree pour continuer..."
+                read -r
+                ;;
+            "2."*|*"Decouvrir"*)
+                clear
+                tui_banner "Decouverte des hotes"
+                local hosts
+                hosts=$(discover_hosts_from_tfvars)
+                if [[ -n "$hosts" ]]; then
+                    tui_log_success "Hotes decouverts depuis tfvars:"
+                    echo "$hosts" | while read -r h; do
+                        # Verifier si deja connu
+                        if ssh-keygen -F "$h" -f "$LIFECYCLE_KNOWN_HOSTS" &>/dev/null 2>&1; then
+                            echo -e "  ${TUI_COLOR_SUCCESS}●${TUI_COLOR_NC} ${h} (connu)"
+                        else
+                            echo -e "  ${TUI_COLOR_WARN}○${TUI_COLOR_NC} ${h} (non connu)"
+                        fi
+                    done
+                else
+                    tui_log_warn "Aucun hote decouvert"
+                fi
+                echo ""
+                tui_log_info "Appuyez sur Entree pour continuer..."
+                read -r
+                ;;
+            "3."*|*"Ajouter"*)
+                local new_host
+                new_host=$(tui_input "Adresse IP ou hostname de l'hote" "")
+                if [[ -n "$new_host" ]]; then
+                    add_host_to_known_hosts "$new_host"
+                fi
+                tui_log_info "Appuyez sur Entree pour continuer..."
+                read -r
+                ;;
+            "4."*|*"Supprimer"*)
+                local del_host
+                del_host=$(tui_input "Adresse IP ou hostname a supprimer" "")
+                if [[ -n "$del_host" ]]; then
+                    remove_host_from_known_hosts "$del_host"
+                fi
+                tui_log_info "Appuyez sur Entree pour continuer..."
+                read -r
+                ;;
+            "5."*|*"Initialiser"*)
+                init_all_known_hosts
+                tui_log_info "Appuyez sur Entree pour continuer..."
+                read -r
+                ;;
+            "6."*|*"Tester"*)
+                clear
+                tui_banner "Test de connectivite"
+                local hosts
+                hosts=$(discover_hosts_from_tfvars)
+                if [[ -n "$hosts" ]]; then
+                    echo "$hosts" | while read -r h; do
+                        # Determiner le user (root pour .50/.100, ubuntu pour autres)
+                        local user="root"
+                        if [[ "$h" =~ \.(51|101|102|103)$ ]]; then
+                            user="ubuntu"
+                        fi
+                        test_host_connectivity "$h" "$user"
+                    done
+                else
+                    tui_log_warn "Aucun hote a tester"
+                fi
+                echo ""
+                tui_log_info "Appuyez sur Entree pour continuer..."
+                read -r
+                ;;
+            *"Retour"*|"")
+                running=false
+                ;;
+            *)
+                tui_log_warn "Option non reconnue"
+                ;;
+        esac
+    done
+}
+
 # Menu principal lifecycle
 menu_lifecycle() {
     local running=true
@@ -691,10 +968,7 @@ menu_lifecycle() {
                 fi
                 ;;
             "2."*|*"SSH"*|*"cles"*)
-                tui_banner "Gestion des cles SSH"
-                tui_log_info "Cette fonctionnalite sera implementee dans la Phase 10 (US9)"
-                tui_log_info "Appuyez sur Entree pour continuer..."
-                read -r
+                menu_ssh_keys
                 ;;
             *"Retour"*|"")
                 running=false
@@ -710,10 +984,12 @@ menu_lifecycle() {
 # Export des fonctions
 # =============================================================================
 
-export -f menu_lifecycle menu_snapshots
+export -f menu_lifecycle menu_snapshots menu_ssh_keys
 export -f get_snapshot_script_path generate_snapshot_name
 export -f validate_vmid validate_snapshot_name format_vm_option
 export -f get_vms_from_tfvars get_containers_from_tfvars get_monitoring_vm_from_tfvars get_env_with_vms
 export -f select_environment select_vm enter_vmid_manually select_vm_or_enter_vmid
 export -f get_snapshot_actions parse_snapshots_json format_snapshot_table
 export -f create_snapshot list_snapshots select_snapshot rollback_snapshot delete_snapshot
+export -f list_known_hosts discover_hosts_from_tfvars add_host_to_known_hosts
+export -f remove_host_from_known_hosts test_host_connectivity init_all_known_hosts
