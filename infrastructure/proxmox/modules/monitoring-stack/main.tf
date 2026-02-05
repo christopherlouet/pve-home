@@ -58,6 +58,8 @@ locals {
   packages = ["qemu-guest-agent", "ca-certificates", "curl", "gnupg"]
 
   # Cloud-init runcmd
+  # NOTE: Docker install commands duplicated in vm/main.tf (docker_runcmd)
+  # Both modules need Docker but with different conditional logic (always vs var.install_docker)
   docker_install_runcmd = [
     "install -m 0755 -d /etc/apt/keyrings",
     "curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc",
