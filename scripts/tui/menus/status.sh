@@ -44,10 +44,22 @@ get_health_script_path() {
 }
 
 # Retourne les options d'environnement disponibles
+# Liste dynamiquement les environnements qui ont un terraform.tfvars
 get_env_options() {
-    echo "prod"
-    echo "lab"
-    echo "monitoring"
+    local envs_dir="${TUI_TFVARS_DIR:-${TUI_PROJECT_ROOT}/infrastructure/proxmox/environments}"
+
+    # Lister les environnements avec un fichier tfvars
+    for env_dir in "${envs_dir}"/*/; do
+        if [[ -d "$env_dir" ]]; then
+            local env_name
+            env_name=$(basename "$env_dir")
+            # Verifier qu'un fichier tfvars existe
+            if [[ -f "${env_dir}/terraform.tfvars" ]] || [[ -f "${envs_dir}/${env_name}.tfvars" ]]; then
+                echo "$env_name"
+            fi
+        fi
+    done
+
     echo "Tous les environnements"
 }
 
