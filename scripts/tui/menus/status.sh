@@ -90,9 +90,34 @@ parse_health_results() {
     local output="$1"
     local results_file="$2"
 
-    # Extraire les lignes de resultats (format: env|component|type|status|detail|duration)
-    # Les lignes de resultat contiennent exactement 5 pipes (6 champs)
-    echo "$output" | grep -E '^[a-z]+\|[^|]+\|[^|]+\|(OK|WARN|FAIL)\|' > "$results_file" || true
+    # Le script check-health.sh produit un format tabulaire avec espaces:
+    # monitoring   prometheus           monitoring   FAIL     Prometheus unreachable
+    #
+    # On doit:
+    # 1. Supprimer les codes couleur ANSI
+    # 2. Extraire les lignes de donnees (format: env  component  type  status  detail)
+    # 3. Convertir en format pipe-separated
+
+    # Supprimer les codes ANSI et extraire les lignes de resultats
+    # Pattern: ligne commencant par un env suivi de colonnes avec OK/FAIL/WARN
+    echo "$output" | \
+        sed 's/\x1b\[[0-9;]*m//g' | \
+        grep -E '^(prod|lab|monitoring) +[a-z]+ +[a-z]+ +(OK|FAIL|WARN)' | \
+        while read -r line; do
+            # Parser la ligne tabulaire en colonnes
+            # Format: env  component  type  status  detail
+            # Note: eviter 'status' car reserve en zsh
+            local hc_env hc_comp hc_type hc_status hc_detail
+            hc_env=$(echo "$line" | awk '{print $1}')
+            hc_comp=$(echo "$line" | awk '{print $2}')
+            hc_type=$(echo "$line" | awk '{print $3}')
+            hc_status=$(echo "$line" | awk '{print $4}')
+            # Le detail est tout ce qui reste apres le statut
+            hc_detail=$(echo "$line" | awk '{$1=$2=$3=$4=""; print $0}' | sed 's/^ *//')
+
+            # Ecrire au format pipe-separated
+            echo "${hc_env}|${hc_comp}|${hc_type}|${hc_status}|${hc_detail}|"
+        done > "$results_file" || true
 }
 
 # Formate le statut avec la couleur appropriee
