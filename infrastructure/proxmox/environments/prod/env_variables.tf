@@ -1,0 +1,1 @@
+../../shared/env_variables.tf
