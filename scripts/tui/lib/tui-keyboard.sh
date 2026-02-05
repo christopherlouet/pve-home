@@ -11,10 +11,10 @@
 # Variables
 # =============================================================================
 
-# Raccourcis par defaut
-declare -A TUI_KEYBINDINGS
-declare -A TUI_VIM_KEYS
-declare -a TUI_NAV_HISTORY
+# Raccourcis par defaut (initialises avec =() pour compatibilite set -o nounset)
+declare -A TUI_KEYBINDINGS=()
+declare -A TUI_VIM_KEYS=()
+declare -a TUI_NAV_HISTORY=()
 
 # Configuration
 TUI_VIM_MODE="${TUI_VIM_MODE:-true}"
