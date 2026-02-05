@@ -282,6 +282,11 @@ select_default_environment() {
     local choice
     choice=$(tui_menu "Selectionner l'environnement par defaut" "${options[@]}")
 
+    # Gerer le retour explicitement
+    if [[ "$choice" == *"Retour"* ]] || [[ "$choice" == *"back"* ]] || [[ -z "$choice" ]]; then
+        return 0
+    fi
+
     # Extraire le nom de l'environnement
     for env in "${CONFIG_VALID_ENVS[@]}"; do
         if [[ "$choice" == *"$env"* ]]; then
@@ -290,7 +295,7 @@ select_default_environment() {
         fi
     done
 
-    return 1
+    return 0
 }
 
 # =============================================================================
@@ -594,7 +599,7 @@ show_current_config() {
 reset_config() {
     if ! tui_confirm "Voulez-vous reinitialiser la configuration par defaut ?"; then
         tui_log_info "Operation annulee"
-        return 1
+        return 0  # Annulation n'est pas une erreur
     fi
 
     # Vider la configuration actuelle
