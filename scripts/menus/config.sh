@@ -356,7 +356,17 @@ test_ssh_connection() {
         tfvars_path="${TUI_PROJECT_ROOT}/infrastructure/proxmox/environments/${env}/terraform.tfvars"
 
         if [[ -f "$tfvars_path" ]]; then
-            host=$(grep -E "^pve_ip\s*=" "$tfvars_path" 2>/dev/null | sed 's/.*=\s*"\([^"]*\)".*/\1/' | head -1) || true
+            # Essayer proxmox_endpoint d'abord (format: https://IP:8006)
+            local endpoint
+            endpoint=$(grep -E "^proxmox_endpoint\s*=" "$tfvars_path" 2>/dev/null | sed 's/.*"\([^"]*\)".*/\1/' | head -1) || true
+            if [[ -n "$endpoint" ]]; then
+                # Extraire l'IP de l'URL
+                host=$(echo "$endpoint" | sed -E 's|https?://([0-9.]+).*|\1|') || true
+            fi
+            # Fallback sur pve_ip si existe
+            if [[ -z "$host" ]]; then
+                host=$(grep -E "^pve_ip\s*=" "$tfvars_path" 2>/dev/null | sed 's/.*=\s*"\([^"]*\)".*/\1/' | head -1) || true
+            fi
         fi
     fi
 
