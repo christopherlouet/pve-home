@@ -44,6 +44,7 @@ source "${LIB_DIR}/common.sh"
 # =============================================================================
 
 NODE=""
+PVE_IP=""
 STORAGE="local"
 VMID_FILTER=""
 FULL_MODE=false
@@ -147,27 +148,39 @@ parse_args() {
 # =============================================================================
 
 detect_node() {
-    if [[ -z "$NODE" ]]; then
-        # Detecter depuis terraform.tfvars (essayer prod, puis lab, puis monitoring)
-        local tfvars_dirs=(
-            "${SCRIPT_DIR}/../../infrastructure/proxmox/environments/prod"
-            "${SCRIPT_DIR}/../../infrastructure/proxmox/environments/lab"
-            "${SCRIPT_DIR}/../../infrastructure/proxmox/environments/monitoring"
-        )
+    # Detecter depuis terraform.tfvars (essayer prod, puis lab, puis monitoring)
+    local tfvars_dirs=(
+        "${SCRIPT_DIR}/../../infrastructure/proxmox/environments/prod"
+        "${SCRIPT_DIR}/../../infrastructure/proxmox/environments/lab"
+        "${SCRIPT_DIR}/../../infrastructure/proxmox/environments/monitoring"
+    )
 
-        for dir in "${tfvars_dirs[@]}"; do
-            local tfvars_file="${dir}/terraform.tfvars"
-            if [[ -f "$tfvars_file" ]]; then
+    local detected_tfvars=""
+    for dir in "${tfvars_dirs[@]}"; do
+        local tfvars_file="${dir}/terraform.tfvars"
+        if [[ -f "$tfvars_file" ]]; then
+            detected_tfvars="$tfvars_file"
+            # Detecter le nom du noeud si non specifie
+            if [[ -z "$NODE" ]]; then
                 NODE=$(get_pve_node "$tfvars_file" 2>/dev/null || echo "")
-                if [[ -n "$NODE" ]]; then
-                    break
-                fi
             fi
-        done
-    fi
+            # Detecter l'IP depuis proxmox_endpoint
+            if [[ -z "$PVE_IP" ]]; then
+                PVE_IP=$(grep -oP 'proxmox_endpoint\s*=\s*"https?://\K[0-9.]+' "$tfvars_file" 2>/dev/null | head -1 || echo "")
+            fi
+            if [[ -n "$NODE" ]] && [[ -n "$PVE_IP" ]]; then
+                break
+            fi
+        fi
+    done
 
-    if [[ -n "$NODE" ]]; then
-        log_info "Noeud Proxmox: ${NODE}"
+    if [[ -n "$NODE" ]] && [[ -n "$PVE_IP" ]]; then
+        log_info "Noeud Proxmox: ${NODE} (${PVE_IP})"
+        return 0
+    elif [[ -n "$NODE" ]]; then
+        # Fallback: utiliser NODE comme hostname SSH
+        PVE_IP="$NODE"
+        log_info "Noeud Proxmox: ${NODE} (IP non detectee, utilise hostname)"
         return 0
     else
         log_warn "Noeud Proxmox non detecte (pas de tfvars ou --node non specifie)"
@@ -198,7 +211,7 @@ verify_vzdump_backups() {
         mock_ctime=$(($(date +%s) - 3600))
         backups_json='[{"volid":"local:backup/vzdump-qemu-100-2026_02_01-12_00_00.vma.zst","format":"vma.zst","size":1000000,"ctime":'$mock_ctime',"vmid":100}]'
     else
-        backups_json=$(ssh_exec "${NODE}" "${pvesh_cmd}" 2>/dev/null || echo "[]")
+        backups_json=$(ssh_exec "${PVE_IP}" "${pvesh_cmd}" 2>/dev/null || echo "[]")
     fi
 
     # Parser le JSON avec jq
@@ -254,7 +267,7 @@ verify_vzdump_backups() {
         if [[ "$DRY_RUN" == true ]]; then
             log_info "[DRY-RUN] SSH vers ${NODE}: ${ls_cmd}"
         else
-            if ! ssh_exec "${NODE}" "${ls_cmd}" &>/dev/null; then
+            if ! ssh_exec "${PVE_IP}" "${ls_cmd}" &>/dev/null; then
                 log_error "VMID ${vmid}: fichier absent (${filename})"
                 REPORT_LINES+=("vzdump | VMID ${vmid} | ERROR | ${filename} | Fichier absent")
                 COUNT_ERROR=$((COUNT_ERROR + 1))
@@ -498,7 +511,7 @@ verify_backup_jobs() {
     fi
 
     local jobs_json
-    jobs_json=$(ssh_exec "${NODE}" "${jobs_cmd}" 2>/dev/null || echo "[]")
+    jobs_json=$(ssh_exec "${PVE_IP}" "${jobs_cmd}" 2>/dev/null || echo "[]")
 
     local jobs_count
     jobs_count=$(echo "$jobs_json" | jq '. | length' 2>/dev/null || echo "0")
@@ -526,7 +539,7 @@ verify_vm_connectivity() {
         # Mock avec 2 VMs pour dry-run
         vms_json='[{"vmid":100,"type":"qemu","status":"running","name":"vm-prod","ip":"192.168.1.110"},{"vmid":101,"type":"lxc","status":"running","name":"lxc-db","ip":"192.168.1.111"}]'
     else
-        vms_json=$(ssh_exec "${NODE}" "${vms_cmd}" 2>/dev/null || echo "[]")
+        vms_json=$(ssh_exec "${PVE_IP}" "${vms_cmd}" 2>/dev/null || echo "[]")
     fi
 
     local vm_count
@@ -562,7 +575,7 @@ verify_vm_connectivity() {
             # Mock IP pour dry-run
             vm_ip="192.168.1.$((100 + vmid % 50))"
         else
-            vm_ip=$(ssh_exec "${NODE}" "${ip_cmd}" 2>/dev/null | xargs || echo "")
+            vm_ip=$(ssh_exec "${PVE_IP}" "${ip_cmd}" 2>/dev/null | xargs || echo "")
         fi
 
         if [[ -z "$vm_ip" ]]; then
