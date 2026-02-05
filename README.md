@@ -142,9 +142,6 @@ L'infrastructure supporte des sauvegardes automatiques de toutes les VMs et cont
 PVE Prod (192.168.1.100)  ──┐     ┌─────────────────────┐
   VMs/LXC                  ├─→ vzdump quotidien       │
                            │   (storage local)        │
-PVE Lab (192.168.1.110)   ──┤                         │
-  VMs/LXC                  │   PVE Monitoring        │
-                           │   (192.168.1.50)        │
 PVE Mon (192.168.1.50)    ──┤                         │
   Monitoring + Minio      │   ┌─────────────────────┐│
                            │   │ Minio S3 (LXC)      ││
@@ -175,7 +172,7 @@ Le monitoring est déployé sur un **PVE dédié** (`environments/monitoring/`) 
 
 ```
 PVE Prod (192.168.1.100)  ──┐
-PVE Lab  (192.168.1.110)  ──┼── scrape ──> PVE Monitoring (192.168.1.50)
+                            ├── scrape ──> PVE Monitoring (192.168.1.50)
 PVE Mon  (192.168.1.50)   ──┘              └─ Prometheus + Grafana + Alertmanager
 ```
 
@@ -398,14 +395,14 @@ Une interface terminal interactive permet de gérer l'infrastructure sans mémor
 ./scripts/homelab --no-color  # Désactiver les couleurs
 ```
 
-Le TUI propose 9 menus : Status, Terraform, Deploy, Lifecycle, Disaster Recovery, Services, Config, Maintenance, et Quit.
+Le TUI propose 8 menus : Status, Lifecycle, Terraform, Deploy, Maintenance, Disaster Recovery, Services, et Config.
 Navigation avec les flèches ou vim-like (j/k), validation avec Entrée.
 
 **Prérequis** : [gum](https://github.com/charmbracelet/gum) pour les menus interactifs (fallback bash sinon).
 
 ## Tests
 
-Le projet utilise deux frameworks de test complementaires totalisant **~495 tests Terraform** et **693 tests BATS** (dont 439 pour le TUI).
+Le projet utilise deux frameworks de test complementaires totalisant **~411 tests Terraform** et **816 tests BATS** (dont 439 pour le TUI).
 
 ### Tests Terraform (modules)
 
@@ -429,16 +426,16 @@ done
 
 ### Tests BATS (scripts shell)
 
-Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (693 tests) :
+Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (816 tests) :
 
 | Domaine | Tests | Couverture |
 |---------|-------|------------|
 | **tui/** | 439 | Interface TUI complete (11 modules) |
-| **restore/** | 169 | Restauration VMs, tfstate, Minio, monitoring, verification |
+| **restore/** | 183 | Restauration VMs, tfstate, Minio, monitoring, verification |
 | **drift/** | 14 | Detection de drift Terraform |
 | **health/** | 14 | Health checks infrastructure |
-| **lifecycle/** | 21 | Snapshots, expiration, rotation SSH |
-| **root** | 36 | deploy.sh, post-install Proxmox |
+| **lifecycle/** | 74 | Snapshots, expiration, nettoyage, rotation SSH |
+| **root** | 92 | deploy.sh, post-install Proxmox |
 
 ```bash
 # Tous les tests
