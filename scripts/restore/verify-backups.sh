@@ -155,11 +155,9 @@ detect_node() {
         "${SCRIPT_DIR}/../../infrastructure/proxmox/environments/monitoring"
     )
 
-    local detected_tfvars=""
     for dir in "${tfvars_dirs[@]}"; do
         local tfvars_file="${dir}/terraform.tfvars"
         if [[ -f "$tfvars_file" ]]; then
-            detected_tfvars="$tfvars_file"
             # Detecter le nom du noeud si non specifie
             if [[ -z "$NODE" ]]; then
                 NODE=$(get_pve_node "$tfvars_file" 2>/dev/null || echo "")
