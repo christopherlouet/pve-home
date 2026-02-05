@@ -255,6 +255,58 @@ check_docker_service() {
 # Checks par type
 # =============================================================================
 
+# Retourne le nom de la VM pour une IP donnee depuis le tfvars
+# Usage: get_vm_name_by_ip "192.168.1.101" "/path/to/terraform.tfvars"
+get_vm_name_by_ip() {
+    local target_ip="$1"
+    local tfvars="$2"
+
+    if [[ ! -f "$tfvars" ]]; then
+        echo "vm-${target_ip}"
+        return
+    fi
+
+    # Parser le bloc vms = { ... } pour trouver le nom associe a l'IP
+    local vm_name=""
+    local current_name=""
+    local in_vms_block=false
+
+    while IFS= read -r line; do
+        # Detecter le debut du bloc vms
+        if [[ "$line" =~ ^vms[[:space:]]*=[[:space:]]*\{ ]]; then
+            in_vms_block=true
+            continue
+        fi
+
+        # Detecter la fin du bloc vms
+        if $in_vms_block && [[ "$line" =~ ^\} ]]; then
+            break
+        fi
+
+        if $in_vms_block; then
+            # Detecter un nouveau nom de VM: "nom-vm" = {
+            if [[ "$line" =~ ^[[:space:]]*\"([^\"]+)\"[[:space:]]*=[[:space:]]*\{ ]]; then
+                current_name="${BASH_REMATCH[1]}"
+            fi
+
+            # Detecter l'IP dans la VM courante
+            if [[ -n "$current_name" && "$line" =~ ip[[:space:]]*=[[:space:]]*\"([^\"]+)\" ]]; then
+                local ip="${BASH_REMATCH[1]}"
+                if [[ "$ip" == "$target_ip" ]]; then
+                    vm_name="$current_name"
+                    break
+                fi
+            fi
+        fi
+    done < "$tfvars"
+
+    if [[ -n "$vm_name" ]]; then
+        echo "$vm_name"
+    else
+        echo "vm-${target_ip}"
+    fi
+}
+
 check_vm_health() {
     local env="$1"
     local env_dir="${ENVS_DIR}/${env}"
@@ -279,7 +331,9 @@ check_vm_health() {
     ips=$(awk '/^vms\s*=\s*\{/,/^\}/' "$tfvars" | grep -oP 'ip\s*=\s*"\K\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' 2>/dev/null | sort -u || echo "")
 
     for ip in $ips; do
-        local name="vm-${ip}"
+        # Recuperer le nom parlant de la VM depuis le tfvars
+        local name
+        name=$(get_vm_name_by_ip "$ip" "$tfvars")
         if is_excluded "$name" || is_excluded "$ip"; then
             continue
         fi
