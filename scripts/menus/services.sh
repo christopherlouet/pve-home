@@ -199,15 +199,18 @@ _check_service_in_tfvars() {
 }
 
 # Cache des services par host (evite SSH multiples)
+# Utilise l'IP comme cle (extrait de user@ip)
 declare -A _SERVICES_CACHE=()
 
 # Recupere la liste des services running d'un host (docker + systemd, avec cache)
 _get_host_services() {
     local ssh_target="$1"
+    # Extraire l'IP pour la cle du cache (evite problemes avec @)
+    local cache_key="${ssh_target##*@}"
 
     # Utiliser le cache si disponible
-    if [[ -n "${_SERVICES_CACHE[$ssh_target]:-}" ]]; then
-        echo "${_SERVICES_CACHE[$ssh_target]}"
+    if [[ -n "${_SERVICES_CACHE[$cache_key]:-}" ]]; then
+        echo "${_SERVICES_CACHE[$cache_key]}"
         return 0
     fi
 
@@ -217,7 +220,7 @@ _get_host_services() {
         "{ docker ps --format '{{.Names}}' 2>/dev/null; systemctl list-units --type=service --state=running --no-legend 2>/dev/null | awk '{gsub(/\.service/,\"\"); print \$1}'; } | sort -u" 2>/dev/null || echo "")
 
     # Mettre en cache
-    _SERVICES_CACHE[$ssh_target]="$services"
+    _SERVICES_CACHE[$cache_key]="$services"
     echo "$services"
 }
 
