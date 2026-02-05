@@ -385,12 +385,39 @@ check_monitoring_health() {
     local tfvars="${ENVS_DIR}/monitoring/terraform.tfvars"
     local monitoring_ip=""
     if [[ -f "$tfvars" ]]; then
+        # L'IP est dans monitoring = { vm = { ip = "..." } }
+        # On extrait l'IP du bloc monitoring qui contient vm.ip
         monitoring_ip=$(awk '/^monitoring\s*=\s*\{/,/^\}/' "$tfvars" | grep -oP 'ip\s*=\s*"\K\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' 2>/dev/null | head -1 || echo "")
     fi
 
     if [[ -z "$monitoring_ip" ]]; then
         log_warn "IP monitoring non trouvee, skip"
         return 0
+    fi
+
+    # VM Monitoring (verifier SSH d'abord)
+    local status="OK" detail=""
+    local start_time end_time duration_ms
+    start_time=$(date +%s%N)
+
+    if ! check_ping "$monitoring_ip" "monitoring-vm"; then
+        status="FAIL"
+        detail="ping failed"
+    elif ! check_ssh "$monitoring_ip"; then
+        status="WARN"
+        detail="SSH unreachable"
+    fi
+
+    end_time=$(date +%s%N)
+    duration_ms=$(( (end_time - start_time) / 1000000 ))
+
+    results_ref+=("${env}|monitoring-vm|vm|${status}|${detail}|${duration_ms}ms")
+    if [[ "$status" == "OK" ]]; then
+        log_success "  monitoring-vm (${monitoring_ip}): OK"
+    elif [[ "$status" == "WARN" ]]; then
+        log_warn "  monitoring-vm (${monitoring_ip}): ${detail}"
+    else
+        log_error "  monitoring-vm (${monitoring_ip}): ${detail}"
     fi
 
     # Prometheus
