@@ -36,7 +36,9 @@ readonly CONFIG_VALID_ENVS=("prod" "lab" "monitoring")
 readonly CONFIG_VALID_LOG_LEVELS=("debug" "info" "warn" "error")
 
 # Configuration en memoire (associative array)
-declare -A TUI_CONFIG
+# Declarer le tableau avec une valeur initiale pour eviter "variable sans liaison"
+# avec set -o nounset
+declare -A TUI_CONFIG=() 2>/dev/null || { declare -A TUI_CONFIG; TUI_CONFIG=(); }
 
 # =============================================================================
 # Fonctions de chargement configuration (T057)
@@ -109,8 +111,13 @@ get_config_value() {
     local key="$1"
     local default="${2:-}"
 
-    if [[ -n "${TUI_CONFIG[$key]:-}" ]]; then
-        echo "${TUI_CONFIG[$key]}"
+    # Utiliser une variable intermediaire pour eviter les erreurs de syntaxe
+    # Note: TUI_CONFIG est declare dans tui.sh
+    local value=""
+    value="${TUI_CONFIG[$key]:-}"
+
+    if [[ -n "$value" ]]; then
+        echo "$value"
     else
         echo "$default"
     fi
@@ -531,6 +538,28 @@ get_config_actions() {
 
 # Affiche la configuration actuelle
 show_current_config() {
+    # Charger la configuration si pas encore fait
+    # Desactiver nounset temporairement pour la verification du tableau
+    local old_nounset=""
+    if [[ -o nounset ]]; then
+        old_nounset="true"
+        set +u
+    fi
+
+    # Declarer le tableau si pas encore fait
+    if [[ -z "${TUI_CONFIG+x}" ]]; then
+        declare -gA TUI_CONFIG
+    fi
+
+    if [[ ${#TUI_CONFIG[@]} -eq 0 ]]; then
+        load_tui_config
+    fi
+
+    # Restaurer nounset
+    if [[ "$old_nounset" == "true" ]]; then
+        set -u
+    fi
+
     echo ""
     tui_banner "Configuration actuelle"
 

@@ -57,6 +57,9 @@ TUI_USE_GUM="${TUI_USE_GUM:-true}"
 TUI_ENVIRONMENT="${TUI_ENVIRONMENT:-}"
 TUI_SOURCE_ONLY="${TUI_SOURCE_ONLY:-false}"
 
+# Tableau de configuration (declare avant le chargement des modules)
+declare -gA TUI_CONFIG 2>/dev/null || declare -A TUI_CONFIG
+
 # =============================================================================
 # Fonctions utilitaires
 # =============================================================================
@@ -166,13 +169,18 @@ get_missing_dependencies() {
 # Charge tous les modules
 load_all_modules() {
     # Charger les libs dans l'ordre
-    source "${TUI_LIB_DIR}/tui-colors.sh"
-    source "${TUI_LIB_DIR}/tui-config.sh"
-    source "${TUI_LIB_DIR}/tui-common.sh"
-    source "${TUI_LIB_DIR}/tui-keyboard.sh"
+    # Note: tui-config.sh redefinit TUI_LIB_DIR vers scripts/lib/
+    # On utilise TUI_SCRIPT_DIR qui reste stable
+    local local_lib="${TUI_SCRIPT_DIR}/lib"
+    local local_menus="${TUI_SCRIPT_DIR}/menus"
+
+    source "${local_lib}/tui-colors.sh"
+    source "${local_lib}/tui-config.sh"
+    source "${local_lib}/tui-common.sh"
+    source "${local_lib}/tui-keyboard.sh"
 
     # Charger le menu principal (qui charge les sous-menus)
-    source "${TUI_MENUS_DIR}/main.sh"
+    source "${local_menus}/main.sh"
 
     # Appliquer les options
     if [[ "$TUI_NO_COLOR" == "true" ]]; then
