@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2026-02-05
+
+### Added
+- **Security functions** in `scripts/lib/common.sh`
+  - `log_secret()` : Masks secrets (tokens, UUIDs, passwords, base64) in log output
+  - `log_info_secure()` : Alias for secure logging operations
+- **HCL parsing functions** to reduce code duplication
+  - `parse_hcl_block()` : Generic HCL block parser
+  - `parse_hcl_block_first()` : Returns first match only
+  - `parse_hcl_block_unique()` : Returns unique sorted values
+  - `validate_choice()` : Validates value against allowed options
+- **Traefik security headers** in monitoring-stack and tooling-stack
+  - Content-Security-Policy (CSP)
+  - HSTS with preload
+  - X-Frame-Options, X-Content-Type-Options
+
+### Changed
+- Proxmox provider version constraint synchronized to `~> 0.94` across all environments
+- Step-ca Docker image pinned to version `0.27.5` (was `latest`)
+- `terraform.tfvars.example` uses placeholder `${GRAFANA_ADMIN_PASSWORD:?required}` instead of weak example password
+
+### Security
+- Fixed weak example password in monitoring terraform.tfvars.example
+- Added CSP headers to prevent XSS attacks
+- Pinned Docker images to avoid supply chain attacks
+
 ## [1.6.0] - 2026-02-05
 
 ### Added

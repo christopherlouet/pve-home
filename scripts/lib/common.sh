@@ -127,6 +127,35 @@ get_ssh_opts() {
 # Fonctions de logging (T002)
 # =============================================================================
 
+# =============================================================================
+# Fonction de masquage des secrets (P1 - Securite)
+# =============================================================================
+
+# Masque les secrets dans un message avant de le logger
+# Usage: log_secret "Message avec secret abc123xyz"
+# Les patterns suivants sont masques:
+#   - Tokens API (32+ chars alphanumeriques)
+#   - UUIDs
+#   - Mots de passe (apres password=, passwd=, pwd=)
+#   - Base64 (16+ chars)
+log_secret() {
+    local msg="$1"
+    # Masquer les UUIDs
+    msg=$(echo "$msg" | sed -E 's/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/***UUID***/gi')
+    # Masquer les tokens API (longues chaines alphanumeriques)
+    msg=$(echo "$msg" | sed -E 's/[A-Za-z0-9_-]{32,}/***TOKEN***/g')
+    # Masquer les mots de passe apres password=, passwd=, pwd=
+    msg=$(echo "$msg" | sed -E 's/(password|passwd|pwd|secret|token)=["'\''"]?[^"'\'' ]+["'\''"]?/\1=***/gi')
+    # Masquer les chaines base64 longues
+    msg=$(echo "$msg" | sed -E 's/[A-Za-z0-9+/]{24,}={0,2}/***BASE64***/g')
+    log_info "$msg"
+}
+
+# Version securisee de log pour les operations sensibles
+log_info_secure() {
+    log_secret "$1"
+}
+
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
@@ -333,6 +362,65 @@ check_disk_space() {
 
     log_success "Espace disque suffisant: ${avail_mb}MB disponible"
     return 0
+}
+
+# =============================================================================
+# Fonction parse_hcl_block (P2 - Reduction duplication)
+# =============================================================================
+
+# Parse un bloc HCL et extrait une valeur
+# Usage: parse_hcl_block "fichier.tfvars" "nom_bloc" "cle"
+# Exemple: parse_hcl_block "$tfvars" "vms" "ip"
+#          parse_hcl_block "$tfvars" "monitoring" "ip"
+# Retourne toutes les valeurs correspondantes (une par ligne)
+parse_hcl_block() {
+    local file="$1"
+    local block="$2"
+    local key="$3"
+
+    if [[ ! -f "$file" ]]; then
+        log_error "Fichier introuvable: ${file}"
+        return 1
+    fi
+
+    # Parser le bloc HCL et extraire la valeur de la cle
+    # Support les formats: key = "value" et key = value
+    awk "/^${block}\\s*=\\s*\\{/,/^\\}/" "$file" | \
+        grep -oP "${key}\\s*=\\s*\"\\K[^\"]*" 2>/dev/null || \
+        echo ""
+}
+
+# Variante qui retourne uniquement la premiere valeur
+parse_hcl_block_first() {
+    local file="$1"
+    local block="$2"
+    local key="$3"
+    parse_hcl_block "$file" "$block" "$key" | head -1
+}
+
+# Variante qui retourne les valeurs uniques triees
+parse_hcl_block_unique() {
+    local file="$1"
+    local block="$2"
+    local key="$3"
+    parse_hcl_block "$file" "$block" "$key" | sort -u
+}
+
+# Fonction de validation de choix parmi une liste
+# Usage: validate_choice "valeur" "opt1" "opt2" "opt3"
+# Retourne 0 si valide, 1 sinon
+validate_choice() {
+    local value="$1"
+    shift
+    local options=("$@")
+
+    for opt in "${options[@]}"; do
+        if [[ "$opt" == "$value" ]]; then
+            return 0
+        fi
+    done
+
+    return 1
 }
 
 # =============================================================================

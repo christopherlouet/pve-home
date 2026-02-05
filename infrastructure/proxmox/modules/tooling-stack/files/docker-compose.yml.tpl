@@ -25,7 +25,7 @@ services:
   # Step-ca - Internal PKI with ACME
   # ---------------------------------------------------------------------------
   step-ca:
-    image: smallstep/step-ca:latest
+    image: smallstep/step-ca:0.27.5
     container_name: step-ca
     restart: unless-stopped
     networks:
