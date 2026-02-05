@@ -9,13 +9,14 @@ Infrastructure as Code pour gérer un homelab Proxmox VE sur Intel NUC avec Terr
 - **Sauvegardes automatiques** : Vzdump quotidien/hebdomadaire avec rétention configurable par environnement
 - **State Terraform sécurisé** : Backend S3 Minio avec versioning pour récupération en cas d'erreur
 - **Stack Monitoring** : Prometheus, Grafana, Alertmanager, Traefik, Loki, Uptime Kuma sur PVE dédié avec dashboards et alertes
+- **Stack Tooling** : PKI interne (Step-ca), Registre Docker (Harbor), SSO (Authentik) avec reverse proxy Traefik
 - **Scripts de restauration** : Restauration automatisée de VMs, state Terraform et composants critiques
-- **Modules réutilisables** : Modules Terraform pour VM, LXC, backup, Minio et monitoring
+- **Modules réutilisables** : Modules Terraform pour VM, LXC, backup, Minio, monitoring et tooling
 - **Détection de drift** : Vérification automatique des dérives Terraform avec métriques Prometheus
 - **Health checks** : Surveillance de la santé des VMs, monitoring et Minio (SSH automatise via keypair dediee)
 - **Deploiement monitoring** : Script `deploy.sh` pour provisionner scripts, tfvars et timers systemd sur la VM monitoring
 - **Cycle de vie VMs** : Snapshots, expiration automatique, mises à jour de sécurité, rotation SSH
-- **Tests Terraform natifs** : Validation, plan et non-regression des 5 modules avec `terraform test` et `mock_provider`
+- **Tests Terraform natifs** : Validation, plan et non-regression des 6 modules avec `terraform test` et `mock_provider`
 - **Resilience SSH** : Retry avec backoff exponentiel pour les connexions SSH dans les scripts d'operation
 - **CI/CD** : Validation Terraform, tests, et scans de sécurité via GitHub Actions
 
@@ -42,7 +43,9 @@ pve-home/
 │   │   │   └── tests/           # Tests natifs Terraform
 │   │   ├── minio/               # Module Minio S3 (backend Terraform)
 │   │   │   └── tests/           # Tests natifs Terraform
-│   │   └── monitoring-stack/    # Stack Prometheus/Grafana/Alertmanager
+│   │   ├── monitoring-stack/    # Stack Prometheus/Grafana/Alertmanager
+│   │   │   └── tests/           # Tests natifs Terraform
+│   │   └── tooling-stack/       # Stack PKI/Registry/SSO (Step-ca, Harbor, Authentik)
 │   │       └── tests/           # Tests natifs Terraform
 │   └── environments/
 │       ├── prod/                # PVE production (workloads)
@@ -98,6 +101,7 @@ terraform apply
 | [Health Checks](docs/HEALTH-CHECKS.md) | Vérification de santé de l'infrastructure (VMs, monitoring, Minio) |
 | [Alertes Telegram](docs/ALERTING.md) | Configuration des notifications Telegram (création bot, chat_id, troubleshooting) |
 | [Cycle de vie VMs](docs/VM-LIFECYCLE.md) | Snapshots, expiration, mises à jour de sécurité, rotation SSH |
+| [Stack Tooling](docs/TOOLING-STACK.md) | PKI Step-ca, Registry Harbor, SSO Authentik avec Traefik |
 | [Index des scripts](scripts/README.md) | Index complet de tous les scripts d'opération |
 
 ## Exemple de configuration
@@ -272,6 +276,61 @@ Les alertes sont configurées dans `infrastructure/proxmox/modules/monitoring-st
 
 Voir [environments/monitoring/terraform.tfvars.example](infrastructure/proxmox/environments/monitoring/terraform.tfvars.example) pour la configuration et [docs/ALERTING.md](docs/ALERTING.md) pour le guide de configuration Telegram.
 
+## Stack Tooling (PKI, Registry, SSO)
+
+Une stack outillage optionnelle peut être déployée pour fournir des services internes partagés :
+
+- **Step-ca** : Autorité de certification interne avec ACME pour certificats TLS automatiques
+- **Harbor** : Registre Docker privé avec scan de vulnérabilités Trivy
+- **Authentik** : SSO (Single Sign-On) pour authentification centralisée
+- **Traefik** : Reverse proxy avec terminaison TLS automatique via Step-ca
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     VM Tooling (192.168.1.60)                   │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐      │
+│  │   Step-ca    │    │    Harbor    │    │   Authentik  │      │
+│  │   (PKI)      │    │  (Registry)  │    │    (SSO)     │      │
+│  │   :8443      │    │    :443      │    │    :9000     │      │
+│  └──────┬───────┘    └──────┬───────┘    └──────┬───────┘      │
+│         └────────────┬──────┴──────────────────┬┘              │
+│                      │     Traefik             │               │
+│                      │   (Reverse Proxy)       │               │
+│                      │     :80 / :443          │               │
+│                      └─────────────────────────┘               │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### URLs des services
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| Step-ca | `https://pki.home.arpa` | API CA pour génération de certificats |
+| Harbor | `https://registry.home.arpa` | Interface UI et API Docker Registry |
+| Authentik | `https://auth.home.arpa` | Interface admin SSO |
+| Traefik | `https://traefik.home.arpa` | Dashboard Traefik |
+
+### Activation
+
+La stack tooling est **désactivée par défaut**. Pour l'activer :
+
+```hcl
+# terraform.tfvars
+tooling = {
+  enabled = true
+  vm = {
+    ip = "192.168.1.60"
+    # ...
+  }
+  step_ca   = { enabled = true, password = "..." }
+  harbor    = { enabled = true, admin_password = "..." }
+  authentik = { enabled = true, secret_key = "...", bootstrap_password = "..." }
+}
+```
+
+Chaque service peut être activé/désactivé individuellement. Voir [docs/TOOLING-STACK.md](docs/TOOLING-STACK.md) pour la documentation complète.
+
 ## Modules Terraform
 
 Les modules réutilisables permettent de provisionner l'infrastructure rapidement :
@@ -283,6 +342,7 @@ Les modules réutilisables permettent de provisionner l'infrastructure rapidemen
 | **backup** | `modules/backup/` | Sauvegardes automatiques vzdump avec scheduling |
 | **minio** | `modules/minio/` | Conteneur Minio S3 pour backend Terraform (versioning) |
 | **monitoring-stack** | `modules/monitoring-stack/` | Stack Prometheus + Grafana + Alertmanager + Traefik + Loki + Uptime Kuma |
+| **tooling-stack** | `modules/tooling-stack/` | Stack outillage interne : Step-ca (PKI), Harbor (Registry), Authentik (SSO) |
 
 Documentation complète : [infrastructure/proxmox/README.md](infrastructure/proxmox/README.md)
 
@@ -298,6 +358,7 @@ Des scripts shell automatisent les opérations d'infrastructure depuis votre mac
 | **restore-tfstate.sh** | Restaurer state Terraform depuis Minio | `./scripts/restore/restore-tfstate.sh --env prod --list` |
 | **rebuild-minio.sh** | Reconstruire le conteneur Minio | `./scripts/restore/rebuild-minio.sh --force` |
 | **rebuild-monitoring.sh** | Reconstruire la stack monitoring | `./scripts/restore/rebuild-monitoring.sh --mode restore` |
+| **rebuild-tooling.sh** | Reconstruire la stack tooling | `./scripts/restore/rebuild-tooling.sh apply` |
 | **verify-backups.sh** | Vérifier l'intégrité des sauvegardes | `./scripts/restore/verify-backups.sh --full` |
 
 ### Drift & Health
@@ -321,11 +382,11 @@ Index complet : [scripts/README.md](scripts/README.md) | Disaster Recovery : [do
 
 ## Tests
 
-Le projet utilise deux frameworks de test complementaires totalisant **~270 tests Terraform** et **254 tests BATS**.
+Le projet utilise deux frameworks de test complementaires totalisant **~495 tests Terraform** et **254 tests BATS**.
 
 ### Tests Terraform (modules)
 
-Les 5 modules sont testes avec le framework natif `terraform test` (>= 1.9) et `mock_provider`, avec 3 types de tests par module :
+Les 6 modules sont testes avec le framework natif `terraform test` (>= 1.9) et `mock_provider`, avec 3 types de tests par module :
 
 | Type | Fichier | Description |
 |------|---------|-------------|
@@ -338,7 +399,7 @@ Les 5 modules sont testes avec le framework natif `terraform test` (>= 1.9) et `
 cd infrastructure/proxmox/modules/vm && terraform init -backend=false && terraform test
 
 # Tester tous les modules
-for m in vm lxc backup minio monitoring-stack; do
+for m in vm lxc backup minio monitoring-stack tooling-stack; do
   (cd infrastructure/proxmox/modules/$m && terraform init -backend=false && terraform test)
 done
 ```

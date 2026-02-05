@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-02-05
+
+### Added
+- **Tooling Stack module** (`modules/tooling-stack/`) for internal homelab services
+  - **Step-ca PKI** : Internal Certificate Authority with ACME support
+    - Root CA generation via Terraform TLS provider
+    - Traefik ACME integration for automatic certificates
+    - Configurable cert duration and provisioner name
+  - **Harbor Registry** : Private Docker registry with Trivy vulnerability scanning
+    - GC garbage collection script (`scripts/tooling/harbor-gc.sh`)
+    - Configurable admin password and Trivy toggle
+  - **Authentik SSO** : Centralized authentication (SSO)
+    - Bootstrap password and secret key configuration
+    - Prepared for Grafana/Harbor OIDC integration
+  - **Traefik** : Reverse proxy with automatic TLS via Step-ca ACME
+    - Dynamic routing for pki/registry/auth.home.arpa
+- **Conditional service enablement** with master switch and individual toggles
+  - `tooling.enabled` : Master switch for entire stack
+  - `tooling.step_ca.enabled`, `tooling.harbor.enabled`, `tooling.authentik.enabled` : Per-service toggles
+- **Monitoring integration** for tooling stack
+  - 3 Grafana dashboards (Step-ca, Harbor, Authentik) in "Tooling" folder
+  - 10 Prometheus alerts for tooling services (`tooling.yml`)
+  - Scrape configuration template (`scrape/tooling.yml.tpl`)
+  - Variables `tooling_*` in monitoring-stack module
+- **Dynamic firewall rules** based on enabled services (SSH, HTTP/S, per-service ports)
+- **Rebuild script** `scripts/restore/rebuild-tooling.sh` with check/init/plan/apply/status commands
+- **138 Terraform tests** for tooling-stack module (validation, plan, regression)
+- **14 Terraform tests** for tooling integration in monitoring-stack module
+- **Documentation** `docs/TOOLING-STACK.md` (~380 lines) covering deployment, services, monitoring, backup
+
+### Changed
+- README.md updated with tooling stack section, module reference, and features
+- Project structure updated to include tooling-stack module
+- Test count updated from ~270 to ~495 Terraform tests (6 modules)
+- terraform.tfvars.example includes complete tooling configuration
+
 ## [1.5.0] - 2026-02-04
 
 ### Changed

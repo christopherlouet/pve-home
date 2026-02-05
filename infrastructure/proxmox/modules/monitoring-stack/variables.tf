@@ -326,6 +326,51 @@ variable "uptime_kuma_enabled" {
 }
 
 # -----------------------------------------------------------------------------
+# Tooling Stack Integration (Step-ca, Harbor, Authentik)
+# -----------------------------------------------------------------------------
+
+variable "tooling_enabled" {
+  description = "Activer l'intégration des dashboards et métriques du tooling stack"
+  type        = bool
+  default     = false
+}
+
+variable "tooling_ip" {
+  description = "Adresse IP de la VM tooling (sans CIDR)"
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.tooling_ip == "" || can(regex("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$", var.tooling_ip))
+    error_message = "tooling_ip doit être une adresse IPv4 valide (ex: 192.168.1.100) ou vide si tooling_enabled est false."
+  }
+}
+
+variable "tooling_step_ca_enabled" {
+  description = "Activer les dashboards et métriques Step-ca (PKI)"
+  type        = bool
+  default     = false
+}
+
+variable "tooling_harbor_enabled" {
+  description = "Activer les dashboards et métriques Harbor (Registry)"
+  type        = bool
+  default     = false
+}
+
+variable "tooling_authentik_enabled" {
+  description = "Activer les dashboards et métriques Authentik (SSO)"
+  type        = bool
+  default     = false
+}
+
+variable "tooling_traefik_enabled" {
+  description = "Activer les dashboards et métriques Traefik sur tooling VM"
+  type        = bool
+  default     = false
+}
+
+# -----------------------------------------------------------------------------
 # Tags
 # -----------------------------------------------------------------------------
 

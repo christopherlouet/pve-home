@@ -40,10 +40,18 @@ module "monitoring" {
   # Prometheus
   prometheus_retention_days = var.monitoring.retention_days
   prometheus_retention_size = "${var.monitoring.vm.data_disk - 10}GB"
-  custom_scrape_configs     = var.custom_scrape_configs
+  custom_scrape_configs     = local.combined_scrape_configs
 
   # Grafana
   grafana_admin_password = var.monitoring.grafana_admin_password
+
+  # Tooling Stack Integration (dashboards et alertes)
+  tooling_enabled           = var.tooling.enabled
+  tooling_ip                = var.tooling.enabled ? var.tooling.vm.ip : ""
+  tooling_step_ca_enabled   = var.tooling.enabled && var.tooling.step_ca.enabled
+  tooling_harbor_enabled    = var.tooling.enabled && var.tooling.harbor.enabled
+  tooling_authentik_enabled = var.tooling.enabled && var.tooling.authentik.enabled
+  tooling_traefik_enabled   = var.tooling.enabled && var.tooling.traefik_enabled
 
   # Alertmanager - Telegram
   telegram_enabled   = var.monitoring.telegram.enabled

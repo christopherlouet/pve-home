@@ -106,6 +106,23 @@ locals {
   dashboard_postgresql           = file("${path.module}/files/grafana/dashboards/postgresql.json")
   dashboard_docker_containers    = file("${path.module}/files/grafana/dashboards/docker-containers.json")
 
+  # Tooling Dashboards (Step-ca, Harbor, Authentik)
+  dashboard_step_ca   = var.tooling_enabled && var.tooling_step_ca_enabled ? file("${path.module}/files/grafana/dashboards/tooling/step-ca.json") : ""
+  dashboard_harbor    = var.tooling_enabled && var.tooling_harbor_enabled ? file("${path.module}/files/grafana/dashboards/tooling/harbor.json") : ""
+  dashboard_authentik = var.tooling_enabled && var.tooling_authentik_enabled ? file("${path.module}/files/grafana/dashboards/tooling/authentik.json") : ""
+
+  # Tooling Alerts
+  tooling_alerts = var.tooling_enabled ? file("${path.module}/files/prometheus/alerts/tooling.yml") : ""
+
+  # Tooling Scrape Config
+  tooling_scrape_config = var.tooling_enabled && var.tooling_ip != "" ? templatefile("${path.module}/files/prometheus/scrape/tooling.yml.tpl", {
+    tooling_ip         = var.tooling_ip
+    step_ca_enabled    = var.tooling_step_ca_enabled
+    harbor_enabled     = var.tooling_harbor_enabled
+    authentik_enabled  = var.tooling_authentik_enabled
+    traefik_enabled    = var.tooling_traefik_enabled
+  }) : ""
+
   # Configuration Alertmanager
   alertmanager_config = templatefile("${path.module}/files/alertmanager.yml.tpl", {
     telegram_enabled   = var.telegram_enabled
@@ -124,6 +141,9 @@ echo "=== Configuration Stack Monitoring ==="
 mkdir -p /opt/monitoring/{prometheus,alertmanager,grafana/provisioning/{datasources,dashboards},grafana/dashboards/{infrastructure,observability,applications},pve-exporter}
 mkdir -p /opt/monitoring/prometheus/data
 mkdir -p /opt/monitoring/grafana/data
+%{if var.tooling_enabled}
+mkdir -p /opt/monitoring/grafana/dashboards/tooling
+%{endif}
 %{if var.traefik_enabled}
 mkdir -p /opt/monitoring/traefik
 %{if var.tls_enabled}
@@ -239,6 +259,16 @@ providers:
     updateIntervalSeconds: 30
     options:
       path: /var/lib/grafana/dashboards/applications
+%{if var.tooling_enabled}
+  - name: 'Tooling'
+    orgId: 1
+    folder: 'Tooling'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards/tooling
+%{endif}
 DASHPROV
 
 # Demarrer la stack
@@ -289,89 +319,121 @@ EOT
     package_update  = true
     package_upgrade = false
     packages        = local.packages
-    write_files = [
-      {
-        path        = "/opt/setup-monitoring.sh"
-        permissions = "0755"
-        content     = local.monitoring_setup_script
-      },
-      # Infrastructure dashboards
-      {
-        path        = "/opt/monitoring/grafana/dashboards/infrastructure/node-exporter.json"
-        permissions = "0644"
-        content     = local.dashboard_node_exporter
-      },
-      {
-        path        = "/opt/monitoring/grafana/dashboards/infrastructure/pve-exporter.json"
-        permissions = "0644"
-        content     = local.dashboard_pve_exporter
-      },
-      {
-        path        = "/opt/monitoring/grafana/dashboards/infrastructure/prometheus.json"
-        permissions = "0644"
-        content     = local.dashboard_prometheus
-      },
-      {
-        path        = "/opt/monitoring/grafana/dashboards/infrastructure/nodes-overview.json"
-        permissions = "0644"
-        content     = local.dashboard_nodes_overview
-      },
-      # Observability dashboards
-      {
-        path        = "/opt/monitoring/grafana/dashboards/observability/backup-overview.json"
-        permissions = "0644"
-        content     = local.dashboard_backup_overview
-      },
-      {
-        path        = "/opt/monitoring/grafana/dashboards/observability/alerting-overview.json"
-        permissions = "0644"
-        content     = local.dashboard_alerting_overview
-      },
-      # Applications dashboards
-      {
-        path        = "/opt/monitoring/grafana/dashboards/applications/application-overview.json"
-        permissions = "0644"
-        content     = local.dashboard_application_overview
-      },
-      {
-        path        = "/opt/monitoring/grafana/dashboards/applications/http-probes.json"
-        permissions = "0644"
-        content     = local.dashboard_http_probes
-      },
-      {
-        path        = "/opt/monitoring/grafana/dashboards/applications/postgresql.json"
-        permissions = "0644"
-        content     = local.dashboard_postgresql
-      },
-      {
-        path        = "/opt/monitoring/grafana/dashboards/applications/docker-containers.json"
-        permissions = "0644"
-        content     = local.dashboard_docker_containers
-      },
-      {
-        path        = "/opt/monitoring/prometheus/alerts/default.yml"
-        permissions = "0644"
-        content     = file("${path.module}/files/prometheus/alerts/default.yml")
-      },
-      {
-        path        = "/opt/monitoring/prometheus/recording/aggregations.yml"
-        permissions = "0644"
-        content     = file("${path.module}/files/prometheus/recording/aggregations.yml")
-      },
-      {
-        path        = "/opt/monitoring/pve-exporter/pve.yml"
-        permissions = "0644"
-        content     = local.pve_exporter_config
-      },
-      # SECURITY NOTE: Cle privee deployee via cloud-init et stockee dans le Terraform state.
-      # Acceptable pour homelab - en production, generer les cles en dehors de Terraform.
-      {
-        path        = "/root/.ssh/id_ed25519"
-        permissions = "0600"
-        owner       = "root:root"
-        content     = tls_private_key.health_check.private_key_openssh
-      }
-    ]
+    write_files = concat(
+      [
+        {
+          path        = "/opt/setup-monitoring.sh"
+          permissions = "0755"
+          content     = local.monitoring_setup_script
+        },
+        # Infrastructure dashboards
+        {
+          path        = "/opt/monitoring/grafana/dashboards/infrastructure/node-exporter.json"
+          permissions = "0644"
+          content     = local.dashboard_node_exporter
+        },
+        {
+          path        = "/opt/monitoring/grafana/dashboards/infrastructure/pve-exporter.json"
+          permissions = "0644"
+          content     = local.dashboard_pve_exporter
+        },
+        {
+          path        = "/opt/monitoring/grafana/dashboards/infrastructure/prometheus.json"
+          permissions = "0644"
+          content     = local.dashboard_prometheus
+        },
+        {
+          path        = "/opt/monitoring/grafana/dashboards/infrastructure/nodes-overview.json"
+          permissions = "0644"
+          content     = local.dashboard_nodes_overview
+        },
+        # Observability dashboards
+        {
+          path        = "/opt/monitoring/grafana/dashboards/observability/backup-overview.json"
+          permissions = "0644"
+          content     = local.dashboard_backup_overview
+        },
+        {
+          path        = "/opt/monitoring/grafana/dashboards/observability/alerting-overview.json"
+          permissions = "0644"
+          content     = local.dashboard_alerting_overview
+        },
+        # Applications dashboards
+        {
+          path        = "/opt/monitoring/grafana/dashboards/applications/application-overview.json"
+          permissions = "0644"
+          content     = local.dashboard_application_overview
+        },
+        {
+          path        = "/opt/monitoring/grafana/dashboards/applications/http-probes.json"
+          permissions = "0644"
+          content     = local.dashboard_http_probes
+        },
+        {
+          path        = "/opt/monitoring/grafana/dashboards/applications/postgresql.json"
+          permissions = "0644"
+          content     = local.dashboard_postgresql
+        },
+        {
+          path        = "/opt/monitoring/grafana/dashboards/applications/docker-containers.json"
+          permissions = "0644"
+          content     = local.dashboard_docker_containers
+        },
+        {
+          path        = "/opt/monitoring/prometheus/alerts/default.yml"
+          permissions = "0644"
+          content     = file("${path.module}/files/prometheus/alerts/default.yml")
+        },
+        {
+          path        = "/opt/monitoring/prometheus/recording/aggregations.yml"
+          permissions = "0644"
+          content     = file("${path.module}/files/prometheus/recording/aggregations.yml")
+        },
+        {
+          path        = "/opt/monitoring/pve-exporter/pve.yml"
+          permissions = "0644"
+          content     = local.pve_exporter_config
+        },
+        # SECURITY NOTE: Cle privee deployee via cloud-init et stockee dans le Terraform state.
+        # Acceptable pour homelab - en production, generer les cles en dehors de Terraform.
+        {
+          path        = "/root/.ssh/id_ed25519"
+          permissions = "0600"
+          owner       = "root:root"
+          content     = tls_private_key.health_check.private_key_openssh
+        }
+      ],
+      # Tooling dashboards (conditionally included)
+      var.tooling_enabled && var.tooling_step_ca_enabled ? [
+        {
+          path        = "/opt/monitoring/grafana/dashboards/tooling/step-ca.json"
+          permissions = "0644"
+          content     = local.dashboard_step_ca
+        }
+      ] : [],
+      var.tooling_enabled && var.tooling_harbor_enabled ? [
+        {
+          path        = "/opt/monitoring/grafana/dashboards/tooling/harbor.json"
+          permissions = "0644"
+          content     = local.dashboard_harbor
+        }
+      ] : [],
+      var.tooling_enabled && var.tooling_authentik_enabled ? [
+        {
+          path        = "/opt/monitoring/grafana/dashboards/tooling/authentik.json"
+          permissions = "0644"
+          content     = local.dashboard_authentik
+        }
+      ] : [],
+      # Tooling alerts
+      var.tooling_enabled ? [
+        {
+          path        = "/opt/monitoring/prometheus/alerts/tooling.yml"
+          permissions = "0644"
+          content     = local.tooling_alerts
+        }
+      ] : []
+    )
     runcmd = concat(
       local.docker_install_runcmd,
       ["/opt/setup-monitoring.sh"]

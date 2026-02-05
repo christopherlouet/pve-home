@@ -216,3 +216,66 @@ remote_targets = [
 # -----------------------------------------------------------------------------
 
 custom_scrape_configs = ""
+
+# -----------------------------------------------------------------------------
+# Stack Tooling (Step-ca PKI + Harbor Registry + Authentik SSO)
+# -----------------------------------------------------------------------------
+# Services internes partages: PKI interne, registre Docker, SSO.
+# Tous les services sont exposes via Traefik avec HTTPS auto.
+# Domaine recommande: *.home.arpa (RFC 8375 pour homelab)
+# -----------------------------------------------------------------------------
+
+tooling = {
+  # Activer/desactiver toute la stack tooling
+  enabled = false
+
+  # Node Proxmox pour la VM tooling (null = default_node)
+  node = null
+
+  # Configuration de la VM tooling
+  # Recommandations: 4 cores, 8 GB RAM, 50 GB system, 200 GB data (Harbor images)
+  vm = {
+    ip        = "192.168.1.60"
+    cores     = 4
+    memory    = 8192
+    disk      = 50
+    data_disk = 200
+  }
+
+  # Domaine pour les services (*.home.arpa recommande - RFC 8375)
+  # Les enregistrements DNS doivent pointer vers l'IP de la VM tooling:
+  #   pki.home.arpa      -> 192.168.1.60
+  #   registry.home.arpa -> 192.168.1.60
+  #   auth.home.arpa     -> 192.168.1.60
+  #   traefik.home.arpa  -> 192.168.1.60
+  domain_suffix = "home.arpa"
+
+  # Activer Traefik (reverse proxy avec HTTPS auto)
+  traefik_enabled = true
+
+  # Step-ca PKI (Autorite de Certification interne)
+  # Permet de generer des certificats TLS pour tous les services internes
+  step_ca = {
+    enabled          = true
+    password         = "${STEP_CA_PASSWORD:?required}"  # Mot de passe CA (min 8 chars)
+    provisioner_name = "acme"                           # Nom du provisioner ACME
+    cert_duration    = "720h"                           # Duree des certificats (30 jours)
+  }
+
+  # Harbor Registry (Registre Docker prive)
+  # Stocke les images Docker avec scan de vulnerabilites Trivy
+  harbor = {
+    enabled        = true
+    admin_password = "${HARBOR_ADMIN_PASSWORD:?required}"  # Mot de passe admin (min 8 chars)
+    trivy_enabled  = true                                   # Scanner de vulnerabilites
+  }
+
+  # Authentik SSO (Single Sign-On)
+  # Authentification centralisee pour Grafana, Harbor, etc.
+  authentik = {
+    enabled            = true
+    secret_key         = "${AUTHENTIK_SECRET_KEY:?required}"         # Cle secrete (min 50 chars)
+    bootstrap_password = "${AUTHENTIK_BOOTSTRAP_PASSWORD:?required}" # Mot de passe admin initial
+    bootstrap_email    = "admin@home.arpa"                           # Email admin
+  }
+}

@@ -90,3 +90,26 @@ output "health_check_ssh_public_key" {
   description = "Cle SSH publique de la VM monitoring pour les health checks"
   value       = trimspace(tls_private_key.health_check.public_key_openssh)
 }
+
+# -----------------------------------------------------------------------------
+# Tooling Stack Integration Outputs
+# -----------------------------------------------------------------------------
+
+output "tooling_enabled" {
+  description = "Indique si l'integration tooling est activee"
+  value       = var.tooling_enabled
+}
+
+output "tooling_dashboards" {
+  description = "Dashboards tooling actives"
+  value = var.tooling_enabled ? {
+    step_ca   = var.tooling_step_ca_enabled
+    harbor    = var.tooling_harbor_enabled
+    authentik = var.tooling_authentik_enabled
+  } : {}
+}
+
+output "tooling_scrape_config" {
+  description = "Configuration scrape Prometheus pour le tooling stack (a ajouter via custom_scrape_configs)"
+  value       = local.tooling_scrape_config
+}
