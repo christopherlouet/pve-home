@@ -141,8 +141,10 @@ jobs:
           done
       - name: BATS tests
         run: |
-          # Run all test directories except tests/tui/ (requires gum)
-          bats tests/ tests/drift/ tests/health/ tests/lifecycle/ tests/restore/ tests/scripts/
+          # Run all test directories except:
+          # - tests/tui/ (requires gum)
+          # - tests/drift/ (requires terraform environments)
+          bats tests/ tests/health/ tests/lifecycle/ tests/restore/ tests/scripts/
 
   markdown-lint:
     name: Markdown Lint
