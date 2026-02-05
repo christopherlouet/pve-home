@@ -96,8 +96,48 @@ resource "proxmox_virtual_environment_firewall_rules" "vms" {
     type    = "in"
     action  = "ACCEPT"
     proto   = "tcp"
+    dport   = "9080"
+    comment = "cAdvisor"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
     dport   = "9100"
     comment = "Node Exporter"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "9113"
+    comment = "Nginx Exporter"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "9115"
+    comment = "Blackbox Exporter"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "9187"
+    comment = "PostgreSQL Exporter"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "9256"
+    comment = "Process Exporter"
   }
 
   rule {
