@@ -126,10 +126,25 @@ jobs:
         uses: actions/checkout@v6
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y shellcheck bats
-      - name: Shellcheck
+      - name: Shellcheck scripts
         run: find scripts -name "*.sh" -type f -print0 | xargs -0 shellcheck -x -S warning
+      - name: Shellcheck module scripts
+        run: |
+          # Check plain .sh files in module files/ directories
+          find infrastructure/proxmox/modules -path '*/files/*.sh' -type f -print0 | xargs -0 --no-run-if-empty shellcheck -x -S warning
+          # Check .sh.tpl files (strip Terraform template directives first)
+          for f in $(find infrastructure/proxmox/modules -path '*/files/*.sh.tpl' -type f); do
+            tmp=$(mktemp)
+            sed -e 's/%{[^}]*}//g' -e 's/\${[^}]*}/PLACEHOLDER/g' "$f" > "$tmp"
+            shellcheck -x -S warning "$tmp" || { echo "shellcheck failed on $f"; rm "$tmp"; exit 1; }
+            rm "$tmp"
+          done
       - name: BATS tests
-        run: bats tests/
+        run: |
+          # Run all test directories except:
+          # - tests/tui/ (requires gum)
+          # - tests/drift/ (requires terraform environments)
+          bats tests/ tests/health/ tests/lifecycle/ tests/restore/ tests/scripts/
 
   markdown-lint:
     name: Markdown Lint

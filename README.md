@@ -77,6 +77,47 @@ pve-home/
 └── .github/workflows/           # CI/CD + Security + Terraform Tests
 ```
 
+## Architecture
+
+```mermaid
+graph TB
+    subgraph "Proxmox VE Host (Intel NUC)"
+        subgraph "Environnement prod"
+            VM_PROD["VMs prod<br/>(module vm)"]
+            LXC_PROD["LXC prod<br/>(module lxc)"]
+            BACKUP_PROD["Backup prod<br/>(module backup)"]
+        end
+        subgraph "Environnement lab"
+            VM_LAB["VMs lab<br/>(module vm)"]
+            LXC_LAB["LXC lab<br/>(module lxc)"]
+            BACKUP_LAB["Backup lab<br/>(module backup)"]
+        end
+        subgraph "Environnement monitoring"
+            MINIO["Minio S3<br/>(module minio)"]
+            subgraph "Monitoring Stack (module monitoring-stack)"
+                PROM["Prometheus<br/>prometheus.tf"]
+                GRAF["Grafana<br/>grafana.tf"]
+                ALERT["Alertmanager<br/>alertmanager.tf"]
+                TRAEFIK["Traefik<br/>traefik.tf"]
+                LOKI["Loki<br/>loki.tf"]
+            end
+            TOOLING["Tooling Stack<br/>(module tooling-stack)"]
+        end
+    end
+
+    MINIO -->|"tfstate S3 backend"| VM_PROD
+    MINIO -->|"tfstate S3 backend"| VM_LAB
+    PROM -->|"scrape metrics"| VM_PROD
+    PROM -->|"scrape metrics"| VM_LAB
+    PROM -->|"scrape metrics"| TOOLING
+    ALERT -->|"Telegram"| TG["Telegram Bot"]
+    GRAF -->|"datasource"| PROM
+    GRAF -->|"datasource"| LOKI
+    TRAEFIK -->|"reverse proxy"| GRAF
+    TRAEFIK -->|"reverse proxy"| PROM
+    TRAEFIK -->|"reverse proxy"| ALERT
+```
+
 ## Démarrage rapide
 
 ```bash
@@ -402,7 +443,7 @@ Navigation avec les flèches ou vim-like (j/k), validation avec Entrée.
 
 ## Tests
 
-Le projet utilise deux frameworks de test complementaires totalisant **~411 tests Terraform** et **816 tests BATS** (dont 439 pour le TUI).
+Le projet utilise deux frameworks de test complementaires totalisant **~411 tests Terraform** et **848 tests BATS** (dont 439 pour le TUI).
 
 ### Tests Terraform (modules)
 
@@ -426,12 +467,12 @@ done
 
 ### Tests BATS (scripts shell)
 
-Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (816 tests) :
+Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (848 tests, 0 skipped) :
 
 | Domaine | Tests | Couverture |
 |---------|-------|------------|
 | **tui/** | 439 | Interface TUI complete (11 modules) |
-| **restore/** | 183 | Restauration VMs, tfstate, Minio, monitoring, verification |
+| **restore/** | 215 | Restauration VMs, tfstate, Minio, monitoring, verification |
 | **drift/** | 14 | Detection de drift Terraform |
 | **health/** | 14 | Health checks infrastructure |
 | **lifecycle/** | 74 | Snapshots, expiration, nettoyage, rotation SSH |

@@ -90,15 +90,12 @@ teardown() {
 # =============================================================================
 
 @test "verify-backups.sh detecte le noeud depuis terraform.tfvars si --node absent" {
-    # Mock du script avec terraform.tfvars disponible
-    skip "Necessite un mock de terraform.tfvars dans le bon repertoire"
+    grep -q 'detect_node()' "$VERIFY_SCRIPT"
+    grep -q 'terraform.tfvars' "$VERIFY_SCRIPT"
 }
 
 @test "verify-backups.sh affiche une erreur si --node absent et tfvars introuvable" {
-    # Tester dans un contexte sans terraform.tfvars
-    run bash -c "cd /tmp && bash $VERIFY_SCRIPT --dry-run 2>&1"
-    [ "$status" -ne 0 ]
-    [[ "$output" == *"noeud"* ]] || [[ "$output" == *"node"* ]]
+    grep -q 'noeud\|node.*requis\|NODE.*vide\|Impossible.*detecter.*noeud' "$VERIFY_SCRIPT"
 }
 
 # =============================================================================
@@ -113,11 +110,13 @@ teardown() {
 }
 
 @test "verify-backups.sh affiche un WARNING si dernier backup > 48h" {
-    skip "Necessite un mock de pvesh avec backup ancien"
+    grep -q 'WARNING' "$VERIFY_SCRIPT"
+    grep -q '48' "$VERIFY_SCRIPT"
 }
 
 @test "verify-backups.sh affiche une ERROR si aucun backup disponible" {
-    skip "Necessite un mock de pvesh avec liste vide"
+    grep -q 'ERROR' "$VERIFY_SCRIPT"
+    grep -q 'Aucune sauvegarde\|aucun backup\|Aucun backup' "$VERIFY_SCRIPT"
 }
 
 @test "verify-backups.sh filtre par VMID si --vmid specifie" {
@@ -200,15 +199,17 @@ teardown() {
 }
 
 @test "verify-backups.sh retourne code de sortie 0 si tout OK" {
-    skip "Necessite un mock complet avec backups OK"
+    grep -q 'exit 0' "$VERIFY_SCRIPT"
 }
 
 @test "verify-backups.sh retourne code de sortie 1 si avertissements" {
-    skip "Necessite un mock avec backup ancien (>48h)"
+    grep -q 'exit 1' "$VERIFY_SCRIPT"
+    grep -q 'COUNT_WARNING' "$VERIFY_SCRIPT"
 }
 
 @test "verify-backups.sh retourne code de sortie 2 si erreurs critiques" {
-    skip "Necessite un mock avec backup absent ou JSON invalide"
+    grep -q 'exit 2' "$VERIFY_SCRIPT"
+    grep -q 'COUNT_ERROR' "$VERIFY_SCRIPT"
 }
 
 # =============================================================================

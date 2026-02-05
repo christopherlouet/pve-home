@@ -6,7 +6,7 @@
 # Setup: source le fichier common.sh avant chaque test
 setup() {
     # Charger la bibliotheque commune
-    SCRIPT_DIR="/home/chris/source/sideprojects/pve-home/scripts/lib"
+    SCRIPT_DIR="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../scripts/lib" && pwd)"
     source "${SCRIPT_DIR}/common.sh"
 
     # Variables de test

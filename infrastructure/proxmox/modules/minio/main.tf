@@ -20,72 +20,14 @@ terraform {
 locals {
   minio_ip = split("/", var.ip_address)[0]
 
-  # Script d'installation Minio
-  install_script = <<-SCRIPT
-    #!/bin/bash
-    set -euo pipefail
-
-    # Installer Minio
-    apt-get update && apt-get install -y curl ca-certificates
-
-    # Telecharger le binaire Minio
-    curl -fsSL https://dl.min.io/server/minio/release/linux-amd64/minio -o /usr/local/bin/minio
-    chmod +x /usr/local/bin/minio
-
-    # Creer utilisateur minio
-    useradd -r -s /sbin/nologin minio-user || true
-
-    # Creer les repertoires
-    mkdir -p /data/minio
-    chown -R minio-user:minio-user /data/minio
-
-    # Configurer les variables d'environnement
-    cat > /etc/default/minio <<EOF
-    MINIO_ROOT_USER=${var.minio_root_user}
-    MINIO_ROOT_PASSWORD=${var.minio_root_password}
-    MINIO_VOLUMES="/data/minio"
-    MINIO_OPTS="--address :${var.minio_port} --console-address :${var.minio_console_port}"
-    EOF
-
-    # Creer le service systemd
-    cat > /etc/systemd/system/minio.service <<EOF
-    [Unit]
-    Description=MinIO Object Storage
-    After=network-online.target
-    Wants=network-online.target
-
-    [Service]
-    User=minio-user
-    Group=minio-user
-    EnvironmentFile=/etc/default/minio
-    ExecStart=/usr/local/bin/minio server \$MINIO_VOLUMES \$MINIO_OPTS
-    Restart=always
-    RestartSec=10
-    LimitNOFILE=65536
-
-    [Install]
-    WantedBy=multi-user.target
-    EOF
-
-    systemctl daemon-reload
-    systemctl enable --now minio
-
-    # Attendre que Minio demarre
-    sleep 5
-
-    # Installer mc (Minio Client) pour creer les buckets
-    curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc
-    chmod +x /usr/local/bin/mc
-
-    # Configurer l'alias via variable d'environnement (evite les credentials en arguments CLI)
-    export MC_HOST_local="http://${var.minio_root_user}:${var.minio_root_password}@127.0.0.1:${var.minio_port}"
-
-    # Creer les buckets avec versioning
-    %{for bucket in var.buckets~}
-    mc mb --ignore-existing local/${bucket}
-    mc version enable local/${bucket}
-    %{endfor~}
-  SCRIPT
+  # Script d'installation Minio (extrait dans fichier template pour testabilite)
+  install_script = templatefile("${path.module}/files/install-minio.sh.tpl", {
+    minio_root_user     = var.minio_root_user
+    minio_root_password = var.minio_root_password
+    minio_port          = var.minio_port
+    minio_console_port  = var.minio_console_port
+    buckets             = var.buckets
+  })
 }
 
 # -----------------------------------------------------------------------------

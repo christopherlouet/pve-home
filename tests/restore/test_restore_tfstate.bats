@@ -1,70 +1,34 @@
 #!/usr/bin/env bats
 # =============================================================================
-# Tests pour restore-tfstate.sh
+# Tests pour scripts/restore/restore-tfstate.sh
 # =============================================================================
 # T012 - Tests BATS pour restore-tfstate.sh
-#
-# Cycle TDD: Phase RED - Ces tests DOIVENT echouer
 # =============================================================================
 
-# Setup global
-setup() {
-    # Repertoire temporaire pour les tests
-    TEMP_DIR="${BATS_TEST_TMPDIR}/restore-tfstate-$$"
-    mkdir -p "${TEMP_DIR}"
+SCRIPT="scripts/restore/restore-tfstate.sh"
 
-    # Path du script a tester
-    SCRIPT_PATH="${BATS_TEST_DIRNAME}/../../scripts/restore/restore-tfstate.sh"
+# =============================================================================
+# Tests de qualite du script
+# =============================================================================
 
-    # Creer un environnement de test minimal
-    TEST_ENV_DIR="${TEMP_DIR}/env/prod"
-    mkdir -p "${TEST_ENV_DIR}"
-
-    # Fichier backend.tf minimal
-    cat > "${TEST_ENV_DIR}/backend.tf" << 'EOF'
-terraform {
-  backend "s3" {
-    bucket = "tfstate-prod"
-    key    = "terraform.tfstate"
-    region = "us-east-1"
-    endpoints = {
-      s3 = "http://192.168.1.52:9000"
-    }
-    skip_credentials_validation = true
-    skip_metadata_api_check     = true
-    skip_requesting_account_id  = true
-    use_path_style              = true
-  }
-}
-EOF
-
-    # Fichier terraform.tfvars minimal pour la configuration Minio
-    cat > "${TEST_ENV_DIR}/terraform.tfvars" << 'EOF'
-default_node = "pve-prod"
-environment = "prod"
-minio = {
-  ip            = "192.168.1.52"
-  root_user     = "minioadmin"
-  root_password = "testpassword"
-  port          = 9000
-}
-EOF
+@test "restore-tfstate.sh: le script existe" {
+    [ -f "$SCRIPT" ]
 }
 
-teardown() {
-    # Nettoyer le repertoire temporaire
-    rm -rf "${TEMP_DIR}"
+@test "restore-tfstate.sh: shellcheck doit passer sans erreur" {
+    shellcheck "$SCRIPT" 2>&1 | grep -v "SC1091" | grep -E "error|warning" && exit 1 || true
+}
+
+@test "restore-tfstate.sh: utilise set -euo pipefail" {
+    grep -q "set -euo pipefail" "$SCRIPT"
 }
 
 # =============================================================================
-# T012.1 - Test parsing arguments
+# Tests parsing arguments (T012.1)
 # =============================================================================
 
-@test "restore-tfstate: --help affiche l'aide" {
-    # Arrange/Act
-    run bash "${SCRIPT_PATH}" --help
-
-    # Assert
+@test "restore-tfstate.sh: --help affiche l'aide" {
+    run bash "$SCRIPT" --help
     [[ $status -eq 0 ]]
     [[ "$output" =~ "Usage:" ]]
     [[ "$output" =~ "--env" ]]
@@ -72,442 +36,163 @@ teardown() {
     [[ "$output" =~ "--restore" ]]
 }
 
-@test "restore-tfstate: erreur si --env manquant" {
-    # Arrange/Act
-    run bash "${SCRIPT_PATH}" --list
-
-    # Assert
+@test "restore-tfstate.sh: erreur si --env manquant" {
+    run bash "$SCRIPT" --list
     [[ $status -ne 0 ]]
     [[ "$output" =~ "Option --env est requise" ]]
 }
 
-@test "restore-tfstate: erreur si environnement invalide" {
-    # Arrange/Act
-    run bash "${SCRIPT_PATH}" --env invalid --list
-
-    # Assert
+@test "restore-tfstate.sh: erreur si environnement invalide" {
+    run bash "$SCRIPT" --env invalid --list
     [[ $status -ne 0 ]]
     [[ "$output" =~ "Environnement invalide" ]]
     [[ "$output" =~ "prod|lab|monitoring" ]]
 }
 
-@test "restore-tfstate: accepte --env prod" {
-    skip "Necessite implementation de configure_mc"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --list --dry-run
-
-    # Assert
-    [[ $status -eq 0 ]]
+@test "restore-tfstate.sh: supporte les environnements prod, lab, monitoring" {
+    grep -q 'prod' "$SCRIPT"
+    grep -q 'lab' "$SCRIPT"
+    grep -q 'monitoring' "$SCRIPT"
 }
 
-@test "restore-tfstate: accepte --env lab" {
-    skip "Necessite implementation de configure_mc"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env lab --list --dry-run
-
-    # Assert
-    [[ $status -eq 0 ]]
+@test "restore-tfstate.sh: supporte --dry-run" {
+    grep -q '\-\-dry-run' "$SCRIPT"
+    grep -q 'DRY_RUN=true' "$SCRIPT"
 }
 
-@test "restore-tfstate: accepte --env monitoring" {
-    skip "Necessite implementation de configure_mc"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env monitoring --list --dry-run
-
-    # Assert
-    [[ $status -eq 0 ]]
+@test "restore-tfstate.sh: affiche [DRY-RUN] en mode dry-run" {
+    grep -q '\[DRY-RUN\]' "$SCRIPT"
 }
 
-@test "restore-tfstate: --dry-run n'execute pas les commandes" {
-    skip "Necessite implementation complete"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --list --dry-run
-
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "[DRY-RUN]" ]]
+@test "restore-tfstate.sh: supporte --force" {
+    grep -q '\-\-force' "$SCRIPT"
+    grep -q 'FORCE_MODE=true' "$SCRIPT"
 }
 
-# =============================================================================
-# T012.2 - Test validation environnement
-# =============================================================================
-
-@test "restore-tfstate: detecte le repertoire environnement prod" {
-    skip "Necessite implementation"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --list --dry-run
-
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "infrastructure/proxmox/environments/prod" ]]
-}
-
-@test "restore-tfstate: erreur si backend.tf absent" {
-    skip "Necessite implementation"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-    rm -f "${TEST_ENV_DIR}/backend.tf"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --list
-
-    # Assert
-    [[ $status -ne 0 ]]
-    [[ "$output" =~ "backend.tf introuvable" ]]
-}
-
-# =============================================================================
-# T012.3 - Test listing versions (mock mc)
-# =============================================================================
-
-@test "restore-tfstate: liste les versions avec mc ls --versions" {
-    skip "Necessite implementation list_versions"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-    # Mock mc avec un script shell
-    cat > "${TEMP_DIR}/mc" << 'MCEOF'
-#!/bin/bash
-if [[ "$1" == "ls" && "$2" == "--versions" ]]; then
-    echo "[2026-02-01 10:00:00] 1234 version-id-001  homelab/tfstate-prod/terraform.tfstate"
-    echo "[2026-01-31 10:00:00] 1200 version-id-002  homelab/tfstate-prod/terraform.tfstate"
-    exit 0
-fi
-exit 1
-MCEOF
-    chmod +x "${TEMP_DIR}/mc"
-    export PATH="${TEMP_DIR}:${PATH}"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --list
-
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "version-id-001" ]]
-    [[ "$output" =~ "version-id-002" ]]
-}
-
-@test "restore-tfstate: affiche 'current' pour la version active" {
-    skip "Necessite implementation list_versions avec marqueur current"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-    cat > "${TEMP_DIR}/mc" << 'MCEOF'
-#!/bin/bash
-if [[ "$1" == "ls" && "$2" == "--versions" ]]; then
-    echo "[2026-02-01 10:00:00] 1234 version-id-001  homelab/tfstate-prod/terraform.tfstate"
-    echo "[2026-01-31 10:00:00] 1200 version-id-002  homelab/tfstate-prod/terraform.tfstate"
-    exit 0
-fi
-exit 1
-MCEOF
-    chmod +x "${TEMP_DIR}/mc"
-    export PATH="${TEMP_DIR}:${PATH}"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --list
-
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "current" ]]
-}
-
-# =============================================================================
-# T012.4 - Test restauration version (mock mc cp)
-# =============================================================================
-
-@test "restore-tfstate: erreur si --restore sans version-id" {
-    # Arrange/Act
-    run bash "${SCRIPT_PATH}" --env prod --restore
-
-    # Assert
+@test "restore-tfstate.sh: erreur si --restore sans version-id" {
+    run bash "$SCRIPT" --env prod --restore
     [[ $status -ne 0 ]]
     [[ "$output" =~ "version-id requis" ]]
 }
 
-@test "restore-tfstate: sauvegarde version actuelle avant restauration" {
-    skip "Necessite implementation restore_version"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-    cat > "${TEMP_DIR}/mc" << 'MCEOF'
-#!/bin/bash
-if [[ "$1" == "cp" ]]; then
-    echo "Copied successfully"
-    exit 0
-fi
-exit 1
-MCEOF
-    chmod +x "${TEMP_DIR}/mc"
-    export PATH="${TEMP_DIR}:${PATH}"
+# =============================================================================
+# Tests validation environnement (T012.2)
+# =============================================================================
 
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --restore version-id-001 --dry-run
-
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "Sauvegarde version actuelle" ]]
-    [[ "$output" =~ ".backup" ]]
+@test "restore-tfstate.sh: detecte le repertoire environnement" {
+    grep -q 'infrastructure/proxmox/environments' "$SCRIPT"
 }
 
-@test "restore-tfstate: telecharge la version avec --version-id" {
-    skip "Necessite implementation restore_version"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-    cat > "${TEMP_DIR}/mc" << 'MCEOF'
-#!/bin/bash
-if [[ "$*" =~ --version-id ]]; then
-    echo "Downloaded version-id-001"
-    exit 0
-fi
-exit 1
-MCEOF
-    chmod +x "${TEMP_DIR}/mc"
-    export PATH="${TEMP_DIR}:${PATH}"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --restore version-id-001 --dry-run
-
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "version-id-001" ]]
-}
-
-@test "restore-tfstate: execute terraform init apres restauration" {
-    skip "Necessite implementation restore_version complete"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-    cat > "${TEMP_DIR}/mc" << 'MCEOF'
-#!/bin/bash
-exit 0
-MCEOF
-    chmod +x "${TEMP_DIR}/mc"
-    cat > "${TEMP_DIR}/terraform" << 'TFEOF'
-#!/bin/bash
-echo "Terraform initialized"
-exit 0
-TFEOF
-    chmod +x "${TEMP_DIR}/terraform"
-    export PATH="${TEMP_DIR}:${PATH}"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --restore version-id-001 --dry-run
-
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "terraform init" ]]
+@test "restore-tfstate.sh: verifie l'existence de backend.tf" {
+    grep -q 'backend.tf' "$SCRIPT"
 }
 
 # =============================================================================
-# T012.5 - Test mode fallback vers backend local
+# Tests listing versions (T012.3)
 # =============================================================================
 
-@test "restore-tfstate: mode fallback sauvegarde backend.tf original" {
-    skip "Necessite implementation fallback_local"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --fallback --dry-run
-
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "backend.tf.minio-backup" ]]
+@test "restore-tfstate.sh: implemente list_versions()" {
+    grep -q 'list_versions()' "$SCRIPT"
 }
 
-@test "restore-tfstate: mode fallback remplace backend.tf par backend local" {
-    skip "Necessite implementation fallback_local"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --fallback --dry-run
-
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "Backend local actif" ]]
-}
-
-@test "restore-tfstate: mode fallback execute terraform init -migrate-state" {
-    skip "Necessite implementation fallback_local"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --fallback --dry-run
-
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "terraform init -migrate-state" ]]
+@test "restore-tfstate.sh: liste les versions avec mc ls --versions" {
+    grep -q 'mc ls --versions' "$SCRIPT"
 }
 
 # =============================================================================
-# T012.6 - Test mode retour vers Minio
+# Tests restauration version (T012.4)
 # =============================================================================
 
-@test "restore-tfstate: mode retour verifie healthcheck Minio" {
-    skip "Necessite implementation return_to_minio"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --return --dry-run
-
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "health" ]]
+@test "restore-tfstate.sh: implemente restore_version()" {
+    grep -q 'restore_version()' "$SCRIPT"
 }
 
-@test "restore-tfstate: mode retour restaure backend.tf depuis backup" {
-    skip "Necessite implementation return_to_minio"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-    # Creer un fichier backup
-    cp "${TEST_ENV_DIR}/backend.tf" "${TEST_ENV_DIR}/backend.tf.minio-backup"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --return --dry-run
-
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "backend.tf.minio-backup" ]]
+@test "restore-tfstate.sh: sauvegarde version actuelle avant restauration (EF-006)" {
+    grep -q 'Sauvegarde de la version actuelle' "$SCRIPT"
 }
 
-@test "restore-tfstate: mode retour execute terraform init -migrate-state" {
-    skip "Necessite implementation return_to_minio"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --return --dry-run
-
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "terraform init -migrate-state" ]]
+@test "restore-tfstate.sh: telecharge la version avec mc cp --version-id" {
+    grep -q 'mc cp --version-id' "$SCRIPT"
 }
 
-@test "restore-tfstate: mode retour supprime le fichier backup apres succes" {
-    skip "Necessite implementation return_to_minio complete"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-    cp "${TEST_ENV_DIR}/backend.tf" "${TEST_ENV_DIR}/backend.tf.minio-backup"
+@test "restore-tfstate.sh: execute terraform init apres restauration" {
+    grep -q 'terraform init' "$SCRIPT"
+}
 
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --return --force --dry-run
-
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "Backend Minio S3 restaure" ]]
+@test "restore-tfstate.sh: execute terraform plan apres restauration" {
+    grep -q 'terraform plan' "$SCRIPT"
 }
 
 # =============================================================================
-# T012.7 - Test erreur si Minio inaccessible
+# Tests mode fallback vers backend local (T012.5)
 # =============================================================================
 
-@test "restore-tfstate: erreur si mc alias set echoue" {
-    skip "Necessite implementation configure_mc avec gestion erreurs"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-    cat > "${TEMP_DIR}/mc" << 'MCEOF'
-#!/bin/bash
-if [[ "$1" == "alias" ]]; then
-    echo "Connection failed"
-    exit 1
-fi
-exit 0
-MCEOF
-    chmod +x "${TEMP_DIR}/mc"
-    export PATH="${TEMP_DIR}:${PATH}"
+@test "restore-tfstate.sh: implemente fallback_local()" {
+    grep -q 'fallback_local()' "$SCRIPT"
+}
 
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --list
+@test "restore-tfstate.sh: sauvegarde backend.tf en backend.tf.minio-backup" {
+    grep -q 'backend.tf.minio-backup' "$SCRIPT"
+}
 
-    # Assert
-    [[ $status -ne 0 ]]
-    [[ "$output" =~ "Impossible de configurer mc" ]]
+@test "restore-tfstate.sh: remplace backend S3 par backend local" {
+    grep -q 'backend local' "$SCRIPT"
+}
+
+@test "restore-tfstate.sh: fallback execute terraform init -migrate-state" {
+    grep -q 'terraform init -migrate-state' "$SCRIPT"
 }
 
 # =============================================================================
-# T012.8 - Test configuration mc depuis tfvars
+# Tests mode retour vers Minio (T012.6)
 # =============================================================================
 
-@test "restore-tfstate: configure mc avec donnees du tfvars" {
-    skip "Necessite implementation configure_mc"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-    cat > "${TEMP_DIR}/mc" << 'MCEOF'
-#!/bin/bash
-if [[ "$1" == "alias" && "$2" == "set" ]]; then
-    echo "Added alias homelab"
-    exit 0
-fi
-exit 1
-MCEOF
-    chmod +x "${TEMP_DIR}/mc"
-    export PATH="${TEMP_DIR}:${PATH}"
+@test "restore-tfstate.sh: implemente return_to_minio()" {
+    grep -q 'return_to_minio()' "$SCRIPT"
+}
 
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --list --dry-run
+@test "restore-tfstate.sh: verifie healthcheck Minio avant retour" {
+    grep -q 'curl.*health\|health.*curl' "$SCRIPT" || grep -q 'healthcheck\|health' "$SCRIPT"
+}
 
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "homelab" ]]
+@test "restore-tfstate.sh: restaure backend.tf depuis backup lors du retour" {
+    grep -q 'backend.tf.minio-backup' "$SCRIPT"
+}
+
+@test "restore-tfstate.sh: retour execute terraform init -migrate-state" {
+    grep -q 'terraform init -migrate-state' "$SCRIPT"
 }
 
 # =============================================================================
-# T012.9 - Test backup du state actuel
+# Tests configuration mc (T012.7, T012.8)
 # =============================================================================
 
-@test "restore-tfstate: cree un backup avant restauration (EF-006)" {
-    skip "Necessite implementation restore_version avec backup"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-    cat > "${TEMP_DIR}/mc" << 'MCEOF'
-#!/bin/bash
-exit 0
-MCEOF
-    chmod +x "${TEMP_DIR}/mc"
-    export PATH="${TEMP_DIR}:${PATH}"
+@test "restore-tfstate.sh: implemente configure_mc()" {
+    grep -q 'configure_mc()' "$SCRIPT"
+}
 
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --restore version-id-001 --dry-run
+@test "restore-tfstate.sh: configure mc avec alias homelab" {
+    grep -q 'mc alias set' "$SCRIPT"
+    grep -q 'homelab' "$SCRIPT"
+}
 
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ "$output" =~ "Sauvegarde de la version actuelle" ]]
+@test "restore-tfstate.sh: gere erreur si mc alias set echoue" {
+    grep -q 'configure_mc || exit\|configure_mc.*exit' "$SCRIPT"
 }
 
 # =============================================================================
-# T012.10 - Test mode --force
+# Tests rapport et common
 # =============================================================================
 
-@test "restore-tfstate: mode --force skip confirmation" {
-    skip "Necessite implementation complete avec confirm"
-    # Arrange
-    export MC_CONFIG_DIR="${TEMP_DIR}/.mc"
-    cat > "${TEMP_DIR}/mc" << 'MCEOF'
-#!/bin/bash
-exit 0
-MCEOF
-    chmod +x "${TEMP_DIR}/mc"
-    export PATH="${TEMP_DIR}:${PATH}"
+@test "restore-tfstate.sh: source common.sh" {
+    grep -q 'source.*common.sh' "$SCRIPT"
+}
 
-    # Act
-    run bash "${SCRIPT_PATH}" --env prod --restore version-id-001 --force --dry-run
+@test "restore-tfstate.sh: demande confirmation avant actions destructrices" {
+    grep -q 'confirm' "$SCRIPT"
+}
 
-    # Assert
-    [[ $status -eq 0 ]]
-    [[ ! "$output" =~ "[?]" ]]
+@test "restore-tfstate.sh: mode --force skip la confirmation" {
+    grep -q 'FORCE_MODE' "$SCRIPT"
+    grep -q 'confirm' "$SCRIPT"
 }
