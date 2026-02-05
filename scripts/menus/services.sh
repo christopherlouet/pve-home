@@ -76,15 +76,33 @@ get_service_host() {
     echo "$host_ip"
 }
 
+# Retourne le user SSH pour une IP donnee
+# VMs (.51, .101, .102, .103) = ubuntu
+# Proxmox/LXC (.50, .52, .100) = root
+get_ssh_user_for_ip() {
+    local ip="$1"
+    local last_octet="${ip##*.}"
+
+    case "$last_octet" in
+        51|101|102|103)
+            echo "ubuntu"
+            ;;
+        *)
+            echo "root"
+            ;;
+    esac
+}
+
 # Retourne le user@host pour SSH vers un service
 get_service_ssh_target() {
     local service="$1"
-    local ssh_user="${2:-root}"
 
     local host_ip
     host_ip=$(get_service_host "$service")
 
     if [[ -n "$host_ip" ]]; then
+        local ssh_user
+        ssh_user=$(get_ssh_user_for_ip "$host_ip")
         echo "${ssh_user}@${host_ip}"
     fi
 }
