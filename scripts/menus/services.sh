@@ -25,8 +25,9 @@ if ! declare -f tui_menu &>/dev/null; then
     source "${SERVICES_TUI_DIR}/lib/common.sh"
 fi
 
-# Services connus du homelab
-readonly KNOWN_SERVICES=("monitoring" "minio" "backup" "telegram" "harbor" "grafana" "prometheus" "loki")
+# Services connus du homelab (services qui peuvent etre demarres/arretes)
+# Note: backup et telegram sont des configs Proxmox, pas des services
+readonly KNOWN_SERVICES=("monitoring" "minio" "grafana" "prometheus" "loki")
 
 # Chemin des environnements
 SERVICES_ENV_DIR="${TUI_PROJECT_ROOT}/infrastructure/proxmox/environments"
@@ -201,11 +202,11 @@ _check_service_in_tfvars() {
 # Cache fichier pour les services (persiste entre subshells)
 _SERVICES_CACHE_FILE="/tmp/.tui-services-cache"
 
-# Nettoie le cache au demarrage (expire apres 30s)
+# Nettoie le cache au demarrage (expire apres 5 minutes)
 _init_services_cache() {
     if [[ -f "$_SERVICES_CACHE_FILE" ]]; then
         local age=$(($(date +%s) - $(stat -c %Y "$_SERVICES_CACHE_FILE" 2>/dev/null || echo 0)))
-        if [[ $age -gt 30 ]]; then
+        if [[ $age -gt 300 ]]; then
             rm -f "$_SERVICES_CACHE_FILE"
         fi
     fi
@@ -244,13 +245,6 @@ _get_host_services() {
 get_service_running() {
     local service="$1"
 
-    # Services config-only : pas de check running (retour immediat)
-    case "$service" in
-        backup|telegram|harbor)
-            echo "unknown"
-            return 0
-            ;;
-    esac
 
     # Auto-detection du host si MONITORING_HOST non defini
     local ssh_target="${MONITORING_HOST:-}"
