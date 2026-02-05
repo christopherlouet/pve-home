@@ -102,7 +102,7 @@ parse_health_results() {
     # Pattern: ligne commencant par un env suivi de colonnes avec OK/FAIL/WARN
     echo "$output" | \
         sed 's/\x1b\[[0-9;]*m//g' | \
-        grep -E '^(prod|lab|monitoring) +[a-z]+ +[a-z]+ +(OK|FAIL|WARN)' | \
+        grep -E '^(prod|lab|monitoring) +[a-zA-Z0-9._-]+ +[a-z]+ +(OK|FAIL|WARN)' | \
         while read -r line; do
             # Parser la ligne tabulaire en colonnes
             # Format: env  component  type  status  detail
