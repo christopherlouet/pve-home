@@ -140,7 +140,7 @@ jobs:
             rm "$tmp"
           done
       - name: BATS tests
-        run: bats tests/
+        run: bats --recursive tests/
 
   markdown-lint:
     name: Markdown Lint

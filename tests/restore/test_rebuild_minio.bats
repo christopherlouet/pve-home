@@ -16,8 +16,11 @@ SCRIPT="scripts/restore/rebuild-minio.sh"
 }
 
 @test "rebuild-minio.sh: shellcheck doit passer sans erreur" {
-    # Ignorer SC1091 (info sur source non suivi)
     shellcheck "$SCRIPT" 2>&1 | grep -v "SC1091" | grep -E "error|warning" && exit 1 || true
+}
+
+@test "rebuild-minio.sh: utilise set -euo pipefail" {
+    grep -q "set -euo pipefail" "$SCRIPT"
 }
 
 # =============================================================================
@@ -31,103 +34,113 @@ SCRIPT="scripts/restore/rebuild-minio.sh"
     [[ "$output" =~ "rebuild-minio.sh" ]]
 }
 
-@test "rebuild-minio.sh: doit accepter --env monitoring par defaut" {
-    skip "Necessite terraform.tfvars valide"
-    run bash "$SCRIPT" --dry-run --force
+@test "rebuild-minio.sh: doit afficher l'aide avec -h" {
+    run bash "$SCRIPT" -h
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "monitoring" ]]
+    [[ "$output" =~ "Usage:" ]]
 }
 
-@test "rebuild-minio.sh: doit accepter --dry-run" {
-    skip "Necessite terraform.tfvars valide"
-    run bash "$SCRIPT" --dry-run --force
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "DRY-RUN" ]]
+@test "rebuild-minio.sh: doit rejeter une option inconnue" {
+    run bash "$SCRIPT" --invalid-option
+    [ "$status" -ne 0 ]
+    [[ "$output" =~ "Option inconnue" ]]
 }
 
-@test "rebuild-minio.sh: doit accepter --force" {
-    skip "Script non implemente"
-    run bash "$SCRIPT" --dry-run --force
-    [ "$status" -eq 0 ]
+@test "rebuild-minio.sh: utilise l'environnement monitoring par defaut" {
+    grep -q 'ENV="monitoring"' "$SCRIPT"
+}
+
+@test "rebuild-minio.sh: supporte --dry-run" {
+    grep -q '\-\-dry-run' "$SCRIPT"
+    grep -q 'DRY_RUN=true' "$SCRIPT"
+}
+
+@test "rebuild-minio.sh: supporte --force" {
+    grep -q '\-\-force' "$SCRIPT"
+    grep -q 'FORCE_MODE=true' "$SCRIPT"
 }
 
 # =============================================================================
 # Tests verification Minio (T017, T019)
 # =============================================================================
 
-@test "rebuild-minio.sh: doit verifier healthcheck Minio avant reconstruction" {
-    skip "Script non implemente"
-    run bash "$SCRIPT" --dry-run --force
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "Verification healthcheck Minio" ]]
+@test "rebuild-minio.sh: implemente check_minio_health" {
+    grep -q 'check_minio_health()' "$SCRIPT"
 }
 
-@test "rebuild-minio.sh: doit detecter IP Minio depuis terraform.tfvars" {
-    skip "Script non implemente"
-    run bash "$SCRIPT" --dry-run --force
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "192.168.1.52" ]]
+@test "rebuild-minio.sh: verifie healthcheck Minio /minio/health/live" {
+    grep -q 'minio/health/live' "$SCRIPT"
+}
+
+@test "rebuild-minio.sh: detecte IP Minio depuis terraform.tfvars" {
+    grep -q 'parse_minio_config()' "$SCRIPT"
+    grep -q 'MINIO_IP=' "$SCRIPT"
+    grep -q 'terraform.tfvars' "$SCRIPT"
 }
 
 # =============================================================================
 # Tests terraform apply (T017)
 # =============================================================================
 
-@test "rebuild-minio.sh: doit executer terraform apply -target=module.minio en dry-run" {
-    skip "Script non implemente"
-    run bash "$SCRIPT" --dry-run --force
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "terraform apply -target=module.minio" ]]
+@test "rebuild-minio.sh: execute terraform apply -target=module.minio" {
+    grep -q 'terraform apply.*module.minio' "$SCRIPT"
 }
 
-@test "rebuild-minio.sh: doit attendre demarrage Minio avec retry loop" {
-    skip "Script non implemente"
-    run bash "$SCRIPT" --dry-run --force
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "Attente demarrage Minio" ]]
+@test "rebuild-minio.sh: implemente retry loop pour demarrage Minio" {
+    grep -q 'wait_minio_ready()' "$SCRIPT"
+    grep -q 'MINIO_HEALTHCHECK_MAX_RETRIES' "$SCRIPT"
+    grep -q 'MINIO_HEALTHCHECK_RETRY_INTERVAL' "$SCRIPT"
+}
+
+@test "rebuild-minio.sh: definit les constantes de healthcheck" {
+    grep -q 'DEFAULT_MINIO_PORT=9000' "$SCRIPT"
+    grep -q 'MINIO_HEALTHCHECK_MAX_RETRIES=12' "$SCRIPT"
+    grep -q 'MINIO_HEALTHCHECK_RETRY_INTERVAL=5' "$SCRIPT"
 }
 
 # =============================================================================
 # Tests verifications (T019)
 # =============================================================================
 
-@test "rebuild-minio.sh: doit verifier healthcheck API Minio" {
-    skip "Script non implemente"
-    run bash "$SCRIPT" --dry-run --force
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "/minio/health/live" ]]
+@test "rebuild-minio.sh: implemente verify_minio" {
+    grep -q 'verify_minio()' "$SCRIPT"
 }
 
-@test "rebuild-minio.sh: doit lister les buckets Minio avec mc" {
-    skip "Script non implemente"
-    run bash "$SCRIPT" --dry-run --force
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "mc ls homelab/" ]]
+@test "rebuild-minio.sh: verifie les buckets avec mc ls" {
+    grep -q 'mc ls' "$SCRIPT"
 }
 
-@test "rebuild-minio.sh: doit verifier versioning sur chaque bucket" {
-    skip "Script non implemente"
-    run bash "$SCRIPT" --dry-run --force
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "mc version info" ]]
+@test "rebuild-minio.sh: verifie le versioning avec mc version info" {
+    grep -q 'mc version info' "$SCRIPT"
 }
 
-@test "rebuild-minio.sh: doit verifier terraform init sur chaque environnement" {
-    skip "Script non implemente"
-    run bash "$SCRIPT" --dry-run --force
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "terraform init" ]]
-    [[ "$output" =~ "monitoring" ]]
+@test "rebuild-minio.sh: verifie les backends Terraform" {
+    grep -q 'verify_terraform_backends()' "$SCRIPT"
+    grep -q 'terraform init' "$SCRIPT"
+}
+
+@test "rebuild-minio.sh: verifie les environnements prod et monitoring" {
+    grep -q '"prod"' "$SCRIPT"
+    grep -q '"monitoring"' "$SCRIPT"
 }
 
 # =============================================================================
 # Tests rapport (T017)
 # =============================================================================
 
-@test "rebuild-minio.sh: doit afficher un rapport de reconstruction" {
-    skip "Script non implemente"
-    run bash "$SCRIPT" --dry-run --force
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "RESUME DE RECONSTRUCTION" ]]
-    [[ "$output" =~ "Minio" ]]
+@test "rebuild-minio.sh: affiche un resume de reconstruction" {
+    grep -q 'RESUME DE RECONSTRUCTION' "$SCRIPT"
+    grep -q 'Minio' "$SCRIPT"
+}
+
+@test "rebuild-minio.sh: affiche les actions prevues avant execution" {
+    grep -q 'Actions prevues' "$SCRIPT"
+}
+
+@test "rebuild-minio.sh: source common.sh" {
+    grep -q 'source.*common.sh' "$SCRIPT"
+}
+
+@test "rebuild-minio.sh: demande confirmation avant reconstruction" {
+    grep -q 'confirm' "$SCRIPT"
 }

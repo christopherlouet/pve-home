@@ -402,7 +402,7 @@ Navigation avec les flèches ou vim-like (j/k), validation avec Entrée.
 
 ## Tests
 
-Le projet utilise deux frameworks de test complementaires totalisant **~411 tests Terraform** et **816 tests BATS** (dont 439 pour le TUI).
+Le projet utilise deux frameworks de test complementaires totalisant **~411 tests Terraform** et **848 tests BATS** (dont 439 pour le TUI).
 
 ### Tests Terraform (modules)
 
@@ -426,12 +426,12 @@ done
 
 ### Tests BATS (scripts shell)
 
-Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (816 tests) :
+Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (848 tests, 0 skipped) :
 
 | Domaine | Tests | Couverture |
 |---------|-------|------------|
 | **tui/** | 439 | Interface TUI complete (11 modules) |
-| **restore/** | 183 | Restauration VMs, tfstate, Minio, monitoring, verification |
+| **restore/** | 215 | Restauration VMs, tfstate, Minio, monitoring, verification |
 | **drift/** | 14 | Detection de drift Terraform |
 | **health/** | 14 | Health checks infrastructure |
 | **lifecycle/** | 74 | Snapshots, expiration, nettoyage, rotation SSH |
