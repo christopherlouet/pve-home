@@ -103,7 +103,8 @@ monitoring = {
   retention_days = 30
 
   # Mot de passe admin Grafana
-  grafana_admin_password = "ChangeMePlease123!"
+  # Mot de passe admin Grafana (generer avec: openssl rand -base64 32)
+  grafana_admin_password = "${GRAFANA_ADMIN_PASSWORD:?required}"
 
   # Notifications Telegram (optionnel)
   telegram = {

@@ -197,11 +197,13 @@ systemctl list-timers 'pve-*'
 La bibliotheque `lib/common.sh` fournit des fonctions partagees par tous les scripts :
 
 - Logging colore (`log_info`, `log_success`, `log_warn`, `log_error`)
+- Logging securise avec masquage des secrets (`log_secret`, `log_info_secure`)
 - Parsing d'arguments (`--dry-run`, `--force`, `--help`)
-- Execution SSH (`ssh_exec`)
+- Execution SSH (`ssh_exec`, `ssh_exec_retry`)
 - Verification des prerequis (`check_prereqs`, `check_ssh_access`)
 - Parsing de tfvars (`parse_tfvars`, `get_pve_node`, `get_pve_ip`)
-- Validation d'entrees (`sanitize_input`, `validate_input`)
+- Parsing de blocs HCL (`parse_hcl_block`, `parse_hcl_block_first`, `parse_hcl_block_unique`)
+- Validation d'entrees (`sanitize_input`, `validate_input`, `validate_choice`)
 
 Documentation : [scripts/lib/README.md](lib/README.md)
 

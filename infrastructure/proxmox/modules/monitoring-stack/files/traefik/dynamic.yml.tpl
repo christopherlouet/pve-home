@@ -85,6 +85,28 @@ http:
 %{ endif }
 
   # ---------------------------------------------------------------------------
+  # Middlewares (Security Headers - P2)
+  # ---------------------------------------------------------------------------
+
+  middlewares:
+    secure-headers:
+      headers:
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        forceSTSHeader: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        customFrameOptionsValue: "SAMEORIGIN"
+        contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;"
+
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 50
+
+  # ---------------------------------------------------------------------------
   # Services
   # ---------------------------------------------------------------------------
 

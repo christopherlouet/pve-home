@@ -31,6 +31,8 @@ dry_run echo 'Cette commande sera executee seulement si DRY_RUN=false'
 - `log_success <message>` : Affiche un message de succès (vert)
 - `log_warn <message>` : Affiche un avertissement (jaune)
 - `log_error <message>` : Affiche une erreur (rouge)
+- `log_secret <message>` : Affiche un message en masquant les secrets (tokens, UUIDs, passwords, base64)
+- `log_info_secure <message>` : Alias de `log_secret` pour les opérations sensibles
 
 ### Confirmation et arguments
 
@@ -54,6 +56,13 @@ dry_run echo 'Cette commande sera executee seulement si DRY_RUN=false'
 - `parse_tfvars <file> <key>` : Extrait une valeur depuis un fichier tfvars
 - `get_pve_node [tfvars_file]` : Récupère le nom du nœud PVE
 - `get_pve_ip [tfvars_file]` : Récupère l'IP du nœud PVE
+- `parse_hcl_block <file> <block> <key>` : Extrait une valeur depuis un bloc HCL (ex: `parse_hcl_block "$tfvars" "monitoring" "ip"`)
+- `parse_hcl_block_first <file> <block> <key>` : Retourne uniquement la première valeur du bloc
+- `parse_hcl_block_unique <file> <block> <key>` : Retourne les valeurs uniques triées
+
+### Validation
+
+- `validate_choice <value> <opt1> <opt2> ...` : Valide qu'une valeur est dans une liste d'options (retourne 0 si valide)
 
 ### Dry-run et sauvegarde
 
