@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-02-05
+
+### Added
+- **ARCHITECTURE.md** documentation with 3 Mermaid diagrams (high-level, module flow, CI pipeline)
+- **CONTRIBUTING.md** guide with project structure, testing, conventions, and contribution workflow
+- **19 BATS error-path tests** for check-health, restore-vm, and verify-backups scripts
+- **11 Terraform tests** for monitoring-stack (traefik and alertmanager configurations)
+- **tooling-stack module** added to all 3 CI matrices (validate, test, docs)
+
+### Changed
+- **Cross-reference comments** added between vm/monitoring-stack (Docker install) and vm/lxc (expiration tag) modules
+
 ## [1.8.0] - 2026-02-05
 
 ### Changed
