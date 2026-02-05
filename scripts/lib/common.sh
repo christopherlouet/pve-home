@@ -455,7 +455,13 @@ parse_tfvars() {
 
 get_pve_node() {
     local tfvars_file="${1:-terraform.tfvars}"
-    parse_tfvars "$tfvars_file" "pve_node"
+    # Essayer default_node d'abord, puis pve_node pour compatibilite
+    local node
+    node=$(parse_tfvars "$tfvars_file" "default_node" 2>/dev/null) || true
+    if [[ -z "$node" ]]; then
+        node=$(parse_tfvars "$tfvars_file" "pve_node" 2>/dev/null) || true
+    fi
+    echo "$node"
 }
 
 get_pve_ip() {

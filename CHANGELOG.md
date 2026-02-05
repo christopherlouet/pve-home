@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.3] - 2026-02-05
+
+### Fixed
+- **verify-backups.sh** node detection now uses correct tfvars key (`default_node`)
+- **verify-backups.sh** gracefully skips vzdump/full verifications when node is not available
+- **get_pve_node()** in common.sh now tries both `default_node` and `pve_node` for compatibility
+
 ## [1.7.2] - 2026-02-05
 
 ### Fixed

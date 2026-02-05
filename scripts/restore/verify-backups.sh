@@ -148,19 +148,32 @@ parse_args() {
 
 detect_node() {
     if [[ -z "$NODE" ]]; then
-        # Detecter depuis terraform.tfvars
-        local tfvars_file="${SCRIPT_DIR}/../../terraform.tfvars"
-        if [[ -f "$tfvars_file" ]]; then
-            NODE=$(get_pve_node "$tfvars_file" 2>/dev/null || echo "")
-        fi
+        # Detecter depuis terraform.tfvars (essayer prod, puis lab, puis monitoring)
+        local tfvars_dirs=(
+            "${SCRIPT_DIR}/../../infrastructure/proxmox/environments/prod"
+            "${SCRIPT_DIR}/../../infrastructure/proxmox/environments/lab"
+            "${SCRIPT_DIR}/../../infrastructure/proxmox/environments/monitoring"
+        )
 
-        if [[ -z "$NODE" ]]; then
-            log_error "Impossible de detecter le noeud Proxmox"
-            log_error "Utilisez --node NODE ou verifiez terraform.tfvars"
-            exit 2
-        fi
+        for dir in "${tfvars_dirs[@]}"; do
+            local tfvars_file="${dir}/terraform.tfvars"
+            if [[ -f "$tfvars_file" ]]; then
+                NODE=$(get_pve_node "$tfvars_file" 2>/dev/null || echo "")
+                if [[ -n "$NODE" ]]; then
+                    break
+                fi
+            fi
+        done
     fi
-    log_info "Noeud Proxmox: ${NODE}"
+
+    if [[ -n "$NODE" ]]; then
+        log_info "Noeud Proxmox: ${NODE}"
+        return 0
+    else
+        log_warn "Noeud Proxmox non detecte (pas de tfvars ou --node non specifie)"
+        log_info "Utilisez --node NODE pour activer la verification vzdump"
+        return 1
+    fi
 }
 
 # =============================================================================
@@ -616,11 +629,18 @@ main() {
         MC_AVAILABLE=false
     fi
 
-    # Detection du noeud
-    detect_node
+    # Detection du noeud (optionnel - on skip vzdump si non detecte)
+    local NODE_AVAILABLE=true
+    if ! detect_node; then
+        NODE_AVAILABLE=false
+    fi
 
-    # Verification vzdump
-    verify_vzdump_backups
+    # Verification vzdump (seulement si noeud disponible)
+    if [[ "$NODE_AVAILABLE" == true ]]; then
+        verify_vzdump_backups
+    else
+        log_info "=== Verification vzdump skippee (noeud non disponible) ==="
+    fi
 
     # Verification Minio (seulement si mc est disponible)
     if [[ "$MC_AVAILABLE" == true ]]; then
@@ -629,10 +649,14 @@ main() {
         log_info "=== Verification Minio skippee (mc non disponible) ==="
     fi
 
-    # Mode full: verifications supplementaires
+    # Mode full: verifications supplementaires (seulement si noeud disponible)
     if [[ "$FULL_MODE" == true ]]; then
-        verify_backup_jobs
-        verify_vm_connectivity
+        if [[ "$NODE_AVAILABLE" == true ]]; then
+            verify_backup_jobs
+            verify_vm_connectivity
+        else
+            log_info "=== Verifications full skippees (noeud non disponible) ==="
+        fi
         log_info "Verification complete terminee"
     fi
 
