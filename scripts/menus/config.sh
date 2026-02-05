@@ -36,9 +36,10 @@ readonly CONFIG_VALID_ENVS=("prod" "lab" "monitoring")
 readonly CONFIG_VALID_LOG_LEVELS=("debug" "info" "warn" "error")
 
 # Configuration en memoire (associative array)
-# Declarer le tableau avec une valeur initiale pour eviter "variable sans liaison"
-# avec set -o nounset
-declare -A TUI_CONFIG=() 2>/dev/null || { declare -A TUI_CONFIG; TUI_CONFIG=(); }
+# Declarer le tableau globalement pour eviter les problemes avec set -u
+if ! declare -p TUI_CONFIG &>/dev/null; then
+    declare -gA TUI_CONFIG
+fi
 
 # =============================================================================
 # Fonctions de chargement configuration (T057)
