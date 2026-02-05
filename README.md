@@ -391,17 +391,15 @@ Une interface terminal interactive permet de gérer l'infrastructure sans mémor
 # Lancer le TUI interactif
 ./scripts/homelab
 
-# Avec un environnement spécifique
-./scripts/homelab --env prod
-
-# Commandes directes
-./scripts/homelab status
-./scripts/homelab terraform plan
-./scripts/homelab drift
+# Options
+./scripts/homelab --help      # Afficher l'aide
+./scripts/homelab --version   # Afficher la version
+./scripts/homelab --debug     # Mode debug (verbose)
+./scripts/homelab --no-color  # Désactiver les couleurs
 ```
 
-Fonctionnalités : status, terraform, snapshots, déploiement, drift detection, disaster recovery, services.
-Navigation vim-like (j/k/h/l), raccourcis clavier (1-9), recherche (/).
+Le TUI propose 9 menus : Status, Terraform, Deploy, Lifecycle, Disaster Recovery, Services, Config, Maintenance, et Quit.
+Navigation avec les flèches ou vim-like (j/k), validation avec Entrée.
 
 **Prérequis** : [gum](https://github.com/charmbracelet/gum) pour les menus interactifs (fallback bash sinon).
 
