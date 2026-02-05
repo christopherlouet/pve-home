@@ -352,31 +352,31 @@ test_ssh_connection() {
     # Auto-detection de l'hote si non specifie
     if [[ -z "$host" ]]; then
         local env tfvars_path
-        env=$(get_default_environment)
+        env=$(get_default_environment 2>/dev/null) || env="monitoring"
         tfvars_path="${TUI_PROJECT_ROOT}/infrastructure/proxmox/environments/${env}/terraform.tfvars"
 
         if [[ -f "$tfvars_path" ]]; then
-            host=$(grep -E "^pve_ip\s*=" "$tfvars_path" 2>/dev/null | sed 's/.*=\s*"\([^"]*\)".*/\1/' | head -1)
+            host=$(grep -E "^pve_ip\s*=" "$tfvars_path" 2>/dev/null | sed 's/.*=\s*"\([^"]*\)".*/\1/' | head -1) || true
         fi
     fi
 
     if [[ -z "$host" ]]; then
         tui_log_error "Aucun hote specifie et impossible de detecter depuis tfvars"
-        return 0  # Pas une erreur fatale
+        return 0
     fi
 
     local timeout
-    timeout=$(get_ssh_timeout)
+    timeout=$(get_ssh_timeout 2>/dev/null) || timeout="10"
 
-    tui_log_info "Test de connexion SSH vers ${host}..."
+    tui_log_info "Test de connexion SSH vers root@${host}..."
 
-    if ssh -o ConnectTimeout="$timeout" -o BatchMode=yes "root@${host}" "echo OK" &>/dev/null; then
+    if ssh -n -o ConnectTimeout="$timeout" -o BatchMode=yes "root@${host}" "echo OK" &>/dev/null; then
         tui_log_success "Connexion SSH OK vers ${host}"
-        return 0
     else
         tui_log_error "Echec de la connexion SSH vers ${host}"
-        return 0  # Pas une erreur fatale pour le menu
     fi
+
+    return 0
 }
 
 # =============================================================================
