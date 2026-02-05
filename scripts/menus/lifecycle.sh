@@ -427,7 +427,7 @@ list_snapshots() {
 
     if [[ ! -f "$script" ]]; then
         tui_log_error "Script snapshot-vm.sh non trouve"
-        return 1
+        return 0  # Ne pas faire echouer avec set -e
     fi
 
     tui_log_info "Recuperation des snapshots pour VMID $vmid..."
@@ -445,7 +445,7 @@ list_snapshots() {
     if [[ $exit_code -ne 0 ]]; then
         tui_log_error "Echec de la recuperation des snapshots"
         echo "$output"
-        return 1
+        return 0  # Ne pas faire echouer le script avec set -e
     fi
 
     # Parser et afficher
@@ -626,22 +626,22 @@ menu_snapshots() {
 
         case "$choice" in
             *"Creer"*)
-                create_snapshot "$vmid"
+                create_snapshot "$vmid" || true
                 tui_log_info "Appuyez sur Entree pour continuer..."
                 read -r
                 ;;
             *"Lister"*)
-                list_snapshots "$vmid" > /dev/null  # Affiche le tableau
+                list_snapshots "$vmid" || true
                 tui_log_info "Appuyez sur Entree pour continuer..."
                 read -r
                 ;;
             *"Restaurer"*)
-                rollback_snapshot "$vmid"
+                rollback_snapshot "$vmid" || true
                 tui_log_info "Appuyez sur Entree pour continuer..."
                 read -r
                 ;;
             *"Supprimer"*)
-                delete_snapshot "$vmid"
+                delete_snapshot "$vmid" || true
                 tui_log_info "Appuyez sur Entree pour continuer..."
                 read -r
                 ;;
