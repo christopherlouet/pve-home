@@ -94,3 +94,10 @@ prometheus-*.yml
 secrets/
 .secrets
 .tui-config.yaml
+
+# Temporary and local files
+*.backup.*
+*.tfplan
+tfplan
+.terraform.lock.hcl
+specs/
