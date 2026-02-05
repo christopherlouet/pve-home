@@ -77,6 +77,47 @@ pve-home/
 └── .github/workflows/           # CI/CD + Security + Terraform Tests
 ```
 
+## Architecture
+
+```mermaid
+graph TB
+    subgraph "Proxmox VE Host (Intel NUC)"
+        subgraph "Environnement prod"
+            VM_PROD["VMs prod<br/>(module vm)"]
+            LXC_PROD["LXC prod<br/>(module lxc)"]
+            BACKUP_PROD["Backup prod<br/>(module backup)"]
+        end
+        subgraph "Environnement lab"
+            VM_LAB["VMs lab<br/>(module vm)"]
+            LXC_LAB["LXC lab<br/>(module lxc)"]
+            BACKUP_LAB["Backup lab<br/>(module backup)"]
+        end
+        subgraph "Environnement monitoring"
+            MINIO["Minio S3<br/>(module minio)"]
+            subgraph "Monitoring Stack (module monitoring-stack)"
+                PROM["Prometheus<br/>prometheus.tf"]
+                GRAF["Grafana<br/>grafana.tf"]
+                ALERT["Alertmanager<br/>alertmanager.tf"]
+                TRAEFIK["Traefik<br/>traefik.tf"]
+                LOKI["Loki<br/>loki.tf"]
+            end
+            TOOLING["Tooling Stack<br/>(module tooling-stack)"]
+        end
+    end
+
+    MINIO -->|"tfstate S3 backend"| VM_PROD
+    MINIO -->|"tfstate S3 backend"| VM_LAB
+    PROM -->|"scrape metrics"| VM_PROD
+    PROM -->|"scrape metrics"| VM_LAB
+    PROM -->|"scrape metrics"| TOOLING
+    ALERT -->|"Telegram"| TG["Telegram Bot"]
+    GRAF -->|"datasource"| PROM
+    GRAF -->|"datasource"| LOKI
+    TRAEFIK -->|"reverse proxy"| GRAF
+    TRAEFIK -->|"reverse proxy"| PROM
+    TRAEFIK -->|"reverse proxy"| ALERT
+```
+
 ## Démarrage rapide
 
 ```bash

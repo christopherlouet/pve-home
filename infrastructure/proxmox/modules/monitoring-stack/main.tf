@@ -2,12 +2,12 @@
 # Module Monitoring Stack - Main
 # =============================================================================
 # Deploie une VM avec la stack de monitoring complete:
-# - Prometheus (collecte metriques)
-# - Grafana (visualisation)
-# - Alertmanager (alertes Telegram)
-# - PVE Exporter (metriques Proxmox)
-# - Traefik (reverse proxy) - optionnel
-# - Loki (centralisation logs) - optionnel
+# - Prometheus (collecte metriques)       → prometheus.tf
+# - Grafana (visualisation)               → grafana.tf
+# - Alertmanager (alertes Telegram)       → alertmanager.tf
+# - PVE Exporter (metriques Proxmox)      → prometheus.tf
+# - Traefik (reverse proxy) - optionnel   → traefik.tf
+# - Loki (centralisation logs) - optionnel → loki.tf
 # - Uptime Kuma (surveillance disponibilite) - optionnel
 # =============================================================================
 
@@ -17,18 +17,6 @@
 
 locals {
   vm_name = var.name
-
-  # Node exporter targets: tous les nodes Proxmox
-  node_exporter_targets = [
-    for node in var.proxmox_nodes : {
-      name = node.name
-      ip   = node.ip
-      port = 9100
-    }
-  ]
-
-  # Combiner avec les targets additionnels (locaux + distants)
-  all_scrape_targets = concat(local.node_exporter_targets, var.additional_scrape_targets, var.remote_scrape_targets)
 
   # Configuration Docker Compose
   docker_compose_content = templatefile("${path.module}/files/docker-compose.yml.tpl", {
@@ -45,89 +33,6 @@ locals {
     loki_enabled = var.loki_enabled
     # Uptime Kuma
     uptime_kuma_enabled = var.uptime_kuma_enabled
-  })
-
-  # Configuration Traefik (static)
-  traefik_static_config = var.traefik_enabled ? templatefile("${path.module}/files/traefik/traefik.yml.tpl", {
-    tls_enabled = var.tls_enabled
-  }) : ""
-
-  # Configuration Traefik (dynamic routes)
-  traefik_dynamic_config = var.traefik_enabled ? templatefile("${path.module}/files/traefik/dynamic.yml.tpl", {
-    domain_suffix        = var.domain_suffix
-    tls_enabled          = var.tls_enabled
-    alertmanager_enabled = var.telegram_enabled
-    loki_enabled         = var.loki_enabled
-    uptime_kuma_enabled  = var.uptime_kuma_enabled
-  }) : ""
-
-  # Configuration Loki
-  loki_config = var.loki_enabled ? file("${path.module}/files/loki/loki-config.yml") : ""
-
-  # Configuration Promtail (local)
-  promtail_config = var.loki_enabled ? templatefile("${path.module}/files/promtail/promtail-config.yml.tpl", {
-    hostname = local.vm_name
-  }) : ""
-
-  # Datasource Loki pour Grafana
-  grafana_datasource_loki = var.loki_enabled ? file("${path.module}/files/grafana/provisioning/datasources/loki.yml") : ""
-
-  # Dashboard Logs Overview
-  dashboard_logs_overview = var.loki_enabled ? file("${path.module}/files/grafana/dashboards/logs-overview.json") : ""
-
-  # Configuration PVE Exporter (un module par node)
-  pve_exporter_config = yamlencode({
-    for node in var.proxmox_nodes : node.name => {
-      user        = var.pve_exporter_user
-      token_name  = var.pve_exporter_token_name
-      token_value = node.token_value
-      verify_ssl  = false
-    }
-  })
-
-  # Configuration Prometheus
-  prometheus_config = templatefile("${path.module}/files/prometheus.yml.tpl", {
-    proxmox_nodes         = var.proxmox_nodes
-    scrape_targets        = local.all_scrape_targets
-    monitoring_ip         = var.ip_address
-    alertmanager_enabled  = var.telegram_enabled
-    custom_scrape_configs = var.custom_scrape_configs != "" ? indent(2, var.custom_scrape_configs) : ""
-  })
-
-  # Dashboards Grafana
-  dashboard_node_exporter        = file("${path.module}/files/grafana/dashboards/node-exporter.json")
-  dashboard_pve_exporter         = file("${path.module}/files/grafana/dashboards/pve-exporter.json")
-  dashboard_prometheus           = file("${path.module}/files/grafana/dashboards/prometheus.json")
-  dashboard_nodes_overview       = file("${path.module}/files/grafana/dashboards/nodes-overview.json")
-  dashboard_backup_overview      = file("${path.module}/files/grafana/dashboards/backup-overview.json")
-  dashboard_alerting_overview    = file("${path.module}/files/grafana/dashboards/alerting-overview.json")
-  dashboard_application_overview = file("${path.module}/files/grafana/dashboards/application-overview.json")
-  dashboard_http_probes          = file("${path.module}/files/grafana/dashboards/http-probes.json")
-  dashboard_postgresql           = file("${path.module}/files/grafana/dashboards/postgresql.json")
-  dashboard_docker_containers    = file("${path.module}/files/grafana/dashboards/docker-containers.json")
-
-  # Tooling Dashboards (Step-ca, Harbor, Authentik)
-  dashboard_step_ca   = var.tooling_enabled && var.tooling_step_ca_enabled ? file("${path.module}/files/grafana/dashboards/tooling/step-ca.json") : ""
-  dashboard_harbor    = var.tooling_enabled && var.tooling_harbor_enabled ? file("${path.module}/files/grafana/dashboards/tooling/harbor.json") : ""
-  dashboard_authentik = var.tooling_enabled && var.tooling_authentik_enabled ? file("${path.module}/files/grafana/dashboards/tooling/authentik.json") : ""
-
-  # Tooling Alerts
-  tooling_alerts = var.tooling_enabled ? file("${path.module}/files/prometheus/alerts/tooling.yml") : ""
-
-  # Tooling Scrape Config
-  tooling_scrape_config = var.tooling_enabled && var.tooling_ip != "" ? templatefile("${path.module}/files/prometheus/scrape/tooling.yml.tpl", {
-    tooling_ip        = var.tooling_ip
-    step_ca_enabled   = var.tooling_step_ca_enabled
-    harbor_enabled    = var.tooling_harbor_enabled
-    authentik_enabled = var.tooling_authentik_enabled
-    traefik_enabled   = var.tooling_traefik_enabled
-  }) : ""
-
-  # Configuration Alertmanager
-  alertmanager_config = templatefile("${path.module}/files/alertmanager.yml.tpl", {
-    telegram_enabled   = var.telegram_enabled
-    telegram_bot_token = var.telegram_bot_token
-    telegram_chat_id   = var.telegram_chat_id
   })
 
   # Script de setup monitoring (extrait dans fichier template pour testabilite)
