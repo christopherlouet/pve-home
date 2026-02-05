@@ -825,11 +825,23 @@ menu_config() {
                 menu_terraform_settings
                 ;;
             "5."*|*"log"*)
-                local options_log=("debug" "info" "warn" "error" "$(tui_back_option)")
+                local current_log options_log=()
+                current_log=$(get_log_level 2>/dev/null) || current_log="info"
+                for level in debug info warn error; do
+                    if [[ "$level" == "$current_log" ]]; then
+                        options_log+=("● ${level} (actuel)")
+                    else
+                        options_log+=("○ ${level}")
+                    fi
+                done
+                options_log+=("$(tui_back_option)")
                 local log_choice
                 log_choice=$(tui_menu "Niveau de log" "${options_log[@]}")
                 if [[ "$log_choice" != *"Retour"* ]] && [[ -n "$log_choice" ]]; then
-                    set_log_level "$log_choice"
+                    # Extraire le niveau du choix (enlever ● ○ et (actuel))
+                    local selected_level
+                    selected_level=$(echo "$log_choice" | sed 's/[●○] //' | sed 's/ (actuel)//')
+                    set_log_level "$selected_level"
                 fi
                 ;;
             "6."*|*"Voir"*|*"actuelle"*)
