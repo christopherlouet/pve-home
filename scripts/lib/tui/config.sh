@@ -1,8 +1,8 @@
 #!/bin/bash
 # =============================================================================
-# TUI Homelab Manager - Configuration et detection contexte (T003)
+# TUI Homelab Manager - Configuration et detection contexte
 # =============================================================================
-# Usage: source scripts/tui/lib/tui-config.sh
+# Usage: source scripts/lib/tui/config.sh
 #
 # Detecte si le TUI s'execute en local ou sur la VM monitoring,
 # et configure les chemins dynamiquement.
@@ -53,29 +53,29 @@ TUI_CONTEXT=$(detect_context)
 # Chemins de base selon le contexte
 if [[ "$TUI_CONTEXT" == "remote" ]]; then
     # Sur la VM monitoring - chemins de deploiement
-    TUI_PROJECT_ROOT="/opt/pve-home"
-    TUI_SCRIPTS_DIR="${TUI_PROJECT_ROOT}/scripts"
-    TUI_TFVARS_DIR="${TUI_PROJECT_ROOT}/tfvars"
-    TUI_LOG_DIR="/var/log/pve-tui"
+    TUI_PROJECT_ROOT="${TUI_PROJECT_ROOT:-/opt/pve-home}"
+    TUI_SCRIPTS_DIR="${TUI_SCRIPTS_DIR:-${TUI_PROJECT_ROOT}/scripts}"
+    TUI_TFVARS_DIR="${TUI_TFVARS_DIR:-${TUI_PROJECT_ROOT}/tfvars}"
+    TUI_LOG_DIR="${TUI_LOG_DIR:-/var/log/pve-tui}"
 else
     # En local - chemins du repo git
-    # Detecter la racine du projet
-    if [[ -n "${TUI_PROJECT_ROOT_OVERRIDE:-}" ]]; then
-        TUI_PROJECT_ROOT="$TUI_PROJECT_ROOT_OVERRIDE"
-    else
-        # Remonter depuis le script pour trouver la racine
-        TUI_PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../" && pwd)"
+    # Utiliser les variables exportées par homelab ou calculer
+    if [[ -z "${TUI_PROJECT_ROOT:-}" ]]; then
+        # Remonter depuis le script pour trouver la racine (scripts/lib/tui -> scripts -> projet)
+        TUI_PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
     fi
-    TUI_SCRIPTS_DIR="${TUI_PROJECT_ROOT}/scripts"
-    TUI_TFVARS_DIR="${TUI_PROJECT_ROOT}/infrastructure/proxmox/environments"
-    TUI_LOG_DIR="${TUI_PROJECT_ROOT}/logs"
+    TUI_SCRIPTS_DIR="${TUI_SCRIPTS_DIR:-${TUI_PROJECT_ROOT}/scripts}"
+    TUI_TFVARS_DIR="${TUI_TFVARS_DIR:-${TUI_PROJECT_ROOT}/infrastructure/proxmox/environments}"
+    TUI_LOG_DIR="${TUI_LOG_DIR:-${TUI_PROJECT_ROOT}/logs}"
 fi
 
-# Sous-repertoires communs
-TUI_LIB_DIR="${TUI_SCRIPTS_DIR}/lib"
-TUI_TUI_DIR="${TUI_SCRIPTS_DIR}/tui"
-TUI_TUI_LIB_DIR="${TUI_TUI_DIR}/lib"
-TUI_TUI_MENUS_DIR="${TUI_TUI_DIR}/menus"
+# Sous-repertoires - nouvelle structure
+TUI_LIB_DIR="${TUI_LIB_DIR:-${TUI_SCRIPTS_DIR}/lib/tui}"
+TUI_MENUS_DIR="${TUI_MENUS_DIR:-${TUI_SCRIPTS_DIR}/menus}"
+
+# Compatibilite avec anciens noms (deprecated)
+TUI_TUI_LIB_DIR="$TUI_LIB_DIR"
+TUI_TUI_MENUS_DIR="$TUI_MENUS_DIR"
 
 # =============================================================================
 # Configuration des environnements Terraform

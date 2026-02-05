@@ -1,20 +1,20 @@
 #!/usr/bin/env bats
 # =============================================================================
-# Tests pour scripts/tui/menus/lifecycle.sh (T022 - US2)
+# Tests pour scripts/menus/lifecycle.sh (T022 - US2)
 # =============================================================================
 # Tests du menu lifecycle/snapshots : selection VM, CRUD snapshots
 
 setup() {
     # Repertoire du projet
     PROJECT_ROOT="/home/chris/source/sideprojects/pve-home"
-    TUI_DIR="${PROJECT_ROOT}/scripts/tui"
-    TUI_LIB="${TUI_DIR}/lib"
+    TUI_DIR="${PROJECT_ROOT}/scripts"
+    TUI_LIB="${PROJECT_ROOT}/scripts/lib/tui"
     LIFECYCLE_MENU="${TUI_DIR}/menus/lifecycle.sh"
 
     # Charger les libs TUI
-    source "${TUI_LIB}/tui-colors.sh"
-    source "${TUI_LIB}/tui-config.sh"
-    source "${TUI_LIB}/tui-common.sh"
+    source "${TUI_LIB}/colors.sh"
+    source "${TUI_LIB}/config.sh"
+    source "${TUI_LIB}/common.sh"
 
     # Variables de test
     TEST_DIR="${BATS_TEST_TMPDIR}/test_lifecycle"
@@ -253,7 +253,7 @@ teardown() {
 }
 
 @test "lifecycle.sh source les dependances TUI" {
-    grep -q "tui-common.sh\|tui-colors.sh" "$LIFECYCLE_MENU" || \
+    grep -q "common.sh\|colors.sh" "$LIFECYCLE_MENU" || \
     grep -q "source.*lib" "$LIFECYCLE_MENU"
 }
 

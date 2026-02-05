@@ -2,7 +2,7 @@
 # =============================================================================
 # TUI Homelab Manager - Menu Status & Health (T009-T014 - US1)
 # =============================================================================
-# Usage: source scripts/tui/menus/status.sh && menu_status
+# Usage: source scripts/menus/status.sh && menu_status
 #
 # Affiche l'etat de sante de l'infrastructure avec:
 # - Selection de l'environnement (prod/lab/monitoring/tous)
@@ -17,13 +17,13 @@ SCRIPT_DIR_STATUS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TUI_LIB_DIR_STATUS="$(cd "${SCRIPT_DIR_STATUS}/../lib" && pwd)"
 
 if [[ -z "${TUI_COLOR_PRIMARY:-}" ]]; then
-    source "${TUI_LIB_DIR_STATUS}/tui-colors.sh"
+    source "${TUI_LIB_DIR_STATUS}/colors.sh"
 fi
 if [[ -z "${TUI_CONTEXT:-}" ]]; then
-    source "${TUI_LIB_DIR_STATUS}/tui-config.sh"
+    source "${TUI_LIB_DIR_STATUS}/config.sh"
 fi
 if ! declare -f tui_menu &>/dev/null; then
-    source "${TUI_LIB_DIR_STATUS}/tui-common.sh"
+    source "${TUI_LIB_DIR_STATUS}/common.sh"
 fi
 
 # =============================================================================
@@ -431,6 +431,7 @@ menu_status() {
     local running=true
 
     while $running; do
+        clear
         tui_banner "Status & Health"
 
         # Afficher le dernier resume si disponible
@@ -438,9 +439,8 @@ menu_status() {
             local summary
             summary=$(calculate_health_summary "$STATUS_RESULTS_FILE")
             display_health_banner "$summary"
-            echo -e "${TUI_COLOR_MUTED}Dernier check: ${STATUS_LAST_ENV}${TUI_COLOR_NC}"
+            echo -e "${TUI_COLOR_WHITE}Dernier check: ${STATUS_LAST_ENV}${TUI_COLOR_NC}"
         fi
-        echo ""
 
         local options=(
             "1. 🔍 Verifier un environnement"

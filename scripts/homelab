@@ -1,0 +1,189 @@
+#!/bin/bash
+# =============================================================================
+# Homelab Manager - Point d'entrée principal
+# =============================================================================
+# Usage: ./scripts/homelab [options]
+#
+# Interface TUI pour gérer l'infrastructure homelab Proxmox.
+#
+# Options:
+#   -h, --help     Afficher l'aide
+#   -v, --version  Afficher la version
+#   --no-color     Désactiver les couleurs
+#   --debug        Mode debug
+#
+# =============================================================================
+
+set -euo pipefail
+
+# =============================================================================
+# Détection des chemins
+# =============================================================================
+
+# Chemin absolu du script
+SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Racine du projet (parent de scripts/)
+PROJECT_ROOT="$(cd "${SCRIPT_PATH}/.." && pwd)"
+
+# Chemins des modules
+LIB_DIR="${SCRIPT_PATH}/lib"
+TUI_LIB_DIR="${SCRIPT_PATH}/lib/tui"
+MENUS_DIR="${SCRIPT_PATH}/menus"
+
+# =============================================================================
+# Variables globales
+# =============================================================================
+
+readonly VERSION="1.0.0"
+DEBUG_MODE=false
+NO_COLOR=false
+
+# =============================================================================
+# Fonctions utilitaires
+# =============================================================================
+
+show_help() {
+    cat << 'HELPEOF'
+Homelab Manager - Interface TUI pour gérer l'infrastructure Proxmox
+
+Usage: homelab [options]
+
+Options:
+  -h, --help     Afficher cette aide
+  -v, --version  Afficher la version
+  --no-color     Désactiver les couleurs
+  --debug        Mode debug (verbose)
+
+Exemples:
+  ./scripts/homelab              # Lancer le TUI
+  ./scripts/homelab --version    # Afficher la version
+  ./scripts/homelab --debug      # Mode debug
+
+Documentation: docs/TUI-GUIDE.md
+HELPEOF
+}
+
+show_version() {
+    echo "Homelab Manager v${VERSION}"
+}
+
+log_debug() {
+    if [[ "$DEBUG_MODE" == true ]]; then
+        echo "[DEBUG] $*" >&2
+    fi
+}
+
+# =============================================================================
+# Parsing des arguments
+# =============================================================================
+
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -v|--version)
+                show_version
+                exit 0
+                ;;
+            --no-color)
+                NO_COLOR=true
+                shift
+                ;;
+            --debug)
+                DEBUG_MODE=true
+                shift
+                ;;
+            *)
+                echo "Option inconnue: $1" >&2
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+}
+
+# =============================================================================
+# Chargement des modules
+# =============================================================================
+
+load_modules() {
+    log_debug "Chargement des modules depuis ${TUI_LIB_DIR}"
+
+    # Charger les bibliothèques TUI dans l'ordre
+    source "${TUI_LIB_DIR}/colors.sh"
+    source "${TUI_LIB_DIR}/config.sh"
+    source "${TUI_LIB_DIR}/common.sh"
+    source "${TUI_LIB_DIR}/keyboard.sh"
+
+    log_debug "Chargement des menus depuis ${MENUS_DIR}"
+
+    # Charger le menu principal
+    source "${MENUS_DIR}/main.sh"
+}
+
+# =============================================================================
+# Vérification des prérequis
+# =============================================================================
+
+check_prerequisites() {
+    local missing=()
+
+    # Vérifier bash version >= 4
+    if [[ "${BASH_VERSINFO[0]}" -lt 4 ]]; then
+        echo "Erreur: Bash 4.0+ requis (version actuelle: ${BASH_VERSION})" >&2
+        exit 1
+    fi
+
+    # Outils obligatoires
+    for cmd in jq; do
+        if ! command -v "$cmd" &>/dev/null; then
+            missing+=("$cmd")
+        fi
+    done
+
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        echo "Erreur: Outils manquants: ${missing[*]}" >&2
+        echo "Installer avec: sudo apt install ${missing[*]}" >&2
+        exit 1
+    fi
+
+    # Vérifier gum (optionnel mais recommandé)
+    if ! command -v gum &>/dev/null; then
+        log_debug "gum non installé - mode dégradé actif"
+    fi
+}
+
+# =============================================================================
+# Point d'entrée principal
+# =============================================================================
+
+main() {
+    parse_args "$@"
+
+    log_debug "PROJECT_ROOT: ${PROJECT_ROOT}"
+    log_debug "SCRIPT_PATH: ${SCRIPT_PATH}"
+
+    check_prerequisites
+
+    # Exporter les variables pour les modules
+    export TUI_PROJECT_ROOT="$PROJECT_ROOT"
+    export TUI_SCRIPTS_DIR="$SCRIPT_PATH"
+    export TUI_LIB_DIR="$TUI_LIB_DIR"
+    export TUI_MENUS_DIR="$MENUS_DIR"
+    export TUI_DEBUG="$DEBUG_MODE"
+
+    if [[ "$NO_COLOR" == true ]]; then
+        export NO_COLOR=1
+    fi
+
+    load_modules
+
+    # Lancer le menu principal
+    menu_main
+}
+
+main "$@"

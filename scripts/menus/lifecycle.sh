@@ -2,7 +2,7 @@
 # =============================================================================
 # TUI Homelab Manager - Menu Lifecycle/Snapshots (T016-T021 - US2)
 # =============================================================================
-# Usage: source scripts/tui/menus/lifecycle.sh && menu_lifecycle
+# Usage: source scripts/menus/lifecycle.sh && menu_lifecycle
 #
 # Gestion des snapshots VM/LXC :
 # - Selection de VM depuis les tfvars ou saisie manuelle du VMID
@@ -15,13 +15,13 @@ SCRIPT_DIR_LIFECYCLE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TUI_LIB_DIR_LIFECYCLE="$(cd "${SCRIPT_DIR_LIFECYCLE}/../lib" && pwd)"
 
 if [[ -z "${TUI_COLOR_PRIMARY:-}" ]]; then
-    source "${TUI_LIB_DIR_LIFECYCLE}/tui-colors.sh"
+    source "${TUI_LIB_DIR_LIFECYCLE}/colors.sh"
 fi
 if [[ -z "${TUI_CONTEXT:-}" ]]; then
-    source "${TUI_LIB_DIR_LIFECYCLE}/tui-config.sh"
+    source "${TUI_LIB_DIR_LIFECYCLE}/config.sh"
 fi
 if ! declare -f tui_menu &>/dev/null; then
-    source "${TUI_LIB_DIR_LIFECYCLE}/tui-common.sh"
+    source "${TUI_LIB_DIR_LIFECYCLE}/common.sh"
 fi
 
 # =============================================================================
@@ -139,6 +139,25 @@ get_containers_from_tfvars() {
         done
 }
 
+# Extrait la VM monitoring depuis un fichier tfvars
+# Format monitoring stack: monitoring = { vm = { ip = "..." } }
+get_monitoring_vm_from_tfvars() {
+    local tfvars="$1"
+
+    if [[ ! -f "$tfvars" ]]; then
+        return 1
+    fi
+
+    # Chercher le bloc monitoring = { vm = { ip = "..." } }
+    local ip
+    ip=$(awk '/^monitoring\s*=\s*\{/,/^\}/' "$tfvars" | \
+         grep -oP 'ip\s*=\s*"\K[0-9.]+' | head -1)
+
+    if [[ -n "$ip" ]]; then
+        echo "monitoring-vm|${ip}"
+    fi
+}
+
 # Retourne les environnements avec des VMs definies
 get_env_with_vms() {
     local envs=()
@@ -151,8 +170,10 @@ get_env_with_vms() {
             vms=$(get_vms_from_tfvars "$tfvars")
             local containers
             containers=$(get_containers_from_tfvars "$tfvars")
+            local monitoring_vm
+            monitoring_vm=$(get_monitoring_vm_from_tfvars "$tfvars")
 
-            if [[ -n "$vms" ]] || [[ -n "$containers" ]]; then
+            if [[ -n "$vms" ]] || [[ -n "$containers" ]] || [[ -n "$monitoring_vm" ]]; then
                 envs+=("$env")
             fi
         fi
@@ -211,6 +232,13 @@ select_vm() {
             options+=("📦 $(format_vm_option "$name" "$ip") [LXC]")
         fi
     done < <(get_containers_from_tfvars "$tfvars")
+
+    # VM Monitoring (format special monitoring stack)
+    while IFS='|' read -r name ip; do
+        if [[ -n "$name" ]]; then
+            options+=("📊 $(format_vm_option "$name" "$ip") [Monitoring]")
+        fi
+    done < <(get_monitoring_vm_from_tfvars "$tfvars")
 
     if [[ ${#options[@]} -eq 0 ]]; then
         tui_log_warn "Aucune VM/LXC dans cet environnement"
@@ -629,6 +657,7 @@ menu_lifecycle() {
     local running=true
 
     while $running; do
+        clear
         tui_banner "Lifecycle - Snapshots & VMs"
 
         local options=(
@@ -680,7 +709,7 @@ menu_lifecycle() {
 export -f menu_lifecycle menu_snapshots
 export -f get_snapshot_script_path generate_snapshot_name
 export -f validate_vmid validate_snapshot_name format_vm_option
-export -f get_vms_from_tfvars get_containers_from_tfvars get_env_with_vms
+export -f get_vms_from_tfvars get_containers_from_tfvars get_monitoring_vm_from_tfvars get_env_with_vms
 export -f select_environment select_vm enter_vmid_manually select_vm_or_enter_vmid
 export -f get_snapshot_actions parse_snapshots_json format_snapshot_table
 export -f create_snapshot list_snapshots select_snapshot rollback_snapshot delete_snapshot

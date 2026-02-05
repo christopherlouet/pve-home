@@ -2,7 +2,7 @@
 # =============================================================================
 # TUI Homelab Manager - Menu Disaster Recovery (T041-T047 - US6)
 # =============================================================================
-# Usage: source scripts/tui/menus/disaster.sh && menu_disaster
+# Usage: source scripts/menus/disaster.sh && menu_disaster
 #
 # Menu de disaster recovery : restauration VMs, tfstate, verification backups.
 # =============================================================================
@@ -16,13 +16,13 @@ DISASTER_TUI_DIR="$(cd "${DISASTER_MENU_DIR}/.." && pwd)"
 
 # Charger les libs TUI si pas deja fait
 if [[ -z "${TUI_COLOR_NC:-}" ]]; then
-    source "${DISASTER_TUI_DIR}/lib/tui-colors.sh"
+    source "${DISASTER_TUI_DIR}/lib/colors.sh"
 fi
 if [[ -z "${TUI_PROJECT_ROOT:-}" ]]; then
-    source "${DISASTER_TUI_DIR}/lib/tui-config.sh"
+    source "${DISASTER_TUI_DIR}/lib/config.sh"
 fi
 if ! declare -f tui_menu &>/dev/null; then
-    source "${DISASTER_TUI_DIR}/lib/tui-common.sh"
+    source "${DISASTER_TUI_DIR}/lib/common.sh"
 fi
 
 # Chemins des scripts
@@ -115,10 +115,30 @@ list_vm_backups() {
 
     tui_log_info "Recuperation de la liste des sauvegardes..."
 
-    # En mode local, on ne peut pas lister directement
-    # On affiche les instructions pour utiliser le script
-    if [[ "${TUI_CONTEXT}" == "local" ]]; then
-        tui_log_warn "Mode local: impossible de lister les backups directement"
+    # Recuperer l'IP du serveur Proxmox depuis la config ou tfvars
+    local pve_ip=""
+    local pve_node=""
+
+    # Essayer de lire depuis la config TUI
+    if [[ -n "${TUI_PVE_HOST:-}" ]]; then
+        pve_ip="$TUI_PVE_HOST"
+    else
+        # Essayer de lire depuis tfvars (prod par defaut)
+        local tfvars="${TUI_TFVARS_DIR:-${TUI_PROJECT_ROOT}/infrastructure/proxmox/environments}/prod/terraform.tfvars"
+        if [[ -f "$tfvars" ]]; then
+            pve_ip=$(grep -oP 'proxmox_endpoint\s*=\s*"https?://\K[0-9.]+' "$tfvars" 2>/dev/null | head -1)
+        fi
+    fi
+
+    # Recuperer le nom du node
+    local tfvars_prod="${TUI_TFVARS_DIR:-${TUI_PROJECT_ROOT}/infrastructure/proxmox/environments}/prod/terraform.tfvars"
+    if [[ -f "$tfvars_prod" ]]; then
+        pve_node=$(grep -oP 'default_node\s*=\s*"\K[^"]+' "$tfvars_prod" 2>/dev/null | head -1)
+    fi
+    pve_node="${pve_node:-pve}"
+
+    if [[ -z "$pve_ip" ]]; then
+        tui_log_warn "Impossible de determiner l'IP du serveur Proxmox"
         echo ""
         echo "Pour lister les backups, executez sur le serveur Proxmox :"
         echo "  pvesh get /nodes/<NODE>/storage/local/content --content backup"
@@ -128,9 +148,10 @@ list_vm_backups() {
         return 0
     fi
 
-    # En mode remote, essayer de lister
+    tui_log_info "Connexion SSH a ${pve_ip} (node: ${pve_node})..."
+
     local node
-    node=$(get_pve_node 2>/dev/null || echo "")
+    node="$pve_node"
 
     if [[ -z "$node" ]]; then
         tui_log_error "Impossible de detecter le noeud Proxmox"
@@ -138,7 +159,7 @@ list_vm_backups() {
     fi
 
     local backups_json
-    backups_json=$(ssh "${node}" "pvesh get /nodes/${node}/storage/local/content --content backup --output-format json" 2>/dev/null || echo "[]")
+    backups_json=$(ssh "root@${pve_ip}" "pvesh get /nodes/${node}/storage/local/content --content backup --output-format json" 2>/dev/null || echo "[]")
 
     local count
     count=$(echo "$backups_json" | jq '. | length' 2>/dev/null || echo "0")
@@ -655,10 +676,9 @@ menu_disaster() {
     local running=true
 
     while $running; do
+        clear
         tui_banner "Disaster Recovery"
-
-        echo -e "${TUI_COLOR_MUTED}Restauration de VMs et states Terraform${TUI_COLOR_NC}"
-        echo ""
+        echo -e "${TUI_COLOR_WHITE}Restauration de VMs et states Terraform${TUI_COLOR_NC}"
 
         # Selection action
         local choice

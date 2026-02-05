@@ -2,7 +2,7 @@
 # =============================================================================
 # TUI Homelab Manager - Menu Terraform (T023-T029 - US3)
 # =============================================================================
-# Usage: source scripts/tui/menus/terraform.sh && menu_terraform
+# Usage: source scripts/menus/terraform.sh && menu_terraform
 #
 # Operations Terraform par environnement :
 # - Selection environnement avec etat (initialise/configure)
@@ -17,13 +17,13 @@ SCRIPT_DIR_TERRAFORM="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TUI_LIB_DIR_TERRAFORM="$(cd "${SCRIPT_DIR_TERRAFORM}/../lib" && pwd)"
 
 if [[ -z "${TUI_COLOR_PRIMARY:-}" ]]; then
-    source "${TUI_LIB_DIR_TERRAFORM}/tui-colors.sh"
+    source "${TUI_LIB_DIR_TERRAFORM}/colors.sh"
 fi
 if [[ -z "${TUI_CONTEXT:-}" ]]; then
-    source "${TUI_LIB_DIR_TERRAFORM}/tui-config.sh"
+    source "${TUI_LIB_DIR_TERRAFORM}/config.sh"
 fi
 if ! declare -f tui_menu &>/dev/null; then
-    source "${TUI_LIB_DIR_TERRAFORM}/tui-common.sh"
+    source "${TUI_LIB_DIR_TERRAFORM}/common.sh"
 fi
 
 # =============================================================================
@@ -619,6 +619,7 @@ menu_terraform() {
     local running=true
 
     while $running; do
+        clear
         tui_banner "Terraform"
 
         # Verifier que terraform est installe

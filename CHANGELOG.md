@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-02-05
+
+### Added
+- **TUI Homelab Manager** complete implementation (11 modules, 439 tests)
+  - `scripts/homelab` as new entry point
+  - Status & Health monitoring with drill-down
+  - Terraform Plan/Apply/Output integration
+  - Snapshots management (create/list/restore/delete)
+  - Drift detection with colored status
+  - Disaster Recovery (VM restore, tfstate restore)
+  - Services management (Harbor, Monitoring stack)
+  - Configuration preferences (SSH, display, logging)
+- **Health check enhancements**
+  - Display VM names instead of IPs using tfvars parsing
+  - Add monitoring VM to health checks
+  - Dynamic environment listing from tfvars files
+- **Documentation reference** for Claude Code integration
+  - `docs/reference/` with commands, agents, skills catalogs
+
+### Changed
+- **Scripts reorganization** for cleaner structure
+  - `scripts/tui/` → `scripts/lib/tui/` (library files)
+  - `scripts/tui/menus/` → `scripts/menus/` (menu modules)
+  - `scripts/tui/tui.sh` → `scripts/homelab` (entry point)
+  - Renamed `tui-*.sh` to simpler names (e.g., `tui-colors.sh` → `colors.sh`)
+- **TUI display improvements**
+  - Added `clear` between menu transitions
+  - Changed muted text (gray) to white for better visibility
+  - Removed excessive blank lines in menus
+  - Reduced `tui_banner` margins for compact display
+
+### Fixed
+- **Drift detection** no longer hangs on environments without tfvars
+- **Drift summary** now correctly shows drift status (was always showing "Conforme")
+- **Health check parsing** handles VM names with dots and numbers
+- **Keyboard navigation** arrays initialized for `nounset` compatibility
+- **Path resolution** issues in TUI library loading
+
 ## [1.6.1] - 2026-02-05
 
 ### Added

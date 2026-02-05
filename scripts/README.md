@@ -8,18 +8,24 @@ Tous les scripts supportent `--dry-run` (simulation) et `--help` (aide).
 
 ```
 scripts/
-├── tui/                     # Interface TUI interactive
-│   ├── tui.sh               # Point d'entree principal
-│   ├── lib/                 # Bibliotheque TUI (colors, config, common, keyboard)
-│   └── menus/               # Modules de menu (status, terraform, services, etc.)
-├── lib/                     # Bibliotheque commune
-│   └── common.sh            # Fonctions partagees (logging, SSH, parsing, dry-run)
-├── restore/                 # Restauration d'infrastructure
-│   ├── restore-vm.sh        # Restaurer une VM/LXC depuis vzdump
-│   ├── restore-tfstate.sh   # Restaurer state Terraform depuis Minio S3
-│   ├── rebuild-minio.sh     # Reconstruire le conteneur Minio
-│   ├── rebuild-monitoring.sh# Reconstruire la stack monitoring
-│   └── verify-backups.sh    # Verifier l'integrite des sauvegardes
+├── homelab                  # Point d'entree TUI principal
+├── lib/                     # Bibliotheques
+│   ├── common.sh            # Fonctions partagees (logging, SSH, parsing)
+│   └── tui/                 # Bibliotheque TUI
+│       ├── colors.sh        # Definitions couleurs, theme
+│       ├── config.sh        # Detection local/distant, chemins
+│       ├── common.sh        # Wrappers gum (menu, confirm, input)
+│       └── keyboard.sh      # Navigation clavier
+├── menus/                   # Modules de menu TUI
+│   ├── main.sh              # Menu principal (8 categories)
+│   ├── status.sh            # Status & Health
+│   ├── lifecycle.sh         # Snapshots et cycle de vie
+│   ├── terraform.sh         # Plan, Apply, Output
+│   ├── deploy.sh            # Deploiement
+│   ├── maintenance.sh       # Drift detection
+│   ├── disaster.sh          # Disaster Recovery
+│   ├── services.sh          # Services (Harbor, etc.)
+│   └── config.sh            # Preferences du TUI
 ├── drift/                   # Detection de drift Terraform
 │   └── check-drift.sh       # Comparer l'etat reel vs declare
 ├── health/                  # Health checks infrastructure
@@ -29,6 +35,16 @@ scripts/
 │   ├── cleanup-snapshots.sh # Nettoyer les snapshots auto- expires
 │   ├── expire-lab-vms.sh    # Arreter les VMs lab expirees
 │   └── rotate-ssh-keys.sh   # Ajouter/revoquer des cles SSH
+├── restore/                 # Restauration d'infrastructure
+│   ├── restore-vm.sh        # Restaurer une VM/LXC depuis vzdump
+│   ├── restore-tfstate.sh   # Restaurer state Terraform depuis Minio S3
+│   ├── rebuild-minio.sh     # Reconstruire le conteneur Minio
+│   ├── rebuild-monitoring.sh# Reconstruire la stack monitoring
+│   └── verify-backups.sh    # Verifier l'integrite des sauvegardes
+├── tooling/                 # Scripts tooling stack
+│   ├── configure-sso.sh     # Configuration SSO Authentik
+│   ├── export-ca.sh         # Export certificats CA
+│   └── harbor-gc.sh         # Garbage collection Harbor
 ├── systemd/                 # Timers et services systemd
 │   ├── pve-drift-check.*    # Detection de drift (06:00 quotidien)
 │   ├── pve-health-check.*   # Health checks (toutes les 4h)
@@ -217,16 +233,16 @@ Une interface terminal interactive permet de gerer l'infrastructure sans memoris
 
 ```bash
 # Lancer le TUI interactif
-./tui/tui.sh
+./homelab
 
 # Avec options
-./tui/tui.sh --env prod --no-color
+./homelab --env prod --no-color
 
 # Commandes directes
-./tui/tui.sh status
-./tui/tui.sh terraform plan
-./tui/tui.sh drift
-./tui/tui.sh services
+./homelab status
+./homelab terraform plan
+./homelab drift
+./homelab services
 ```
 
 ### Menus disponibles
@@ -252,7 +268,7 @@ Une interface terminal interactive permet de gerer l'infrastructure sans memoris
 | `1-9` | Selection rapide |
 | `/` | Recherche |
 
-Documentation complete : [scripts/tui/README.md](tui/README.md)
+**Prerequis** : [gum](https://github.com/charmbracelet/gum) pour les menus interactifs (fallback bash sinon).
 
 ## Metriques Prometheus
 

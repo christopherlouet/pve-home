@@ -1,20 +1,20 @@
 #!/usr/bin/env bats
 # =============================================================================
-# Tests pour scripts/tui/menus/maintenance.sh (T040 - US5)
+# Tests pour scripts/menus/maintenance.sh (T040 - US5)
 # =============================================================================
 # Tests du menu maintenance : drift detection, verifications
 
 setup() {
     # Repertoire du projet
     PROJECT_ROOT="/home/chris/source/sideprojects/pve-home"
-    TUI_DIR="${PROJECT_ROOT}/scripts/tui"
-    TUI_LIB="${TUI_DIR}/lib"
+    TUI_DIR="${PROJECT_ROOT}/scripts"
+    TUI_LIB="${PROJECT_ROOT}/scripts/lib/tui"
     MAINTENANCE_MENU="${TUI_DIR}/menus/maintenance.sh"
 
     # Charger les libs TUI
-    source "${TUI_LIB}/tui-colors.sh"
-    source "${TUI_LIB}/tui-config.sh"
-    source "${TUI_LIB}/tui-common.sh"
+    source "${TUI_LIB}/colors.sh"
+    source "${TUI_LIB}/config.sh"
+    source "${TUI_LIB}/common.sh"
 
     # Variables de test
     TEST_DIR="${BATS_TEST_TMPDIR}/test_maintenance"
@@ -308,7 +308,7 @@ teardown() {
 }
 
 @test "maintenance.sh source les dependances TUI" {
-    grep -q "tui-common.sh\|tui-colors.sh" "$MAINTENANCE_MENU" || \
+    grep -q "common.sh\|colors.sh" "$MAINTENANCE_MENU" || \
     grep -q "source.*lib" "$MAINTENANCE_MENU"
 }
 

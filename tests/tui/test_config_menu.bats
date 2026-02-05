@@ -1,20 +1,20 @@
 #!/usr/bin/env bats
 # =============================================================================
-# Tests pour scripts/tui/menus/config.sh (T056-T062 - US8)
+# Tests pour scripts/menus/config.sh (T056-T062 - US8)
 # =============================================================================
 # Tests du menu configuration : preferences, environnement, SSH, logs
 
 setup() {
     # Repertoire du projet
     PROJECT_ROOT="/home/chris/source/sideprojects/pve-home"
-    TUI_DIR="${PROJECT_ROOT}/scripts/tui"
-    TUI_LIB="${TUI_DIR}/lib"
+    TUI_DIR="${PROJECT_ROOT}/scripts"
+    TUI_LIB="${PROJECT_ROOT}/scripts/lib/tui"
     CONFIG_MENU="${TUI_DIR}/menus/config.sh"
 
     # Charger les libs TUI
-    source "${TUI_LIB}/tui-colors.sh"
-    source "${TUI_LIB}/tui-config.sh"
-    source "${TUI_LIB}/tui-common.sh"
+    source "${TUI_LIB}/colors.sh"
+    source "${TUI_LIB}/config.sh"
+    source "${TUI_LIB}/common.sh"
 
     # Variables de test
     TEST_DIR="${BATS_TEST_TMPDIR}/test_config"
@@ -396,7 +396,7 @@ teardown() {
 }
 
 @test "config.sh source les dependances TUI" {
-    grep -q "tui-common.sh\|tui-colors.sh" "$CONFIG_MENU" || \
+    grep -q "common.sh\|colors.sh" "$CONFIG_MENU" || \
     grep -q "source.*lib" "$CONFIG_MENU"
 }
 

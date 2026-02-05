@@ -61,8 +61,9 @@ pve-home/
 │   ├── ALERTING.md
 │   └── VM-LIFECYCLE.md
 ├── scripts/
-│   ├── lib/                     # Bibliotheque commune (common.sh)
-│   ├── tui/                     # Interface TUI interactive (439 tests)
+│   ├── homelab                  # Point d'entree TUI principal
+│   ├── lib/                     # Bibliotheques (common.sh + tui/)
+│   ├── menus/                   # Modules de menu TUI (8 menus)
 │   ├── restore/                 # Scripts de restauration
 │   ├── drift/                   # Detection de drift Terraform
 │   ├── health/                  # Health checks infrastructure
@@ -105,7 +106,6 @@ terraform apply
 | [Cycle de vie VMs](docs/VM-LIFECYCLE.md) | Snapshots, expiration, mises à jour de sécurité, rotation SSH |
 | [Stack Tooling](docs/TOOLING-STACK.md) | PKI Step-ca, Registry Harbor, SSO Authentik avec Traefik |
 | [Index des scripts](scripts/README.md) | Index complet de tous les scripts d'opération |
-| [TUI Homelab Manager](scripts/tui/README.md) | Interface terminal interactive pour gérer l'infrastructure |
 
 ## Exemple de configuration
 
@@ -389,21 +389,21 @@ Une interface terminal interactive permet de gérer l'infrastructure sans mémor
 
 ```bash
 # Lancer le TUI interactif
-./scripts/tui/tui.sh
+./scripts/homelab
 
 # Avec un environnement spécifique
-./scripts/tui/tui.sh --env prod
+./scripts/homelab --env prod
 
 # Commandes directes
-./scripts/tui/tui.sh status
-./scripts/tui/tui.sh terraform plan
-./scripts/tui/tui.sh drift
+./scripts/homelab status
+./scripts/homelab terraform plan
+./scripts/homelab drift
 ```
 
 Fonctionnalités : status, terraform, snapshots, déploiement, drift detection, disaster recovery, services.
 Navigation vim-like (j/k/h/l), raccourcis clavier (1-9), recherche (/).
 
-Documentation : [scripts/tui/README.md](scripts/tui/README.md)
+**Prérequis** : [gum](https://github.com/charmbracelet/gum) pour les menus interactifs (fallback bash sinon).
 
 ## Tests
 

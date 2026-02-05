@@ -2,7 +2,7 @@
 # =============================================================================
 # TUI Homelab Manager - Menu Configuration (T056-T062 - US8)
 # =============================================================================
-# Usage: source scripts/tui/menus/config.sh && menu_config
+# Usage: source scripts/menus/config.sh && menu_config
 #
 # Menu de configuration globale : preferences, environnement, SSH, affichage.
 # =============================================================================
@@ -16,13 +16,13 @@ CONFIG_TUI_DIR="$(cd "${CONFIG_MENU_DIR}/.." && pwd)"
 
 # Charger les libs TUI si pas deja fait
 if [[ -z "${TUI_COLOR_NC:-}" ]]; then
-    source "${CONFIG_TUI_DIR}/lib/tui-colors.sh"
+    source "${CONFIG_TUI_DIR}/lib/colors.sh"
 fi
 if [[ -z "${TUI_PROJECT_ROOT:-}" ]]; then
-    source "${CONFIG_TUI_DIR}/lib/tui-config.sh"
+    source "${CONFIG_TUI_DIR}/lib/config.sh"
 fi
 if ! declare -f tui_menu &>/dev/null; then
-    source "${CONFIG_TUI_DIR}/lib/tui-common.sh"
+    source "${CONFIG_TUI_DIR}/lib/common.sh"
 fi
 
 # Chemin du fichier de configuration
@@ -763,10 +763,9 @@ menu_config() {
     load_tui_config
 
     while $running; do
+        clear
         tui_banner "Configuration"
-
-        echo -e "${TUI_COLOR_MUTED}Gestion des preferences du TUI${TUI_COLOR_NC}"
-        echo ""
+        echo -e "${TUI_COLOR_WHITE}Gestion des preferences du TUI${TUI_COLOR_NC}"
 
         local options=(
             "1. 🌐 Environnement par defaut"

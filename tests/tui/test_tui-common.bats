@@ -1,18 +1,18 @@
 #!/usr/bin/env bats
 # =============================================================================
-# Tests pour scripts/tui/lib/tui-common.sh (T008)
+# Tests pour scripts/lib/tui/common.sh (T008)
 # =============================================================================
 # Tests des wrappers gum : menu, confirm, input, spin, table, banner
 
 setup() {
     # Repertoire du projet
     PROJECT_ROOT="/home/chris/source/sideprojects/pve-home"
-    TUI_LIB="${PROJECT_ROOT}/scripts/tui/lib"
+    TUI_LIB="${PROJECT_ROOT}/scripts/lib/tui"
 
     # Sourcer les libs TUI
-    source "${TUI_LIB}/tui-colors.sh" 2>/dev/null || true
-    source "${TUI_LIB}/tui-config.sh" 2>/dev/null || true
-    source "${TUI_LIB}/tui-common.sh"
+    source "${TUI_LIB}/colors.sh" 2>/dev/null || true
+    source "${TUI_LIB}/config.sh" 2>/dev/null || true
+    source "${TUI_LIB}/common.sh"
 
     # Variables de test
     TEST_DIR="${BATS_TEST_TMPDIR}/test_tui_common"
@@ -27,83 +27,83 @@ teardown() {
 # Tests existence des fichiers
 # =============================================================================
 
-@test "tui-common.sh existe" {
-    [ -f "${TUI_LIB}/tui-common.sh" ]
+@test "common.sh existe" {
+    [ -f "${TUI_LIB}/common.sh" ]
 }
 
-@test "tui-colors.sh existe" {
-    [ -f "${TUI_LIB}/tui-colors.sh" ]
+@test "colors.sh existe" {
+    [ -f "${TUI_LIB}/colors.sh" ]
 }
 
-@test "tui-config.sh existe" {
-    [ -f "${TUI_LIB}/tui-config.sh" ]
+@test "config.sh existe" {
+    [ -f "${TUI_LIB}/config.sh" ]
 }
 
 # =============================================================================
-# Tests tui-colors.sh - Definitions des couleurs
+# Tests colors.sh - Definitions des couleurs
 # =============================================================================
 
-@test "tui-colors.sh definit TUI_COLOR_PRIMARY" {
-    source "${TUI_LIB}/tui-colors.sh"
+@test "colors.sh definit TUI_COLOR_PRIMARY" {
+    source "${TUI_LIB}/colors.sh"
     [ -n "$TUI_COLOR_PRIMARY" ]
 }
 
-@test "tui-colors.sh definit TUI_COLOR_SUCCESS" {
-    source "${TUI_LIB}/tui-colors.sh"
+@test "colors.sh definit TUI_COLOR_SUCCESS" {
+    source "${TUI_LIB}/colors.sh"
     [ -n "$TUI_COLOR_SUCCESS" ]
 }
 
-@test "tui-colors.sh definit TUI_COLOR_WARNING" {
-    source "${TUI_LIB}/tui-colors.sh"
+@test "colors.sh definit TUI_COLOR_WARNING" {
+    source "${TUI_LIB}/colors.sh"
     [ -n "$TUI_COLOR_WARNING" ]
 }
 
-@test "tui-colors.sh definit TUI_COLOR_ERROR" {
-    source "${TUI_LIB}/tui-colors.sh"
+@test "colors.sh definit TUI_COLOR_ERROR" {
+    source "${TUI_LIB}/colors.sh"
     [ -n "$TUI_COLOR_ERROR" ]
 }
 
-@test "tui-colors.sh definit TUI_COLOR_INFO" {
-    source "${TUI_LIB}/tui-colors.sh"
+@test "colors.sh definit TUI_COLOR_INFO" {
+    source "${TUI_LIB}/colors.sh"
     [ -n "$TUI_COLOR_INFO" ]
 }
 
 # =============================================================================
-# Tests tui-config.sh - Detection contexte et chemins
+# Tests config.sh - Detection contexte et chemins
 # =============================================================================
 
-@test "tui-config.sh definit TUI_CONTEXT" {
-    source "${TUI_LIB}/tui-config.sh"
+@test "config.sh definit TUI_CONTEXT" {
+    source "${TUI_LIB}/config.sh"
     [ -n "$TUI_CONTEXT" ]
     # Doit etre 'local' ou 'remote'
     [[ "$TUI_CONTEXT" == "local" ]] || [[ "$TUI_CONTEXT" == "remote" ]]
 }
 
-@test "tui-config.sh definit TUI_PROJECT_ROOT" {
-    source "${TUI_LIB}/tui-config.sh"
+@test "config.sh definit TUI_PROJECT_ROOT" {
+    source "${TUI_LIB}/config.sh"
     [ -n "$TUI_PROJECT_ROOT" ]
     [ -d "$TUI_PROJECT_ROOT" ]
 }
 
-@test "tui-config.sh definit TUI_SCRIPTS_DIR" {
-    source "${TUI_LIB}/tui-config.sh"
+@test "config.sh definit TUI_SCRIPTS_DIR" {
+    source "${TUI_LIB}/config.sh"
     [ -n "$TUI_SCRIPTS_DIR" ]
 }
 
-@test "tui-config.sh definit TUI_TFVARS_DIR" {
-    source "${TUI_LIB}/tui-config.sh"
+@test "config.sh definit TUI_TFVARS_DIR" {
+    source "${TUI_LIB}/config.sh"
     [ -n "$TUI_TFVARS_DIR" ]
 }
 
 @test "detect_context() retourne local ou remote" {
-    source "${TUI_LIB}/tui-config.sh"
+    source "${TUI_LIB}/config.sh"
     run detect_context
     [ "$status" -eq 0 ]
     [[ "$output" == "local" ]] || [[ "$output" == "remote" ]]
 }
 
 # =============================================================================
-# Tests tui-common.sh - Wrapper tui_menu
+# Tests common.sh - Wrapper tui_menu
 # =============================================================================
 
 @test "tui_menu() est definie" {
@@ -117,7 +117,7 @@ teardown() {
 }
 
 # =============================================================================
-# Tests tui-common.sh - Wrapper tui_confirm
+# Tests common.sh - Wrapper tui_confirm
 # =============================================================================
 
 @test "tui_confirm() est definie" {
@@ -131,7 +131,7 @@ teardown() {
 }
 
 # =============================================================================
-# Tests tui-common.sh - Wrapper tui_input
+# Tests common.sh - Wrapper tui_input
 # =============================================================================
 
 @test "tui_input() est definie" {
@@ -144,7 +144,7 @@ teardown() {
 }
 
 # =============================================================================
-# Tests tui-common.sh - Wrapper tui_spin
+# Tests common.sh - Wrapper tui_spin
 # =============================================================================
 
 @test "tui_spin() est definie" {
@@ -163,7 +163,7 @@ teardown() {
 }
 
 # =============================================================================
-# Tests tui-common.sh - Wrapper tui_table
+# Tests common.sh - Wrapper tui_table
 # =============================================================================
 
 @test "tui_table() est definie" {
@@ -177,7 +177,7 @@ teardown() {
 }
 
 # =============================================================================
-# Tests tui-common.sh - Wrapper tui_banner
+# Tests common.sh - Wrapper tui_banner
 # =============================================================================
 
 @test "tui_banner() est definie" {
@@ -191,7 +191,7 @@ teardown() {
 }
 
 # =============================================================================
-# Tests tui-common.sh - Fonctions utilitaires
+# Tests common.sh - Fonctions utilitaires
 # =============================================================================
 
 @test "tui_log_info() est definie" {
@@ -223,7 +223,7 @@ teardown() {
 }
 
 # =============================================================================
-# Tests tui-common.sh - Gestion gum absent (fallback)
+# Tests common.sh - Gestion gum absent (fallback)
 # =============================================================================
 
 @test "tui_check_gum() est definie" {
@@ -254,10 +254,10 @@ teardown() {
 # Tests integration avec common.sh existant
 # =============================================================================
 
-@test "tui-common.sh peut sourcer scripts/lib/common.sh" {
+@test "common.sh peut sourcer scripts/lib/common.sh" {
     # Verifier la compatibilite avec la lib existante
     source "${PROJECT_ROOT}/scripts/lib/common.sh"
-    source "${TUI_LIB}/tui-common.sh"
+    source "${TUI_LIB}/common.sh"
     # Les deux libs doivent coexister
     declare -f log_info > /dev/null
     declare -f tui_log_info > /dev/null
@@ -270,11 +270,11 @@ teardown() {
 @test "tui_back_option() est definie ou gere le retour" {
     # Le menu doit avoir une option de retour
     declare -f tui_back_option > /dev/null || \
-    grep -q "Retour\|Back\|←" "${TUI_LIB}/tui-common.sh"
+    grep -q "Retour\|Back\|←" "${TUI_LIB}/common.sh"
 }
 
 @test "tui_quit_handler() est definie pour Ctrl+C" {
     # Gestion propre de l'interruption
     declare -f tui_quit_handler > /dev/null || \
-    grep -qE "trap.*INT|trap.*SIGINT|trap.*EXIT" "${TUI_LIB}/tui-common.sh"
+    grep -qE "trap.*INT|trap.*SIGINT|trap.*EXIT" "${TUI_LIB}/common.sh"
 }

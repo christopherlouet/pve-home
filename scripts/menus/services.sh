@@ -2,7 +2,7 @@
 # =============================================================================
 # TUI Homelab Manager - Menu Services (T049-T055 - US7)
 # =============================================================================
-# Usage: source scripts/tui/menus/services.sh && menu_services
+# Usage: source scripts/menus/services.sh && menu_services
 #
 # Menu de gestion des services : liste, activation/desactivation, demarrage/arret.
 # =============================================================================
@@ -16,13 +16,13 @@ SERVICES_TUI_DIR="$(cd "${SERVICES_MENU_DIR}/.." && pwd)"
 
 # Charger les libs TUI si pas deja fait
 if [[ -z "${TUI_COLOR_NC:-}" ]]; then
-    source "${SERVICES_TUI_DIR}/lib/tui-colors.sh"
+    source "${SERVICES_TUI_DIR}/lib/colors.sh"
 fi
 if [[ -z "${TUI_PROJECT_ROOT:-}" ]]; then
-    source "${SERVICES_TUI_DIR}/lib/tui-config.sh"
+    source "${SERVICES_TUI_DIR}/lib/config.sh"
 fi
 if ! declare -f tui_menu &>/dev/null; then
-    source "${SERVICES_TUI_DIR}/lib/tui-common.sh"
+    source "${SERVICES_TUI_DIR}/lib/common.sh"
 fi
 
 # Services connus du homelab
@@ -671,14 +671,12 @@ menu_services() {
     local running=true
 
     while $running; do
+        clear
         tui_banner "Services"
-
-        echo -e "${TUI_COLOR_MUTED}Gestion des services du homelab${TUI_COLOR_NC}"
-        echo ""
+        echo -e "${TUI_COLOR_WHITE}Gestion des services du homelab${TUI_COLOR_NC}"
 
         # Afficher un resume rapide
         list_services
-        echo ""
 
         # Selection action
         local options=(

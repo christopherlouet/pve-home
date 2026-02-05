@@ -2,7 +2,7 @@
 # =============================================================================
 # TUI Homelab Manager - Menu principal (T006)
 # =============================================================================
-# Usage: source scripts/tui/menus/main.sh && menu_main
+# Usage: source scripts/menus/main.sh && menu_main
 #
 # Menu principal avec les 7 categories de gestion du homelab.
 # =============================================================================
@@ -15,12 +15,11 @@ menu_main() {
     local running=true
 
     while $running; do
-        # Afficher la banniere
+        clear
         tui_banner "Homelab Manager v${TUI_VERSION}"
 
         # Afficher le contexte
-        echo -e "${TUI_COLOR_MUTED}Contexte: ${TUI_CONTEXT} | Projet: ${TUI_PROJECT_ROOT}${TUI_COLOR_NC}"
-        echo ""
+        echo -e "${TUI_COLOR_WHITE}Contexte: ${TUI_CONTEXT} | Projet: ${TUI_PROJECT_ROOT}${TUI_COLOR_NC}"
 
         # Options du menu
         local options=(

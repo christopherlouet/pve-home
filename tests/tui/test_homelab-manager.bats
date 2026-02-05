@@ -1,14 +1,14 @@
 #!/usr/bin/env bats
 # =============================================================================
-# Tests pour scripts/tui/homelab-manager.sh (T007)
+# Tests pour scripts/homelab (T007)
 # =============================================================================
 # Tests du point d'entree TUI : arguments, help, version, prerequis
 
 setup() {
     # Repertoire du projet
     PROJECT_ROOT="/home/chris/source/sideprojects/pve-home"
-    TUI_DIR="${PROJECT_ROOT}/scripts/tui"
-    SCRIPT="${TUI_DIR}/homelab-manager.sh"
+    TUI_DIR="${PROJECT_ROOT}/scripts"
+    SCRIPT="${TUI_DIR}/homelab"
 
     # Variables de test
     TEST_DIR="${BATS_TEST_TMPDIR}/test_tui"
@@ -134,21 +134,21 @@ teardown() {
 # Tests integration avec les libs
 # =============================================================================
 
-@test "source tui-common.sh sans erreur" {
+@test "source common.sh sans erreur" {
     # Le script doit pouvoir sourcer la lib commune
-    run bash -c "source ${TUI_DIR}/lib/tui-common.sh && echo OK"
+    run bash -c "source ${TUI_DIR}/lib/tui/common.sh && echo OK"
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
 
-@test "source tui-config.sh sans erreur" {
-    run bash -c "source ${TUI_DIR}/lib/tui-config.sh && echo OK"
+@test "source config.sh sans erreur" {
+    run bash -c "source ${TUI_DIR}/lib/tui/config.sh && echo OK"
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
 
-@test "source tui-colors.sh sans erreur" {
-    run bash -c "source ${TUI_DIR}/lib/tui-colors.sh && echo OK"
+@test "source colors.sh sans erreur" {
+    run bash -c "source ${TUI_DIR}/lib/tui/colors.sh && echo OK"
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }

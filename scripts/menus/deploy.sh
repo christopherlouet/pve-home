@@ -2,7 +2,7 @@
 # =============================================================================
 # TUI Homelab Manager - Menu Deploiement (T031-T034 - US4)
 # =============================================================================
-# Usage: source scripts/tui/menus/deploy.sh && menu_deploy
+# Usage: source scripts/menus/deploy.sh && menu_deploy
 #
 # Menu de deploiement des scripts et timers sur la VM monitoring.
 # =============================================================================
@@ -16,13 +16,13 @@ DEPLOY_TUI_DIR="$(cd "${DEPLOY_MENU_DIR}/.." && pwd)"
 
 # Charger les libs TUI si pas deja fait
 if [[ -z "${TUI_COLOR_NC:-}" ]]; then
-    source "${DEPLOY_TUI_DIR}/lib/tui-colors.sh"
+    source "${DEPLOY_TUI_DIR}/lib/colors.sh"
 fi
 if [[ -z "${TUI_PROJECT_ROOT:-}" ]]; then
-    source "${DEPLOY_TUI_DIR}/lib/tui-config.sh"
+    source "${DEPLOY_TUI_DIR}/lib/config.sh"
 fi
 if ! declare -f tui_menu &>/dev/null; then
-    source "${DEPLOY_TUI_DIR}/lib/tui-common.sh"
+    source "${DEPLOY_TUI_DIR}/lib/common.sh"
 fi
 
 # Chemin du script deploy.sh
@@ -176,7 +176,7 @@ show_deploy_preview() {
     local monitoring_ip
     monitoring_ip=$(get_monitoring_ip 2>/dev/null) || monitoring_ip="non detectee"
 
-    echo -e "${TUI_COLOR_MUTED}VM monitoring: ${monitoring_ip}${TUI_COLOR_NC}"
+    echo -e "${TUI_COLOR_WHITE}VM monitoring: ${monitoring_ip}${TUI_COLOR_NC}"
     echo ""
 
     get_deploy_summary
@@ -526,6 +526,7 @@ menu_deploy() {
     local running=true
 
     while $running; do
+        clear
         tui_banner "Deploiement"
 
         # Afficher l'etat de la VM monitoring
@@ -533,7 +534,7 @@ menu_deploy() {
         monitoring_ip=$(get_monitoring_ip 2>/dev/null) || monitoring_ip=""
 
         if [[ -n "$monitoring_ip" ]]; then
-            echo -e "${TUI_COLOR_MUTED}VM monitoring: ${monitoring_ip}${TUI_COLOR_NC}"
+            echo -e "${TUI_COLOR_WHITE}VM monitoring: ${monitoring_ip}${TUI_COLOR_NC}"
 
             if check_monitoring_reachable "$monitoring_ip" 2>/dev/null; then
                 echo -e "${TUI_COLOR_SUCCESS}Etat: Accessible${TUI_COLOR_NC}"

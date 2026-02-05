@@ -93,3 +93,4 @@ prometheus-*.yml
 *.key
 secrets/
 .secrets
+.tui-config.yaml

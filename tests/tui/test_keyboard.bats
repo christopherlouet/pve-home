@@ -1,20 +1,20 @@
 #!/usr/bin/env bats
 # =============================================================================
-# Tests pour scripts/tui/lib/tui-keyboard.sh (T063-T070 - US9)
+# Tests pour scripts/lib/tui/keyboard.sh (T063-T070 - US9)
 # =============================================================================
 # Tests de la navigation clavier avancee : raccourcis, vim-like, recherche
 
 setup() {
     # Repertoire du projet
     PROJECT_ROOT="/home/chris/source/sideprojects/pve-home"
-    TUI_DIR="${PROJECT_ROOT}/scripts/tui"
-    TUI_LIB="${TUI_DIR}/lib"
-    KEYBOARD_LIB="${TUI_LIB}/tui-keyboard.sh"
+    TUI_DIR="${PROJECT_ROOT}/scripts"
+    TUI_LIB="${PROJECT_ROOT}/scripts/lib/tui"
+    KEYBOARD_LIB="${TUI_LIB}/keyboard.sh"
 
     # Charger les libs TUI
-    source "${TUI_LIB}/tui-colors.sh"
-    source "${TUI_LIB}/tui-config.sh"
-    source "${TUI_LIB}/tui-common.sh"
+    source "${TUI_LIB}/colors.sh"
+    source "${TUI_LIB}/config.sh"
+    source "${TUI_LIB}/common.sh"
 
     # Variables de test
     TEST_DIR="${BATS_TEST_TMPDIR}/test_keyboard"
@@ -50,11 +50,11 @@ teardown() {
 # Tests existence et structure (T063)
 # =============================================================================
 
-@test "tui-keyboard.sh existe" {
+@test "keyboard.sh existe" {
     [ -f "$KEYBOARD_LIB" ]
 }
 
-@test "tui-keyboard.sh peut etre source sans erreur" {
+@test "keyboard.sh peut etre source sans erreur" {
     run bash -c "source '${KEYBOARD_LIB}' && echo OK"
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]

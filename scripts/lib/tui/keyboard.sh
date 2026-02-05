@@ -1,8 +1,8 @@
 #!/bin/bash
 # =============================================================================
-# TUI Homelab Manager - Keyboard Navigation (T063-T070 - US9)
+# TUI Homelab Manager - Keyboard Navigation
 # =============================================================================
-# Usage: source scripts/tui/lib/tui-keyboard.sh
+# Usage: source scripts/lib/tui/keyboard.sh
 #
 # Gestion avancee de la navigation clavier : raccourcis, vim-like, recherche.
 # =============================================================================

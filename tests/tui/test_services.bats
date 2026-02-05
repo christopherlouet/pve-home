@@ -1,20 +1,20 @@
 #!/usr/bin/env bats
 # =============================================================================
-# Tests pour scripts/tui/menus/services.sh (T055 - US7)
+# Tests pour scripts/menus/services.sh (T055 - US7)
 # =============================================================================
 # Tests du menu services : liste, activation/desactivation, demarrage/arret
 
 setup() {
     # Repertoire du projet
     PROJECT_ROOT="/home/chris/source/sideprojects/pve-home"
-    TUI_DIR="${PROJECT_ROOT}/scripts/tui"
-    TUI_LIB="${TUI_DIR}/lib"
+    TUI_DIR="${PROJECT_ROOT}/scripts"
+    TUI_LIB="${PROJECT_ROOT}/scripts/lib/tui"
     SERVICES_MENU="${TUI_DIR}/menus/services.sh"
 
     # Charger les libs TUI
-    source "${TUI_LIB}/tui-colors.sh"
-    source "${TUI_LIB}/tui-config.sh"
-    source "${TUI_LIB}/tui-common.sh"
+    source "${TUI_LIB}/colors.sh"
+    source "${TUI_LIB}/config.sh"
+    source "${TUI_LIB}/common.sh"
 
     # Variables de test
     TEST_DIR="${BATS_TEST_TMPDIR}/test_services"
@@ -316,7 +316,7 @@ teardown() {
 }
 
 @test "services.sh source les dependances TUI" {
-    grep -q "tui-common.sh\|tui-colors.sh" "$SERVICES_MENU" || \
+    grep -q "common.sh\|colors.sh" "$SERVICES_MENU" || \
     grep -q "source.*lib" "$SERVICES_MENU"
 }
 

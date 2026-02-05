@@ -7,9 +7,9 @@
 setup() {
     # Repertoire du projet
     PROJECT_ROOT="/home/chris/source/sideprojects/pve-home"
-    TUI_DIR="${PROJECT_ROOT}/scripts/tui"
-    TUI_ENTRY="${TUI_DIR}/tui.sh"
-    TUI_LIB="${TUI_DIR}/lib"
+    TUI_DIR="${PROJECT_ROOT}/scripts"
+    TUI_ENTRY="${TUI_DIR}/homelab"
+    TUI_LIB="${PROJECT_ROOT}/scripts/lib/tui"
     TUI_MENUS="${TUI_DIR}/menus"
 
     # Variables de test
@@ -25,33 +25,33 @@ teardown() {
 # Tests point d'entree (T071)
 # =============================================================================
 
-@test "tui.sh existe" {
+@test "homelab existe" {
     [ -f "$TUI_ENTRY" ]
 }
 
-@test "tui.sh est executable" {
+@test "homelab est executable" {
     [ -x "$TUI_ENTRY" ]
 }
 
-@test "tui.sh affiche l'aide avec --help" {
+@test "homelab affiche l'aide avec --help" {
     run "$TUI_ENTRY" --help
     [ "$status" -eq 0 ]
     [[ "$output" == *"Usage"* ]] || [[ "$output" == *"usage"* ]] || [[ "$output" == *"help"* ]]
 }
 
-@test "tui.sh affiche la version avec --version" {
+@test "homelab affiche la version avec --version" {
     run "$TUI_ENTRY" --version
     [ "$status" -eq 0 ]
     [[ "$output" =~ [0-9]+\.[0-9]+ ]]
 }
 
-@test "tui.sh accepte l'option --dry-run" {
+@test "homelab accepte l'option --dry-run" {
     run "$TUI_ENTRY" --help
     [ "$status" -eq 0 ]
     [[ "$output" == *"dry-run"* ]] || [[ "$output" == *"dry"* ]] || true
 }
 
-@test "tui.sh accepte l'option --no-color" {
+@test "homelab accepte l'option --no-color" {
     run "$TUI_ENTRY" --help
     [ "$status" -eq 0 ]
     [[ "$output" == *"color"* ]] || [[ "$output" == *"Color"* ]] || true
@@ -62,10 +62,10 @@ teardown() {
 # =============================================================================
 
 @test "tous les modules lib existent" {
-    [ -f "${TUI_LIB}/tui-colors.sh" ]
-    [ -f "${TUI_LIB}/tui-config.sh" ]
-    [ -f "${TUI_LIB}/tui-common.sh" ]
-    [ -f "${TUI_LIB}/tui-keyboard.sh" ]
+    [ -f "${TUI_LIB}/colors.sh" ]
+    [ -f "${TUI_LIB}/config.sh" ]
+    [ -f "${TUI_LIB}/common.sh" ]
+    [ -f "${TUI_LIB}/keyboard.sh" ]
 }
 
 @test "tous les modules menus existent" {
@@ -80,17 +80,17 @@ teardown() {
     [ -f "${TUI_MENUS}/config.sh" ]
 }
 
-@test "tui.sh source les libs sans erreur" {
+@test "homelab source les libs sans erreur" {
     run bash -c "source '${TUI_ENTRY}' --source-only 2>/dev/null && echo OK" || \
-    run bash -c "source '${TUI_LIB}/tui-colors.sh' && source '${TUI_LIB}/tui-config.sh' && source '${TUI_LIB}/tui-common.sh' && echo OK"
+    run bash -c "source '${TUI_LIB}/colors.sh' && source '${TUI_LIB}/config.sh' && source '${TUI_LIB}/common.sh' && echo OK"
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 }
 
 @test "load_all_modules() est definie ou modules charges automatiquement" {
-    source "${TUI_LIB}/tui-colors.sh"
-    source "${TUI_LIB}/tui-config.sh"
-    source "${TUI_LIB}/tui-common.sh"
+    source "${TUI_LIB}/colors.sh"
+    source "${TUI_LIB}/config.sh"
+    source "${TUI_LIB}/common.sh"
     source "${TUI_MENUS}/main.sh"
     declare -f menu_main > /dev/null
 }
@@ -99,17 +99,17 @@ teardown() {
 # Tests verification prerequis (T073)
 # =============================================================================
 
-@test "check_prerequisites() est definie dans tui.sh" {
+@test "check_prerequisites() est definie dans homelab" {
     run grep -l "check_prerequisites\|check_requirements\|verify_deps" "$TUI_ENTRY"
     [ "$status" -eq 0 ]
 }
 
-@test "tui.sh verifie la presence de bash 4+" {
+@test "homelab verifie la presence de bash 4+" {
     run grep -E "BASH_VERSION|bash.*4" "$TUI_ENTRY"
     [ "$status" -eq 0 ]
 }
 
-@test "tui.sh verifie gum ou propose fallback" {
+@test "homelab verifie gum ou propose fallback" {
     run grep -E "gum|fallback|TUI_USE_GUM" "$TUI_ENTRY"
     [ "$status" -eq 0 ]
 }
@@ -123,7 +123,7 @@ teardown() {
 # Tests aide et documentation (T074)
 # =============================================================================
 
-@test "show_help() est definie dans tui.sh" {
+@test "show_help() est definie dans homelab" {
     run grep -E "show_help|usage|print_help" "$TUI_ENTRY"
     [ "$status" -eq 0 ]
 }
@@ -144,17 +144,17 @@ teardown() {
 # Tests gestion erreurs (T075)
 # =============================================================================
 
-@test "tui.sh gere les erreurs avec set -e ou trap" {
+@test "homelab gere les erreurs avec set -e ou trap" {
     run grep -E "set -e|set -o errexit|trap.*ERR|trap.*EXIT" "$TUI_ENTRY"
     [ "$status" -eq 0 ]
 }
 
-@test "tui.sh a un gestionnaire de sortie propre" {
+@test "homelab a un gestionnaire de sortie propre" {
     run grep -E "trap.*EXIT|cleanup|on_exit" "$TUI_ENTRY"
     [ "$status" -eq 0 ]
 }
 
-@test "tui.sh gere Ctrl+C proprement" {
+@test "homelab gere Ctrl+C proprement" {
     run grep -E "trap.*INT|trap.*SIGINT|CTRL.C|Ctrl-C" "$TUI_ENTRY"
     [ "$status" -eq 0 ]
 }
@@ -163,23 +163,23 @@ teardown() {
 # Tests options ligne de commande (T076)
 # =============================================================================
 
-@test "tui.sh parse les arguments" {
+@test "homelab parse les arguments" {
     run grep -E "getopts|while.*\\\$|case.*\\\$|--.*\)" "$TUI_ENTRY"
     [ "$status" -eq 0 ]
 }
 
-@test "tui.sh supporte --env pour specifier l'environnement" {
+@test "homelab supporte --env pour specifier l'environnement" {
     run "$TUI_ENTRY" --help
     [ "$status" -eq 0 ]
     [[ "$output" == *"env"* ]] || [[ "$output" == *"environment"* ]] || true
 }
 
-@test "tui.sh retourne 0 sur --help" {
+@test "homelab retourne 0 sur --help" {
     run "$TUI_ENTRY" --help
     [ "$status" -eq 0 ]
 }
 
-@test "tui.sh retourne 0 sur --version" {
+@test "homelab retourne 0 sur --version" {
     run "$TUI_ENTRY" --version
     [ "$status" -eq 0 ]
 }
@@ -188,12 +188,12 @@ teardown() {
 # Tests mode non-interactif (T077)
 # =============================================================================
 
-@test "tui.sh detecte le mode non-interactif" {
+@test "homelab detecte le mode non-interactif" {
     run grep -E "\\-t 0|isatty|interactive|TTY" "$TUI_ENTRY"
     [ "$status" -eq 0 ]
 }
 
-@test "tui.sh supporte les commandes directes" {
+@test "homelab supporte les commandes directes" {
     run "$TUI_ENTRY" --help
     [ "$status" -eq 0 ]
     # Verifier que des commandes directes sont mentionnees
@@ -205,30 +205,30 @@ teardown() {
 # =============================================================================
 
 @test "TUI_VERSION est definie" {
-    source "${TUI_LIB}/tui-colors.sh"
-    source "${TUI_LIB}/tui-config.sh"
+    source "${TUI_LIB}/colors.sh"
+    source "${TUI_LIB}/config.sh"
     [[ -n "${TUI_VERSION:-}" ]]
 }
 
 @test "TUI_PROJECT_ROOT est definie correctement" {
-    source "${TUI_LIB}/tui-colors.sh"
-    source "${TUI_LIB}/tui-config.sh"
+    source "${TUI_LIB}/colors.sh"
+    source "${TUI_LIB}/config.sh"
     [[ -n "${TUI_PROJECT_ROOT:-}" ]]
     [[ -d "${TUI_PROJECT_ROOT}" ]]
 }
 
 @test "menu_main est accessible apres chargement complet" {
-    source "${TUI_LIB}/tui-colors.sh"
-    source "${TUI_LIB}/tui-config.sh"
-    source "${TUI_LIB}/tui-common.sh"
+    source "${TUI_LIB}/colors.sh"
+    source "${TUI_LIB}/config.sh"
+    source "${TUI_LIB}/common.sh"
     source "${TUI_MENUS}/main.sh"
     declare -f menu_main > /dev/null
 }
 
 @test "tous les sous-menus sont accessibles" {
-    source "${TUI_LIB}/tui-colors.sh"
-    source "${TUI_LIB}/tui-config.sh"
-    source "${TUI_LIB}/tui-common.sh"
+    source "${TUI_LIB}/colors.sh"
+    source "${TUI_LIB}/config.sh"
+    source "${TUI_LIB}/common.sh"
     source "${TUI_MENUS}/main.sh"
 
     declare -f menu_status > /dev/null
@@ -241,8 +241,8 @@ teardown() {
     declare -f menu_config > /dev/null
 }
 
-@test "tui-keyboard.sh est chargeable" {
-    source "${TUI_LIB}/tui-keyboard.sh"
+@test "keyboard.sh est chargeable" {
+    source "${TUI_LIB}/keyboard.sh"
     declare -f get_keybinding > /dev/null
     declare -f show_keyboard_help > /dev/null
 }
@@ -251,7 +251,7 @@ teardown() {
 # Tests qualite code
 # =============================================================================
 
-@test "tui.sh n'a pas de syntaxe bash invalide" {
+@test "homelab n'a pas de syntaxe bash invalide" {
     run bash -n "$TUI_ENTRY"
     [ "$status" -eq 0 ]
 }
@@ -270,7 +270,7 @@ teardown() {
     done
 }
 
-@test "tui.sh a un shebang correct" {
+@test "homelab a un shebang correct" {
     head -1 "$TUI_ENTRY" | grep -qE "^#!/(usr/)?bin/(env )?bash"
 }
 
@@ -278,7 +278,7 @@ teardown() {
 # Tests documentation
 # =============================================================================
 
-@test "tui.sh a un en-tete de documentation" {
+@test "homelab a un en-tete de documentation" {
     run head -20 "$TUI_ENTRY"
     [[ "$output" == *"#"* ]]
     [[ "$output" == *"TUI"* ]] || [[ "$output" == *"Homelab"* ]] || [[ "$output" == *"Usage"* ]]

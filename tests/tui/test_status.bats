@@ -1,20 +1,20 @@
 #!/usr/bin/env bats
 # =============================================================================
-# Tests pour scripts/tui/menus/status.sh (T015 - US1)
+# Tests pour scripts/menus/status.sh (T015 - US1)
 # =============================================================================
 # Tests du menu status/health : selection env, affichage resultats, drill-down
 
 setup() {
     # Repertoire du projet
     PROJECT_ROOT="/home/chris/source/sideprojects/pve-home"
-    TUI_DIR="${PROJECT_ROOT}/scripts/tui"
-    TUI_LIB="${TUI_DIR}/lib"
+    TUI_DIR="${PROJECT_ROOT}/scripts"
+    TUI_LIB="${PROJECT_ROOT}/scripts/lib/tui"
     STATUS_MENU="${TUI_DIR}/menus/status.sh"
 
     # Charger les libs TUI
-    source "${TUI_LIB}/tui-colors.sh"
-    source "${TUI_LIB}/tui-config.sh"
-    source "${TUI_LIB}/tui-common.sh"
+    source "${TUI_LIB}/colors.sh"
+    source "${TUI_LIB}/config.sh"
+    source "${TUI_LIB}/common.sh"
 
     # Variables de test
     TEST_DIR="${BATS_TEST_TMPDIR}/test_status"
@@ -254,6 +254,6 @@ teardown() {
 
 @test "status.sh source les dependances TUI" {
     # Verifier que le fichier source les libs necessaires
-    grep -q "tui-common.sh\|tui-colors.sh" "$STATUS_MENU" || \
+    grep -q "common.sh\|colors.sh" "$STATUS_MENU" || \
     grep -q "source.*lib" "$STATUS_MENU"
 }

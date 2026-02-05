@@ -1,8 +1,8 @@
 #!/bin/bash
 # =============================================================================
-# TUI Homelab Manager - Fonctions communes et wrappers gum (T004)
+# TUI Homelab Manager - Fonctions communes et wrappers gum
 # =============================================================================
-# Usage: source scripts/tui/lib/tui-common.sh
+# Usage: source scripts/lib/tui/common.sh
 #
 # Fournit des wrappers pour gum avec fallback si gum n'est pas installe :
 # - tui_menu : Menu de selection
@@ -17,11 +17,11 @@
 SCRIPT_DIR_TUI_COMMON="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ -z "${TUI_COLOR_PRIMARY:-}" ]]; then
-    source "${SCRIPT_DIR_TUI_COMMON}/tui-colors.sh"
+    source "${SCRIPT_DIR_TUI_COMMON}/colors.sh"
 fi
 
 if [[ -z "${TUI_CONTEXT:-}" ]]; then
-    source "${SCRIPT_DIR_TUI_COMMON}/tui-config.sh"
+    source "${SCRIPT_DIR_TUI_COMMON}/config.sh"
 fi
 
 # =============================================================================
@@ -76,9 +76,12 @@ tui_menu() {
 
     if tui_check_gum; then
         gum choose --header "$title" \
-            --cursor.foreground "${GUM_COLOR_CURSOR}" \
-            --selected.foreground "${GUM_COLOR_SELECTED}" \
-            --header.foreground "${GUM_COLOR_PRIMARY}" \
+            --height 10 \
+            --cursor "> " \
+            --cursor.foreground 212 \
+            --item.foreground 255 \
+            --selected.foreground 212 \
+            --header.foreground 87 \
             "${options[@]}"
     else
         # Fallback sans gum : select bash
@@ -229,7 +232,7 @@ tui_banner() {
             --border "rounded" \
             --border-foreground "${GUM_COLOR_BORDER}" \
             --padding "0 2" \
-            --margin "1 0" \
+            --margin "0" \
             --bold \
             "$text"
     else
@@ -241,7 +244,7 @@ tui_banner() {
         echo "╔${border}╗"
         echo "║  ${text}  ║"
         echo "╚${border}╝"
-        echo -e "${TUI_COLOR_NC}"
+        echo -en "${TUI_COLOR_NC}"
     fi
 }
 

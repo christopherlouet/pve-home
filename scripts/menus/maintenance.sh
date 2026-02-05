@@ -2,7 +2,7 @@
 # =============================================================================
 # TUI Homelab Manager - Menu Maintenance (T036-T039 - US5)
 # =============================================================================
-# Usage: source scripts/tui/menus/maintenance.sh && menu_maintenance
+# Usage: source scripts/menus/maintenance.sh && menu_maintenance
 #
 # Menu de maintenance : drift detection, verifications infrastructure.
 # =============================================================================
@@ -16,13 +16,13 @@ MAINTENANCE_TUI_DIR="$(cd "${MAINTENANCE_MENU_DIR}/.." && pwd)"
 
 # Charger les libs TUI si pas deja fait
 if [[ -z "${TUI_COLOR_NC:-}" ]]; then
-    source "${MAINTENANCE_TUI_DIR}/lib/tui-colors.sh"
+    source "${MAINTENANCE_TUI_DIR}/lib/colors.sh"
 fi
 if [[ -z "${TUI_PROJECT_ROOT:-}" ]]; then
-    source "${MAINTENANCE_TUI_DIR}/lib/tui-config.sh"
+    source "${MAINTENANCE_TUI_DIR}/lib/config.sh"
 fi
 if ! declare -f tui_menu &>/dev/null; then
-    source "${MAINTENANCE_TUI_DIR}/lib/tui-common.sh"
+    source "${MAINTENANCE_TUI_DIR}/lib/common.sh"
 fi
 
 # Chemin du script check-drift.sh
@@ -230,7 +230,8 @@ run_drift_check() {
     local output
     local exit_code=0
 
-    tui_log_info "Verification du drift en cours..."
+    echo ""
+    echo -e "${TUI_COLOR_WARNING}>>> Verification du drift en cours (30-60s)...${TUI_COLOR_NC}"
     echo ""
 
     output=$("$DRIFT_SCRIPT" "${args[@]}" 2>&1) || exit_code=$?
@@ -393,14 +394,14 @@ select_drift_environment() {
 # Selection d'action drift
 select_drift_action() {
     local options=(
-        "1. 🔍 Verifier drift (tous les environnements)"
-        "2. 🎯 Verifier drift (un environnement)"
+        "1. 🔍 Verifier drift (tous)"
+        "2. 🎯 Verifier drift (un env)"
         "3. 🧪 Simulation (dry-run)"
         "4. 📊 Resume du statut"
         "$(tui_back_option)"
     )
 
-    tui_menu "Que voulez-vous faire ?" "${options[@]}"
+    tui_menu "Action:" "${options[@]}"
 }
 
 # Menu drift
@@ -444,21 +445,20 @@ menu_maintenance() {
     local running=true
 
     while $running; do
+        clear
         tui_banner "Maintenance"
 
         # Afficher le resume rapide
-        echo -e "${TUI_COLOR_MUTED}Verification de l'infrastructure Proxmox${TUI_COLOR_NC}"
-        echo ""
+        echo -e "${TUI_COLOR_WHITE}Verification de l'infrastructure Proxmox${TUI_COLOR_NC}"
 
         # Statut rapide si disponible
         if [[ -f "$DRIFT_METRICS_FILE" ]]; then
-            echo -e "${TUI_COLOR_INFO}Dernier statut connu :${TUI_COLOR_NC}"
+            echo -e "${TUI_COLOR_WHITE}Dernier statut connu :${TUI_COLOR_NC}"
             for env in "${DRIFT_VALID_ENVS[@]}"; do
                 local status_icon
                 status_icon=$(get_env_drift_status "$env")
                 echo -e "  ${status_icon} ${env}"
             done
-            echo ""
         fi
 
         # Selection action

@@ -209,6 +209,8 @@ check_drift_for_env() {
             echo ""
             write_metrics "$env" 1 "$changed_count" "$timestamp"
             write_log "$env" "$date_str" "DRIFT" "$plan_output"
+            # Retourner 2 pour indiquer un drift
+            return 2
             ;;
     esac
 
@@ -362,28 +364,41 @@ main() {
     local has_error=false
 
     for env in "${envs_to_check[@]}"; do
+        # Verifier que le tfvars existe
+        local tfvars_path="${ENVS_DIR}/${env}/terraform.tfvars"
+        if [[ ! -f "$tfvars_path" ]]; then
+            log_warn "[${env}] Pas de terraform.tfvars, environnement ignore"
+            results+=("${env}|SKIP|Pas de tfvars")
+            continue
+        fi
+
         local exit_code=0
         check_drift_for_env "$env" || exit_code=$?
 
-        if [[ "$exit_code" -ne 0 ]]; then
-            results+=("${env}|ERROR|Echec du check")
-            has_error=true
-        else
-            # Lire le statut depuis les metriques
-            if [[ "$DRY_RUN" == true ]]; then
-                results+=("${env}|OK|dry-run")
-            elif grep -q "pve_drift_status{env=\"${env}\"} 1" "$METRICS_FILE" 2>/dev/null; then
-                local count
-                count=$(grep "pve_drift_resources_changed{env=\"${env}\"}" "$METRICS_FILE" 2>/dev/null | awk '{print $2}' || echo "?")
-                results+=("${env}|DRIFT|${count} ressource(s)")
-                has_drift=true
-            elif grep -q "pve_drift_status{env=\"${env}\"} 2" "$METRICS_FILE" 2>/dev/null; then
-                results+=("${env}|ERROR|Erreur Terraform")
+        case "$exit_code" in
+            0)
+                # Pas de drift
+                if [[ "$DRY_RUN" == true ]]; then
+                    results+=("${env}|OK|dry-run")
+                else
+                    results+=("${env}|OK|Aucun drift")
+                fi
+                ;;
+            1)
+                # Erreur terraform
+                results+=("${env}|ERROR|Echec du check")
                 has_error=true
-            else
-                results+=("${env}|OK|Aucun drift")
-            fi
-        fi
+                ;;
+            2)
+                # Drift detecte
+                results+=("${env}|DRIFT|Changements detectes")
+                has_drift=true
+                ;;
+            *)
+                results+=("${env}|ERROR|Code inconnu: ${exit_code}")
+                has_error=true
+                ;;
+        esac
     done
 
     print_summary results

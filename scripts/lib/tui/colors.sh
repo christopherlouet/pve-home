@@ -1,8 +1,8 @@
 #!/bin/bash
 # =============================================================================
-# TUI Homelab Manager - Definitions des couleurs (T002)
+# TUI Homelab Manager - Definitions des couleurs
 # =============================================================================
-# Usage: source scripts/tui/lib/tui-colors.sh
+# Usage: source scripts/lib/tui/colors.sh
 #
 # Definit les couleurs et le theme pour gum et l'affichage terminal.
 # =============================================================================

@@ -1,20 +1,20 @@
 #!/usr/bin/env bats
 # =============================================================================
-# Tests pour scripts/tui/menus/deploy.sh (T035 - US4)
+# Tests pour scripts/menus/deploy.sh (T035 - US4)
 # =============================================================================
 # Tests du menu deploiement : resume, progression, resultats
 
 setup() {
     # Repertoire du projet
     PROJECT_ROOT="/home/chris/source/sideprojects/pve-home"
-    TUI_DIR="${PROJECT_ROOT}/scripts/tui"
-    TUI_LIB="${TUI_DIR}/lib"
+    TUI_DIR="${PROJECT_ROOT}/scripts"
+    TUI_LIB="${PROJECT_ROOT}/scripts/lib/tui"
     DEPLOY_MENU="${TUI_DIR}/menus/deploy.sh"
 
     # Charger les libs TUI
-    source "${TUI_LIB}/tui-colors.sh"
-    source "${TUI_LIB}/tui-config.sh"
-    source "${TUI_LIB}/tui-common.sh"
+    source "${TUI_LIB}/colors.sh"
+    source "${TUI_LIB}/config.sh"
+    source "${TUI_LIB}/common.sh"
 
     # Variables de test
     TEST_DIR="${BATS_TEST_TMPDIR}/test_deploy"
@@ -300,7 +300,7 @@ teardown() {
 }
 
 @test "deploy.sh source les dependances TUI" {
-    grep -q "tui-common.sh\|tui-colors.sh" "$DEPLOY_MENU" || \
+    grep -q "common.sh\|colors.sh" "$DEPLOY_MENU" || \
     grep -q "source.*lib" "$DEPLOY_MENU"
 }
 
