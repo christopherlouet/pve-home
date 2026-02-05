@@ -220,3 +220,41 @@ SCRIPT="scripts/restore/restore-vm.sh"
 @test "restore-vm.sh: implemente detect_node()" {
     grep -q 'detect_node()' "$SCRIPT"
 }
+
+# =============================================================================
+# Tests d'execution error-path
+# =============================================================================
+
+@test "restore-vm.sh: VMID invalide (lettres) retourne erreur" {
+    run bash "$SCRIPT" "abc"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"invalide"* ]] || [[ "$output" == *"nombre"* ]]
+}
+
+@test "restore-vm.sh: VMID invalide (mixte) retourne erreur" {
+    run bash "$SCRIPT" "12abc"
+    [ "$status" -ne 0 ]
+}
+
+@test "restore-vm.sh: option --date sans valeur retourne erreur" {
+    run bash "$SCRIPT" 100 --date
+    [ "$status" -ne 0 ]
+}
+
+@test "restore-vm.sh: option --date avec format invalide retourne erreur" {
+    run bash "$SCRIPT" 100 --date "15-01-2026" --dry-run --force
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"invalide"* ]] || [[ "$output" == *"YYYY-MM-DD"* ]]
+}
+
+@test "restore-vm.sh: option --target-id non numerique retourne erreur" {
+    run bash "$SCRIPT" 100 --target-id "abc" --dry-run --force
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"invalide"* ]] || [[ "$output" == *"nombre"* ]]
+}
+
+@test "restore-vm.sh: option inconnue retourne erreur" {
+    run bash "$SCRIPT" 100 --unknown-option
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"inconnue"* ]] || [[ "$output" == *"Usage"* ]]
+}

@@ -43,6 +43,7 @@ jobs:
           - infrastructure/proxmox/modules/backup
           - infrastructure/proxmox/modules/minio
           - infrastructure/proxmox/modules/monitoring-stack
+          - infrastructure/proxmox/modules/tooling-stack
           - infrastructure/proxmox/environments/prod
           - infrastructure/proxmox/environments/lab
           - infrastructure/proxmox/environments/monitoring
@@ -76,6 +77,7 @@ jobs:
           - infrastructure/proxmox/modules/backup
           - infrastructure/proxmox/modules/minio
           - infrastructure/proxmox/modules/monitoring-stack
+          - infrastructure/proxmox/modules/tooling-stack
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -105,6 +107,7 @@ jobs:
           - infrastructure/proxmox/modules/backup
           - infrastructure/proxmox/modules/minio
           - infrastructure/proxmox/modules/monitoring-stack
+          - infrastructure/proxmox/modules/tooling-stack
     steps:
       - name: Checkout
         uses: actions/checkout@v6

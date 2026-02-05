@@ -288,3 +288,36 @@ teardown() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"Details"* ]] || [[ "$output" == *"taille"* ]]
 }
+
+# =============================================================================
+# Tests d'execution error-path
+# =============================================================================
+
+@test "verify-backups.sh affiche l'aide avec -h" {
+    run bash "$VERIFY_SCRIPT" -h
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Usage:"* ]]
+}
+
+@test "verify-backups.sh rejette une option inconnue" {
+    run bash "$VERIFY_SCRIPT" --unknown-option
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"inconnue"* ]] || [[ "$output" == *"Usage"* ]]
+}
+
+@test "verify-backups.sh rejette --vmid non numerique" {
+    run bash "$VERIFY_SCRIPT" --node pve-test --vmid abc --dry-run
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"invalide"* ]] || [[ "$output" == *"nombre"* ]]
+}
+
+@test "verify-backups.sh sans --node detecte ou avertit" {
+    run bash "$VERIFY_SCRIPT" --dry-run
+    # Le script doit soit detecter depuis tfvars, soit avertir et continuer
+    [[ "$output" == *"noeud"* ]] || [[ "$output" == *"node"* ]] || [[ "$output" == *"Noeud"* ]] || [[ "$output" == *"skipp"* ]] || [[ "$output" == *"detecte"* ]]
+}
+
+@test "verify-backups.sh --dry-run genere un rapport meme sans noeud" {
+    run bash "$VERIFY_SCRIPT" --dry-run
+    [[ "$output" == *"RAPPORT"* ]] || [[ "$output" == *"Rapport"* ]] || [[ "$output" == *"RESUME"* ]]
+}

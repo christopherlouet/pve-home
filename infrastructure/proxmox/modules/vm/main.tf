@@ -19,6 +19,8 @@ locals {
   docker_packages = var.install_docker ? ["ca-certificates", "curl", "gnupg"] : []
   all_packages    = concat(local.base_packages, local.docker_packages, var.additional_packages)
 
+  # NOTE: Docker install commands duplicated in monitoring-stack/main.tf (docker_install_runcmd)
+  # Both modules need Docker but with different conditional logic (var.install_docker vs always)
   docker_runcmd = var.install_docker ? [
     "install -m 0755 -d /etc/apt/keyrings",
     "curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc",
@@ -73,6 +75,7 @@ locals {
   ] : []
 
   # Tag d'expiration pour le lifecycle management
+  # NOTE: Same expiration_tag pattern used in lxc/main.tf
   expiration_tag = var.expiration_days != null ? ["expires:${formatdate("YYYY-MM-DD", timeadd(timestamp(), "${var.expiration_days * 24}h"))}"] : []
 
   cloud_config = {
