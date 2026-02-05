@@ -169,9 +169,20 @@ detect_node() {
     local project_root
     project_root="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-    for env in prod lab monitoring; do
+    for env in monitoring prod lab; do
         local tfvars="${project_root}/infrastructure/proxmox/environments/${env}/terraform.tfvars"
         if [[ -f "$tfvars" ]]; then
+            # Essayer proxmox_endpoint d'abord (format: https://IP:8006)
+            local endpoint
+            endpoint=$(grep -E "^proxmox_endpoint\s*=" "$tfvars" 2>/dev/null | sed 's/.*"\([^"]*\)".*/\1/' | head -1) || true
+            if [[ -n "$endpoint" ]]; then
+                PVE_NODE=$(echo "$endpoint" | sed -E 's|https?://([0-9.]+).*|\1|') || true
+                if [[ -n "$PVE_NODE" ]]; then
+                    log_info "Node detecte depuis ${env}: ${PVE_NODE}"
+                    return 0
+                fi
+            fi
+            # Fallback sur pve_ip
             PVE_NODE=$(grep -oP '(?<=pve_ip\s*=\s*")\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' "$tfvars" 2>/dev/null || echo "")
             if [[ -n "$PVE_NODE" ]]; then
                 log_info "Node detecte: ${PVE_NODE}"

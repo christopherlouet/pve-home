@@ -36,9 +36,10 @@ readonly CONFIG_VALID_ENVS=("prod" "lab" "monitoring")
 readonly CONFIG_VALID_LOG_LEVELS=("debug" "info" "warn" "error")
 
 # Configuration en memoire (associative array)
-# Declarer le tableau avec une valeur initiale pour eviter "variable sans liaison"
-# avec set -o nounset
-declare -A TUI_CONFIG=() 2>/dev/null || { declare -A TUI_CONFIG; TUI_CONFIG=(); }
+# Declarer le tableau globalement pour eviter les problemes avec set -u
+if ! declare -p TUI_CONFIG &>/dev/null; then
+    declare -gA TUI_CONFIG
+fi
 
 # =============================================================================
 # Fonctions de chargement configuration (T057)
@@ -281,6 +282,11 @@ select_default_environment() {
     local choice
     choice=$(tui_menu "Selectionner l'environnement par defaut" "${options[@]}")
 
+    # Gerer le retour explicitement
+    if [[ "$choice" == *"Retour"* ]] || [[ "$choice" == *"back"* ]] || [[ -z "$choice" ]]; then
+        return 0
+    fi
+
     # Extraire le nom de l'environnement
     for env in "${CONFIG_VALID_ENVS[@]}"; do
         if [[ "$choice" == *"$env"* ]]; then
@@ -289,7 +295,7 @@ select_default_environment() {
         fi
     done
 
-    return 1
+    return 0
 }
 
 # =============================================================================
@@ -341,25 +347,46 @@ get_ssh_batch_mode() {
 # Teste la connexion SSH
 # shellcheck disable=SC2120
 test_ssh_connection() {
-    local host="${1:-${MONITORING_HOST:-}}"
+    local host="${1:-}"
+
+    # Auto-detection de l'hote si non specifie
+    if [[ -z "$host" ]]; then
+        local env tfvars_path
+        env=$(get_default_environment 2>/dev/null) || env="monitoring"
+        tfvars_path="${TUI_PROJECT_ROOT}/infrastructure/proxmox/environments/${env}/terraform.tfvars"
+
+        if [[ -f "$tfvars_path" ]]; then
+            # Essayer proxmox_endpoint d'abord (format: https://IP:8006)
+            local endpoint
+            endpoint=$(grep -E "^proxmox_endpoint\s*=" "$tfvars_path" 2>/dev/null | sed 's/.*"\([^"]*\)".*/\1/' | head -1) || true
+            if [[ -n "$endpoint" ]]; then
+                # Extraire l'IP de l'URL
+                host=$(echo "$endpoint" | sed -E 's|https?://([0-9.]+).*|\1|') || true
+            fi
+            # Fallback sur pve_ip si existe
+            if [[ -z "$host" ]]; then
+                host=$(grep -E "^pve_ip\s*=" "$tfvars_path" 2>/dev/null | sed 's/.*=\s*"\([^"]*\)".*/\1/' | head -1) || true
+            fi
+        fi
+    fi
 
     if [[ -z "$host" ]]; then
-        tui_log_error "Aucun hote specifie"
-        return 1
+        tui_log_error "Aucun hote specifie et impossible de detecter depuis tfvars"
+        return 0
     fi
 
     local timeout
-    timeout=$(get_ssh_timeout)
+    timeout=$(get_ssh_timeout 2>/dev/null) || timeout="10"
 
-    tui_log_info "Test de connexion SSH vers ${host}..."
+    tui_log_info "Test de connexion SSH vers root@${host}..."
 
-    if ssh -o ConnectTimeout="$timeout" -o BatchMode=yes "$host" "echo OK" &>/dev/null; then
-        tui_log_success "Connexion SSH OK"
-        return 0
+    if ssh -n -o ConnectTimeout="$timeout" -o BatchMode=yes "root@${host}" "echo OK" &>/dev/null; then
+        tui_log_success "Connexion SSH OK vers ${host}"
     else
-        tui_log_error "Echec de la connexion SSH"
-        return 1
+        tui_log_error "Echec de la connexion SSH vers ${host}"
     fi
+
+    return 0
 }
 
 # =============================================================================
@@ -593,7 +620,7 @@ show_current_config() {
 reset_config() {
     if ! tui_confirm "Voulez-vous reinitialiser la configuration par defaut ?"; then
         tui_log_info "Operation annulee"
-        return 1
+        return 0  # Annulation n'est pas une erreur
     fi
 
     # Vider la configuration actuelle
@@ -798,11 +825,23 @@ menu_config() {
                 menu_terraform_settings
                 ;;
             "5."*|*"log"*)
-                local options_log=("debug" "info" "warn" "error" "$(tui_back_option)")
+                local current_log options_log=()
+                current_log=$(get_log_level 2>/dev/null) || current_log="info"
+                for level in debug info warn error; do
+                    if [[ "$level" == "$current_log" ]]; then
+                        options_log+=("● ${level} (actuel)")
+                    else
+                        options_log+=("○ ${level}")
+                    fi
+                done
+                options_log+=("$(tui_back_option)")
                 local log_choice
                 log_choice=$(tui_menu "Niveau de log" "${options_log[@]}")
                 if [[ "$log_choice" != *"Retour"* ]] && [[ -n "$log_choice" ]]; then
-                    set_log_level "$log_choice"
+                    # Extraire le niveau du choix (enlever ● ○ et (actuel))
+                    local selected_level
+                    selected_level=$(echo "$log_choice" | sed 's/[●○] //' | sed 's/ (actuel)//')
+                    set_log_level "$selected_level"
                 fi
                 ;;
             "6."*|*"Voir"*|*"actuelle"*)

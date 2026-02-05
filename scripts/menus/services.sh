@@ -25,11 +25,88 @@ if ! declare -f tui_menu &>/dev/null; then
     source "${SERVICES_TUI_DIR}/lib/common.sh"
 fi
 
-# Services connus du homelab
-readonly KNOWN_SERVICES=("monitoring" "minio" "backup" "telegram" "harbor" "grafana" "prometheus" "loki")
+# Services connus du homelab (services qui peuvent etre demarres/arretes)
+# Note: backup et telegram sont des configs Proxmox, pas des services
+readonly KNOWN_SERVICES=("monitoring" "minio" "grafana" "prometheus" "loki")
 
 # Chemin des environnements
 SERVICES_ENV_DIR="${TUI_PROJECT_ROOT}/infrastructure/proxmox/environments"
+
+# =============================================================================
+# Detection automatique du host pour les services
+# =============================================================================
+
+# Retourne l'IP du host ou tourne un service
+# Usage: get_service_host "minio" -> "192.168.1.52"
+get_service_host() {
+    local service="$1"
+    local host_ip=""
+
+    # Chercher dans les fichiers tfvars
+    for env_dir in "${SERVICES_ENV_DIR}"/*/; do
+        local tfvars_file="${env_dir}terraform.tfvars"
+        [[ -f "$tfvars_file" ]] || continue
+
+        case "$service" in
+            minio)
+                # Minio a son propre bloc avec une IP (conteneur LXC)
+                host_ip=$(grep -A15 "^minio" "$tfvars_file" 2>/dev/null | \
+                    grep -oP 'ip\s*=\s*"\K[0-9.]+' | head -1)
+                ;;
+            grafana|prometheus|loki|alertmanager)
+                # Services du monitoring-stack (VM avec docker-compose)
+                host_ip=$(grep -A15 "^monitoring" "$tfvars_file" 2>/dev/null | \
+                    grep -oP 'ip\s*=\s*"\K[0-9.]+' | head -1)
+                ;;
+            monitoring)
+                # Le service monitoring lui-meme (VM)
+                host_ip=$(grep -A15 "^monitoring" "$tfvars_file" 2>/dev/null | \
+                    grep -oP 'ip\s*=\s*"\K[0-9.]+' | head -1)
+                ;;
+            backup|telegram|harbor)
+                # Services de configuration Proxmox (pas de conteneur Docker)
+                # backup = job vzdump, telegram = notifications, harbor = registry
+                # Retourner vide car ces services n'ont pas de statut "running"
+                host_ip=""
+                ;;
+        esac
+
+        [[ -n "$host_ip" ]] && break
+    done
+
+    echo "$host_ip"
+}
+
+# Retourne le user SSH pour une IP donnee
+# VMs (.51, .101, .102, .103) = ubuntu
+# Proxmox/LXC (.50, .52, .100) = root
+get_ssh_user_for_ip() {
+    local ip="$1"
+    local last_octet="${ip##*.}"
+
+    case "$last_octet" in
+        51|101|102|103)
+            echo "ubuntu"
+            ;;
+        *)
+            echo "root"
+            ;;
+    esac
+}
+
+# Retourne le user@host pour SSH vers un service
+get_service_ssh_target() {
+    local service="$1"
+
+    local host_ip
+    host_ip=$(get_service_host "$service")
+
+    if [[ -n "$host_ip" ]]; then
+        local ssh_user
+        ssh_user=$(get_ssh_user_for_ip "$host_ip")
+        echo "${ssh_user}@${host_ip}"
+    fi
+}
 
 # =============================================================================
 # Fonctions utilitaires (T050)
@@ -61,13 +138,21 @@ get_service_enabled() {
     local service="$1"
     local tfvars_file="${2:-}"
 
+    # Services du monitoring-stack heritent du statut de monitoring
+    local check_service="$service"
+    case "$service" in
+        grafana|prometheus|loki|alertmanager|promtail)
+            check_service="monitoring"
+            ;;
+    esac
+
     # Si pas de fichier specifie, chercher dans les environnements
     if [[ -z "$tfvars_file" ]]; then
         for env_dir in "${SERVICES_ENV_DIR}"/*/; do
             local tf_file="${env_dir}terraform.tfvars"
             if [[ -f "$tf_file" ]]; then
                 local result
-                result=$(_check_service_in_tfvars "$service" "$tf_file")
+                result=$(_check_service_in_tfvars "$check_service" "$tf_file")
                 if [[ -n "$result" ]]; then
                     echo "$result"
                     return 0
@@ -91,66 +176,108 @@ _check_service_in_tfvars() {
         return 0
     fi
 
-    # Chercher le bloc du service et son attribut enabled
-    local in_block=false
-    local block_depth=0
+    # Methode simplifiee : grep direct pour enabled dans le bloc du service
+    # Extraire le bloc du service et chercher enabled
+    local block_content
+    block_content=$(awk "/^[[:space:]]*${service}[[:space:]]*=/{found=1} found{print; if(/\}/)exit}" "$tfvars_file" 2>/dev/null)
 
-    while IFS= read -r line; do
-        # Detecter le debut du bloc du service
-        if [[ "$line" =~ ^[[:space:]]*${service}[[:space:]]*= ]]; then
-            in_block=true
-            block_depth=0
+    if [[ -n "$block_content" ]]; then
+        # Chercher enabled = true/false dans le bloc
+        if echo "$block_content" | grep -qE 'enabled[[:space:]]*=[[:space:]]*true'; then
+            echo "true"
+            return 0
+        elif echo "$block_content" | grep -qE 'enabled[[:space:]]*=[[:space:]]*false'; then
+            echo "false"
+            return 0
+        else
+            # Bloc existe mais pas d'enabled explicite = actif
+            echo "true"
+            return 0
         fi
-
-        if $in_block; then
-            # Compter les accolades
-            local open_count close_count
-            open_count=$(echo "$line" | grep -o '{' | wc -l)
-            close_count=$(echo "$line" | grep -o '}' | wc -l)
-            block_depth=$((block_depth + open_count - close_count))
-
-            # Chercher enabled = true/false
-            if [[ "$line" =~ enabled[[:space:]]*=[[:space:]]*(true|false) ]]; then
-                echo "${BASH_REMATCH[1]}"
-                return 0
-            fi
-
-            # Fin du bloc
-            if [[ $block_depth -le 0 ]] && [[ "$line" == *"}"* ]]; then
-                break
-            fi
-        fi
-    done < "$tfvars_file"
-
-    # Si le service existe sans enabled explicite, il est considere comme actif
-    if grep -q "^[[:space:]]*${service}[[:space:]]*=" "$tfvars_file" 2>/dev/null; then
-        echo "true"
-    else
-        echo "unknown"
     fi
+
+    echo "unknown"
+}
+
+# Cache fichier pour les services (persiste entre subshells)
+_SERVICES_CACHE_FILE="/tmp/.tui-services-cache"
+
+# Nettoie le cache au demarrage (expire apres 5 minutes)
+_init_services_cache() {
+    if [[ -f "$_SERVICES_CACHE_FILE" ]]; then
+        local age=$(($(date +%s) - $(stat -c %Y "$_SERVICES_CACHE_FILE" 2>/dev/null || echo 0)))
+        if [[ $age -gt 300 ]]; then
+            rm -f "$_SERVICES_CACHE_FILE"
+        fi
+    fi
+}
+_init_services_cache
+
+# Recupere la liste des services running d'un host (docker + systemd, avec cache fichier)
+_get_host_services() {
+    local ssh_target="$1"
+    local cache_key="${ssh_target##*@}"
+
+    # Chercher dans le cache fichier
+    if [[ -f "$_SERVICES_CACHE_FILE" ]]; then
+        local cached
+        cached=$(grep "^${cache_key}:" "$_SERVICES_CACHE_FILE" 2>/dev/null | cut -d: -f2-)
+        if [[ -n "$cached" ]]; then
+            echo "$cached" | tr ',' '\n'
+            return 0
+        fi
+    fi
+
+    # Recuperer containers docker ET services systemd running
+    local services
+    services=$(ssh -n -o ConnectTimeout=2 -o BatchMode=yes "${ssh_target}" \
+        "{ docker ps --format '{{.Names}}' 2>/dev/null; systemctl list-units --type=service --state=running --no-legend 2>/dev/null | awk '{gsub(/\.service/,\"\"); print \$1}'; } | sort -u" 2>/dev/null || echo "")
+
+    # Mettre en cache fichier
+    local services_csv
+    services_csv=$(echo "$services" | tr '\n' ',' | sed 's/,$//')
+    echo "${cache_key}:${services_csv}" >> "$_SERVICES_CACHE_FILE"
+
+    echo "$services"
 }
 
 # Verifie si un service est en cours d'execution
 get_service_running() {
     local service="$1"
 
-    # En mode test ou sans connexion SSH, retourner unknown
-    if [[ -z "${MONITORING_HOST:-}" ]]; then
+
+    # Auto-detection du host si MONITORING_HOST non defini
+    local ssh_target="${MONITORING_HOST:-}"
+    if [[ -z "$ssh_target" ]]; then
+        ssh_target=$(get_service_ssh_target "$service")
+    fi
+
+    # Sans host, retourner unknown
+    if [[ -z "$ssh_target" ]]; then
         echo "unknown"
         return 0
     fi
 
-    # Verifier via SSH
-    local status
-    status=$(ssh -o ConnectTimeout=5 -o BatchMode=yes "${MONITORING_HOST}" \
-        "docker ps --filter 'name=${service}' --format '{{.Status}}' 2>/dev/null || systemctl is-active ${service} 2>/dev/null" 2>/dev/null || echo "")
+    # Pour le service "monitoring", verifier si grafana OU prometheus OU loki tourne
+    local check_name="$service"
+    if [[ "$service" == "monitoring" ]]; then
+        check_name="grafana|prometheus|loki"
+    fi
 
-    if [[ "$status" == *"Up"* ]] || [[ "$status" == "active" ]]; then
-        echo "running"
-    elif [[ -n "$status" ]]; then
-        echo "stopped"
-    else
+    # Recuperer les services (docker + systemd, avec cache)
+    local services
+    services=$(_get_host_services "$ssh_target")
+
+    if [[ -z "$services" ]]; then
         echo "unknown"
+        return 0
+    fi
+
+    # Verifier si le service est dans la liste
+    if echo "$services" | grep -qE "^(${check_name})$"; then
+        echo "running"
+    else
+        echo "stopped"
     fi
 }
 
@@ -490,14 +617,23 @@ execute_service_command() {
     local cmd="$1"
     local service="$2"
 
-    if [[ -z "${MONITORING_HOST:-}" ]]; then
-        tui_log_error "Variable MONITORING_HOST non definie"
+    # Auto-detection du host si MONITORING_HOST non defini
+    local ssh_target="${MONITORING_HOST:-}"
+    if [[ -z "$ssh_target" ]]; then
+        ssh_target=$(get_service_ssh_target "$service")
+    fi
+
+    if [[ -z "$ssh_target" ]]; then
+        tui_log_error "Impossible de determiner le host pour ${service}"
         tui_log_info "Commande a executer manuellement : ${cmd}"
+        tui_log_info "Ou definir MONITORING_HOST=root@<ip>"
         return 1
     fi
 
+    tui_log_info "Connexion a ${ssh_target}..."
     local output exit_code
-    output=$(ssh -o ConnectTimeout=10 -o BatchMode=yes "${MONITORING_HOST}" "$cmd" 2>&1)
+    # -n pour eviter que SSH consomme stdin (important dans les boucles)
+    output=$(ssh -n -o ConnectTimeout=10 -o BatchMode=yes "${ssh_target}" "$cmd" 2>&1)
     exit_code=$?
 
     if [[ $exit_code -eq 0 ]]; then

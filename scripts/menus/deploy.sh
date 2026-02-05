@@ -147,11 +147,11 @@ get_deploy_summary() {
     local tfvars_count=0
     local timers_count=${#DEPLOY_TIMERS[@]}
 
-    # Compter les scripts
+    # Compter les scripts (utiliser || true pour eviter exit avec set -e)
     local scripts_dir="${TUI_PROJECT_ROOT}/scripts"
     for dir in "${DEPLOY_SCRIPT_DIRS[@]}"; do
         if [[ -d "${scripts_dir}/${dir}" ]]; then
-            ((scripts_count++))
+            ((scripts_count++)) || true
         fi
     done
 
@@ -159,7 +159,7 @@ get_deploy_summary() {
     local envs_dir="${TUI_PROJECT_ROOT}/infrastructure/proxmox/environments"
     for env in "${DEPLOY_ENVS[@]}"; do
         if [[ -f "${envs_dir}/${env}/terraform.tfvars" ]]; then
-            ((tfvars_count++))
+            ((tfvars_count++)) || true
         fi
     done
 

@@ -233,8 +233,9 @@ ssh_exec() {
     fi
 
     # Options SSH securisees avec known_hosts dedie
+    # -n pour eviter que SSH consomme stdin (important dans les boucles while read)
     # shellcheck disable=SC2046
-    ssh $(get_ssh_opts) "root@${node}" "${command}"
+    ssh -n $(get_ssh_opts) "root@${node}" "${command}"
 }
 
 check_ssh_access() {
@@ -249,8 +250,9 @@ check_ssh_access() {
         log_warn "Ou exportez SSH_INIT_MODE=true pour accepter la cle automatiquement"
     fi
 
+    # -n pour eviter que SSH consomme stdin (important dans les boucles while read)
     # shellcheck disable=SC2046
-    if ! retry_with_backoff 3 ssh -o ConnectTimeout=5 $(get_ssh_opts) \
+    if ! retry_with_backoff 3 ssh -n -o ConnectTimeout=5 $(get_ssh_opts) \
          "root@${node}" "exit" &>/dev/null; then
         log_error "Impossible de se connecter en SSH a ${node} apres 3 tentatives"
         log_error "Verifiez que la cle SSH est configuree et que le noeud est accessible"
@@ -298,8 +300,9 @@ ssh_exec_retry() {
         return 0
     fi
 
+    # -n pour eviter que SSH consomme stdin (important dans les boucles while read)
     # shellcheck disable=SC2046
-    retry_with_backoff 3 ssh $(get_ssh_opts) "root@${node}" "${command}"
+    retry_with_backoff 3 ssh -n $(get_ssh_opts) "root@${node}" "${command}"
 }
 
 # =============================================================================
@@ -455,7 +458,13 @@ parse_tfvars() {
 
 get_pve_node() {
     local tfvars_file="${1:-terraform.tfvars}"
-    parse_tfvars "$tfvars_file" "pve_node"
+    # Essayer default_node d'abord, puis pve_node pour compatibilite
+    local node
+    node=$(parse_tfvars "$tfvars_file" "default_node" 2>/dev/null) || true
+    if [[ -z "$node" ]]; then
+        node=$(parse_tfvars "$tfvars_file" "pve_node" 2>/dev/null) || true
+    fi
+    echo "$node"
 }
 
 get_pve_ip() {
