@@ -140,7 +140,9 @@ jobs:
             rm "$tmp"
           done
       - name: BATS tests
-        run: bats --recursive tests/
+        run: |
+          # Run all test directories except tests/tui/ (requires gum)
+          bats tests/ tests/drift/ tests/health/ tests/lifecycle/ tests/restore/ tests/scripts/
 
   markdown-lint:
     name: Markdown Lint
