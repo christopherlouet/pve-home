@@ -48,23 +48,25 @@ get_service_host() {
 
         case "$service" in
             minio)
-                # Minio a son propre bloc avec une IP
+                # Minio a son propre bloc avec une IP (conteneur LXC)
                 host_ip=$(grep -A15 "^minio" "$tfvars_file" 2>/dev/null | \
                     grep -oP 'ip\s*=\s*"\K[0-9.]+' | head -1)
                 ;;
             grafana|prometheus|loki|alertmanager)
-                # Services du monitoring-stack
+                # Services du monitoring-stack (VM avec docker-compose)
                 host_ip=$(grep -A15 "^monitoring" "$tfvars_file" 2>/dev/null | \
                     grep -oP 'ip\s*=\s*"\K[0-9.]+' | head -1)
                 ;;
             monitoring)
-                # Le service monitoring lui-meme
+                # Le service monitoring lui-meme (VM)
                 host_ip=$(grep -A15 "^monitoring" "$tfvars_file" 2>/dev/null | \
                     grep -oP 'ip\s*=\s*"\K[0-9.]+' | head -1)
                 ;;
-            backup|telegram)
-                # Ces services tournent generalement sur le noeud Proxmox
-                host_ip=$(grep -oP 'proxmox_endpoint\s*=\s*"https?://\K[0-9.]+' "$tfvars_file" 2>/dev/null | head -1)
+            backup|telegram|harbor)
+                # Services de configuration Proxmox (pas de conteneur Docker)
+                # backup = job vzdump, telegram = notifications, harbor = registry
+                # Retourner vide car ces services n'ont pas de statut "running"
+                host_ip=""
                 ;;
         esac
 
