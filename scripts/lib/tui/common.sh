@@ -224,6 +224,7 @@ tui_table() {
 
 tui_banner() {
     local text="$1"
+    # shellcheck disable=SC2034
     local style="${2:-bold}"  # bold, rounded, double, etc.
 
     if tui_check_gum; then

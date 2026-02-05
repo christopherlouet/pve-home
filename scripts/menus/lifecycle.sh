@@ -30,6 +30,7 @@ fi
 
 LIFECYCLE_CURRENT_VMID=""
 LIFECYCLE_CURRENT_VM_NAME=""
+# shellcheck disable=SC2034
 LIFECYCLE_CURRENT_ENV=""
 
 # =============================================================================
@@ -332,7 +333,9 @@ get_snapshot_actions() {
 
 # Parse le JSON des snapshots Proxmox
 # Filtre "current" qui n'est pas un vrai snapshot
+# shellcheck disable=SC2120
 parse_snapshots_json() {
+# shellcheck disable=SC2120
     local json_file="$1"
 
     if [[ ! -f "$json_file" ]]; then
@@ -676,6 +679,7 @@ menu_lifecycle() {
                 env=$(select_environment)
 
                 if [[ "$env" != "back" ]] && [[ -n "$env" ]]; then
+                    # shellcheck disable=SC2034
                     LIFECYCLE_CURRENT_ENV="$env"
 
                     # Selectionner VM

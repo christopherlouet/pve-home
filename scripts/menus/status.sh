@@ -226,6 +226,7 @@ is_health_ok() {
         return 1
     fi
 
+    # shellcheck disable=SC2034
     local fail_count warn_count
     fail_count=$(count_by_status "$results_file" "FAIL")
 

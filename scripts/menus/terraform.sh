@@ -30,8 +30,11 @@ fi
 # Variables locales au module
 # =============================================================================
 
+# shellcheck disable=SC2034
 TERRAFORM_CURRENT_ENV=""
+# shellcheck disable=SC2034
 TERRAFORM_CURRENT_PATH=""
+# shellcheck disable=SC2034
 TERRAFORM_LAST_PLAN_FILE=""
 
 # =============================================================================
@@ -239,6 +242,7 @@ run_terraform_plan() {
         popd > /dev/null || true
     fi
 
+        # shellcheck disable=SC2034
     if [[ $exit_code -eq 0 ]]; then
         TERRAFORM_LAST_PLAN_FILE="$plan_file"
         tui_log_success "Plan genere avec succes"
@@ -644,7 +648,9 @@ menu_terraform() {
             "1."*|*"Selectionner"*)
                 local env
                 env=$(select_terraform_env)
+                    # shellcheck disable=SC2034
                 if [[ "$env" != "back" ]] && [[ -n "$env" ]]; then
+                    # shellcheck disable=SC2034
                     TERRAFORM_CURRENT_ENV="$env"
                     TERRAFORM_CURRENT_PATH=$(get_env_path "$env")
                     menu_terraform_env "$env"

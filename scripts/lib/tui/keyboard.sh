@@ -89,6 +89,7 @@ set_keybinding() {
 }
 
 # Charge les raccourcis depuis un fichier
+# shellcheck disable=SC2120
 load_keybindings() {
     local file="${1:-${TUI_PROJECT_ROOT:-.}/.tui-keybindings}"
 

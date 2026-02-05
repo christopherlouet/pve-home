@@ -62,6 +62,7 @@ config_file_exists() {
 }
 
 # Charge la configuration depuis un fichier YAML
+# shellcheck disable=SC2120
 load_tui_config() {
     local config_file="${1:-$(get_config_path)}"
 
@@ -338,6 +339,7 @@ get_ssh_batch_mode() {
 }
 
 # Teste la connexion SSH
+# shellcheck disable=SC2120
 test_ssh_connection() {
     local host="${1:-${MONITORING_HOST:-}}"
 

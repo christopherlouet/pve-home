@@ -278,7 +278,9 @@ parse_tfstate_versions() {
 }
 
 # Liste les backups tfstate
+# shellcheck disable=SC2120
 list_tfstate_backups() {
+# shellcheck disable=SC2120
     local env="${1:-}"
 
     tui_banner "Versions tfstate disponibles"
@@ -395,6 +397,7 @@ parse_verify_status() {
     local output="$1"
 
     # Extraire les compteurs avec grep
+    # shellcheck disable=SC2034
     local error_count warn_count
     error_count=$(echo "$output" | grep -oP 'Erreurs:\s*\K\d+' | head -1 || echo "")
     warn_count=$(echo "$output" | grep -oP 'Warnings:\s*\K\d+' | head -1 || echo "")
