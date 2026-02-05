@@ -19,6 +19,7 @@ Infrastructure as Code pour gérer un homelab Proxmox VE sur Intel NUC avec Terr
 - **Tests Terraform natifs** : Validation, plan et non-regression des 6 modules avec `terraform test` et `mock_provider`
 - **Resilience SSH** : Retry avec backoff exponentiel pour les connexions SSH dans les scripts d'operation
 - **CI/CD** : Validation Terraform, tests, et scans de sécurité via GitHub Actions
+- **TUI interactif** : Interface terminal pour gérer l'infrastructure (status, terraform, snapshots, services)
 
 ## Prérequis
 
@@ -61,6 +62,7 @@ pve-home/
 │   └── VM-LIFECYCLE.md
 ├── scripts/
 │   ├── lib/                     # Bibliotheque commune (common.sh)
+│   ├── tui/                     # Interface TUI interactive (439 tests)
 │   ├── restore/                 # Scripts de restauration
 │   ├── drift/                   # Detection de drift Terraform
 │   ├── health/                  # Health checks infrastructure
@@ -103,6 +105,7 @@ terraform apply
 | [Cycle de vie VMs](docs/VM-LIFECYCLE.md) | Snapshots, expiration, mises à jour de sécurité, rotation SSH |
 | [Stack Tooling](docs/TOOLING-STACK.md) | PKI Step-ca, Registry Harbor, SSO Authentik avec Traefik |
 | [Index des scripts](scripts/README.md) | Index complet de tous les scripts d'opération |
+| [TUI Homelab Manager](scripts/tui/README.md) | Interface terminal interactive pour gérer l'infrastructure |
 
 ## Exemple de configuration
 
@@ -380,9 +383,31 @@ Des scripts shell automatisent les opérations d'infrastructure depuis votre mac
 
 Index complet : [scripts/README.md](scripts/README.md) | Disaster Recovery : [docs/DISASTER-RECOVERY.md](docs/DISASTER-RECOVERY.md)
 
+### Interface TUI
+
+Une interface terminal interactive permet de gérer l'infrastructure sans mémoriser les commandes :
+
+```bash
+# Lancer le TUI interactif
+./scripts/tui/tui.sh
+
+# Avec un environnement spécifique
+./scripts/tui/tui.sh --env prod
+
+# Commandes directes
+./scripts/tui/tui.sh status
+./scripts/tui/tui.sh terraform plan
+./scripts/tui/tui.sh drift
+```
+
+Fonctionnalités : status, terraform, snapshots, déploiement, drift detection, disaster recovery, services.
+Navigation vim-like (j/k/h/l), raccourcis clavier (1-9), recherche (/).
+
+Documentation : [scripts/tui/README.md](scripts/tui/README.md)
+
 ## Tests
 
-Le projet utilise deux frameworks de test complementaires totalisant **~495 tests Terraform** et **254 tests BATS**.
+Le projet utilise deux frameworks de test complementaires totalisant **~495 tests Terraform** et **693 tests BATS** (dont 439 pour le TUI).
 
 ### Tests Terraform (modules)
 
@@ -406,10 +431,11 @@ done
 
 ### Tests BATS (scripts shell)
 
-Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (254 tests) :
+Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (693 tests) :
 
 | Domaine | Tests | Couverture |
 |---------|-------|------------|
+| **tui/** | 439 | Interface TUI complete (11 modules) |
 | **restore/** | 169 | Restauration VMs, tfstate, Minio, monitoring, verification |
 | **drift/** | 14 | Detection de drift Terraform |
 | **health/** | 14 | Health checks infrastructure |
@@ -421,6 +447,7 @@ Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core
 bats tests/
 
 # Par domaine
+bats tests/tui/        # Interface TUI (439 tests)
 bats tests/restore/
 bats tests/drift/
 bats tests/health/

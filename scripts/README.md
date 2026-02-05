@@ -8,6 +8,10 @@ Tous les scripts supportent `--dry-run` (simulation) et `--help` (aide).
 
 ```
 scripts/
+├── tui/                     # Interface TUI interactive
+│   ├── tui.sh               # Point d'entree principal
+│   ├── lib/                 # Bibliotheque TUI (colors, config, common, keyboard)
+│   └── menus/               # Modules de menu (status, terraform, services, etc.)
 ├── lib/                     # Bibliotheque commune
 │   └── common.sh            # Fonctions partagees (logging, SSH, parsing, dry-run)
 ├── restore/                 # Restauration d'infrastructure
@@ -207,6 +211,49 @@ La bibliotheque `lib/common.sh` fournit des fonctions partagees par tous les scr
 
 Documentation : [scripts/lib/README.md](lib/README.md)
 
+## Interface TUI
+
+Une interface terminal interactive permet de gerer l'infrastructure sans memoriser les commandes :
+
+```bash
+# Lancer le TUI interactif
+./tui/tui.sh
+
+# Avec options
+./tui/tui.sh --env prod --no-color
+
+# Commandes directes
+./tui/tui.sh status
+./tui/tui.sh terraform plan
+./tui/tui.sh drift
+./tui/tui.sh services
+```
+
+### Menus disponibles
+
+| Menu | Description |
+|------|-------------|
+| **Status & Health** | Vue d'ensemble de l'infrastructure |
+| **Lifecycle** | Snapshots et cycle de vie VMs |
+| **Terraform** | Plan, Apply, Output |
+| **Deploiement** | Deployer scripts sur monitoring |
+| **Maintenance** | Detection de drift |
+| **Disaster Recovery** | Restauration VMs, tfstate |
+| **Services** | Activer/desactiver, demarrer/arreter |
+| **Configuration** | Preferences du TUI |
+
+### Raccourcis clavier
+
+| Touche | Action |
+|--------|--------|
+| `q` | Quitter |
+| `?` | Aide |
+| `j/k` | Navigation haut/bas |
+| `1-9` | Selection rapide |
+| `/` | Recherche |
+
+Documentation complete : [scripts/tui/README.md](tui/README.md)
+
 ## Metriques Prometheus
 
 Les scripts de drift, health et lifecycle generent des metriques au format textfile collector dans `/var/lib/prometheus/node-exporter/` :
@@ -229,6 +276,7 @@ Les scripts sont testes avec [BATS](https://github.com/bats-core/bats-core) :
 bats tests/
 
 # Par domaine
+bats tests/tui/         # 439 tests (interface TUI)
 bats tests/restore/     # 29 tests (common.sh + scripts)
 bats tests/drift/       # 13 tests
 bats tests/health/      # 13 tests
