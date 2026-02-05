@@ -702,7 +702,8 @@ discover_hosts_from_tfvars() {
             if [[ -n "$endpoint" ]]; then
                 local ip
                 ip=$(echo "$endpoint" | sed -E 's|https?://([0-9.]+).*|\1|') || true
-                if [[ -n "$ip" ]] && [[ ! " ${hosts[*]} " =~ " ${ip} " ]]; then
+                local pattern=" ${ip} "
+                if [[ -n "$ip" ]] && [[ ! " ${hosts[*]} " =~ $pattern ]]; then
                     hosts+=("$ip")
                 fi
             fi
@@ -711,7 +712,8 @@ discover_hosts_from_tfvars() {
             local vm_ips
             vm_ips=$(grep -v '^\s*#' "$tfvars" 2>/dev/null | grep -oP 'ip\s*=\s*"\K[0-9.]+' | sort -u) || true
             for ip in $vm_ips; do
-                if [[ -n "$ip" ]] && [[ ! " ${hosts[*]} " =~ " ${ip} " ]]; then
+                local pattern=" ${ip} "
+                if [[ -n "$ip" ]] && [[ ! " ${hosts[*]} " =~ $pattern ]]; then
                     hosts+=("$ip")
                 fi
             done
