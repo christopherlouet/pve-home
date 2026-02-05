@@ -255,6 +255,7 @@ resource "proxmox_virtual_environment_vm" "monitoring" {
 
   memory {
     dedicated = var.vm_config.memory
+    floating  = 0
   }
 
   # Disque systeme

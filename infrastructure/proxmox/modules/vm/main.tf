@@ -134,6 +134,7 @@ resource "proxmox_virtual_environment_vm" "this" {
 
   memory {
     dedicated = var.memory_mb
+    floating  = 0
   }
 
   disk {

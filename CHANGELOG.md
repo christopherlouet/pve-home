@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-02-05
+
+### Added
+- **Firewall rules for monitoring exporters** on prod VMs
+  - cAdvisor (9080), Nginx Exporter (9113), Blackbox Exporter (9115)
+  - PostgreSQL Exporter (9187), Process Exporter (9256)
+
+### Fixed
+- **Memory ballooning** disabled (`floating = 0`) in vm and monitoring-stack modules to prevent Proxmox reporting inflated memory usage (100% instead of actual ~22%)
+- **Node Exporter dashboard** uses `MemAvailable` instead of `MemFree` for accurate memory usage (was counting cache as used)
+
+### Changed
+- **README** updated with accurate test counts (422 Terraform, 867 BATS), 14 Grafana dashboards (added tooling folder), 53 Prometheus alerts (added 25 tooling alerts), missing documentation links, tooling scripts section, and updated project structure
+
 ## [1.9.0] - 2026-02-05
 
 ### Added
