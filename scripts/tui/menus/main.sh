@@ -31,6 +31,7 @@ menu_main() {
             "5. 🔍 Maintenance - Drift detection, verifications"
             "6. 💾 Disaster Recovery - Restauration, backups"
             "7. ⚙️  Services - Activer/desactiver Harbor, etc."
+            "8. 🔧 Configuration - Preferences du TUI"
             "$(tui_quit_option)"
         )
 
@@ -61,6 +62,9 @@ menu_main() {
             "7."*|*"Services"*)
                 menu_services
                 ;;
+            "8."*|*"Configuration"*|*"Preferences"*)
+                menu_config
+                ;;
             *"Quitter"*|*"quit"*|*"exit"*|"")
                 running=false
                 tui_log_info "Au revoir!"
@@ -87,43 +91,24 @@ fi
 if [[ -f "${MAIN_MENU_DIR}/terraform.sh" ]]; then
     source "${MAIN_MENU_DIR}/terraform.sh"
 fi
-
-menu_deploy() {
-    tui_banner "Deploiement"
-    tui_log_info "Cette fonctionnalite sera implementee dans la Phase 5 (US4)"
-    echo ""
-    tui_log_info "Appuyez sur Entree pour revenir au menu principal..."
-    read -r
-}
-
-menu_maintenance() {
-    tui_banner "Maintenance"
-    tui_log_info "Cette fonctionnalite sera implementee dans la Phase 6 (US5)"
-    echo ""
-    tui_log_info "Appuyez sur Entree pour revenir au menu principal..."
-    read -r
-}
-
-menu_disaster() {
-    tui_banner "Disaster Recovery"
-    tui_log_info "Cette fonctionnalite sera implementee dans la Phase 7 (US6)"
-    echo ""
-    tui_log_info "Appuyez sur Entree pour revenir au menu principal..."
-    read -r
-}
-
-menu_services() {
-    tui_banner "Services"
-    tui_log_info "Cette fonctionnalite sera implementee dans la Phase 8 (US7)"
-    echo ""
-    tui_log_info "Appuyez sur Entree pour revenir au menu principal..."
-    read -r
-}
+if [[ -f "${MAIN_MENU_DIR}/deploy.sh" ]]; then
+    source "${MAIN_MENU_DIR}/deploy.sh"
+fi
+if [[ -f "${MAIN_MENU_DIR}/maintenance.sh" ]]; then
+    source "${MAIN_MENU_DIR}/maintenance.sh"
+fi
+if [[ -f "${MAIN_MENU_DIR}/disaster.sh" ]]; then
+    source "${MAIN_MENU_DIR}/disaster.sh"
+fi
+if [[ -f "${MAIN_MENU_DIR}/services.sh" ]]; then
+    source "${MAIN_MENU_DIR}/services.sh"
+fi
+if [[ -f "${MAIN_MENU_DIR}/config.sh" ]]; then
+    source "${MAIN_MENU_DIR}/config.sh"
+fi
 
 # =============================================================================
 # Export des fonctions
 # =============================================================================
 
 export -f menu_main
-export -f menu_deploy
-export -f menu_maintenance menu_disaster menu_services
