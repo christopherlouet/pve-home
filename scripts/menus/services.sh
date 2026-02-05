@@ -32,6 +32,62 @@ readonly KNOWN_SERVICES=("monitoring" "minio" "backup" "telegram" "harbor" "graf
 SERVICES_ENV_DIR="${TUI_PROJECT_ROOT}/infrastructure/proxmox/environments"
 
 # =============================================================================
+# Detection automatique du host pour les services
+# =============================================================================
+
+# Retourne l'IP du host ou tourne un service
+# Usage: get_service_host "minio" -> "192.168.1.52"
+get_service_host() {
+    local service="$1"
+    local host_ip=""
+
+    # Chercher dans les fichiers tfvars
+    for env_dir in "${SERVICES_ENV_DIR}"/*/; do
+        local tfvars_file="${env_dir}terraform.tfvars"
+        [[ -f "$tfvars_file" ]] || continue
+
+        case "$service" in
+            minio)
+                # Minio a son propre bloc avec une IP
+                host_ip=$(grep -A15 "^minio" "$tfvars_file" 2>/dev/null | \
+                    grep -oP 'ip\s*=\s*"\K[0-9.]+' | head -1)
+                ;;
+            grafana|prometheus|loki|alertmanager)
+                # Services du monitoring-stack
+                host_ip=$(grep -A15 "^monitoring" "$tfvars_file" 2>/dev/null | \
+                    grep -oP 'ip\s*=\s*"\K[0-9.]+' | head -1)
+                ;;
+            monitoring)
+                # Le service monitoring lui-meme
+                host_ip=$(grep -A15 "^monitoring" "$tfvars_file" 2>/dev/null | \
+                    grep -oP 'ip\s*=\s*"\K[0-9.]+' | head -1)
+                ;;
+            backup|telegram)
+                # Ces services tournent generalement sur le noeud Proxmox
+                host_ip=$(grep -oP 'proxmox_endpoint\s*=\s*"https?://\K[0-9.]+' "$tfvars_file" 2>/dev/null | head -1)
+                ;;
+        esac
+
+        [[ -n "$host_ip" ]] && break
+    done
+
+    echo "$host_ip"
+}
+
+# Retourne le user@host pour SSH vers un service
+get_service_ssh_target() {
+    local service="$1"
+    local ssh_user="${2:-root}"
+
+    local host_ip
+    host_ip=$(get_service_host "$service")
+
+    if [[ -n "$host_ip" ]]; then
+        echo "${ssh_user}@${host_ip}"
+    fi
+}
+
+# =============================================================================
 # Fonctions utilitaires (T050)
 # =============================================================================
 
@@ -134,15 +190,21 @@ _check_service_in_tfvars() {
 get_service_running() {
     local service="$1"
 
-    # En mode test ou sans connexion SSH, retourner unknown
-    if [[ -z "${MONITORING_HOST:-}" ]]; then
+    # Auto-detection du host si MONITORING_HOST non defini
+    local ssh_target="${MONITORING_HOST:-}"
+    if [[ -z "$ssh_target" ]]; then
+        ssh_target=$(get_service_ssh_target "$service")
+    fi
+
+    # Sans host, retourner unknown
+    if [[ -z "$ssh_target" ]]; then
         echo "unknown"
         return 0
     fi
 
-    # Verifier via SSH
+    # Verifier via SSH (-n pour eviter de consommer stdin)
     local status
-    status=$(ssh -o ConnectTimeout=5 -o BatchMode=yes "${MONITORING_HOST}" \
+    status=$(ssh -n -o ConnectTimeout=5 -o BatchMode=yes "${ssh_target}" \
         "docker ps --filter 'name=${service}' --format '{{.Status}}' 2>/dev/null || systemctl is-active ${service} 2>/dev/null" 2>/dev/null || echo "")
 
     if [[ "$status" == *"Up"* ]] || [[ "$status" == "active" ]]; then
@@ -490,14 +552,23 @@ execute_service_command() {
     local cmd="$1"
     local service="$2"
 
-    if [[ -z "${MONITORING_HOST:-}" ]]; then
-        tui_log_error "Variable MONITORING_HOST non definie"
+    # Auto-detection du host si MONITORING_HOST non defini
+    local ssh_target="${MONITORING_HOST:-}"
+    if [[ -z "$ssh_target" ]]; then
+        ssh_target=$(get_service_ssh_target "$service")
+    fi
+
+    if [[ -z "$ssh_target" ]]; then
+        tui_log_error "Impossible de determiner le host pour ${service}"
         tui_log_info "Commande a executer manuellement : ${cmd}"
+        tui_log_info "Ou definir MONITORING_HOST=root@<ip>"
         return 1
     fi
 
+    tui_log_info "Connexion a ${ssh_target}..."
     local output exit_code
-    output=$(ssh -o ConnectTimeout=10 -o BatchMode=yes "${MONITORING_HOST}" "$cmd" 2>&1)
+    # -n pour eviter que SSH consomme stdin (important dans les boucles)
+    output=$(ssh -n -o ConnectTimeout=10 -o BatchMode=yes "${ssh_target}" "$cmd" 2>&1)
     exit_code=$?
 
     if [[ $exit_code -eq 0 ]]; then
