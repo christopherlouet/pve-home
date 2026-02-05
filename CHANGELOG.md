@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-02-05
+
+### Changed
+- **Monitoring-stack module** split `main.tf` (411 lines) into 6 focused files
+  - `prometheus.tf`: Scrape targets, PVE exporter, Prometheus config
+  - `grafana.tf`: Dashboard locals, datasource configurations
+  - `alertmanager.tf`: Alertmanager config, tooling alerts
+  - `traefik.tf`: Reverse proxy static and dynamic config
+  - `loki.tf`: Log aggregation and Promtail config
+  - `main.tf`: VM resource, cloud-init, Docker setup (316 lines)
+- **Shared variables** centralized via symlinks (`shared/env_variables.tf`)
+- **Inline scripts** extracted to `.sh.tpl` template files for testability
+- **CI BATS tests** expanded from 37 to 395 tests (explicit directory listing)
+
+### Fixed
+- **test_common.bats** hardcoded absolute path replaced with relative path
+- **CI** BATS step now runs all CI-compatible test directories (excludes TUI/drift requiring external deps)
+
+### Added
+- **Mermaid architecture diagram** in README for project visualization
+- **55 BATS tests** converted from skipped to passing static analysis tests (0 skips remaining)
+
 ## [1.7.3] - 2026-02-05
 
 ### Fixed
