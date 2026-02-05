@@ -137,13 +137,21 @@ get_service_enabled() {
     local service="$1"
     local tfvars_file="${2:-}"
 
+    # Services du monitoring-stack heritent du statut de monitoring
+    local check_service="$service"
+    case "$service" in
+        grafana|prometheus|loki|alertmanager|promtail)
+            check_service="monitoring"
+            ;;
+    esac
+
     # Si pas de fichier specifie, chercher dans les environnements
     if [[ -z "$tfvars_file" ]]; then
         for env_dir in "${SERVICES_ENV_DIR}"/*/; do
             local tf_file="${env_dir}terraform.tfvars"
             if [[ -f "$tf_file" ]]; then
                 local result
-                result=$(_check_service_in_tfvars "$service" "$tf_file")
+                result=$(_check_service_in_tfvars "$check_service" "$tf_file")
                 if [[ -n "$result" ]]; then
                     echo "$result"
                     return 0
@@ -167,43 +175,27 @@ _check_service_in_tfvars() {
         return 0
     fi
 
-    # Chercher le bloc du service et son attribut enabled
-    local in_block=false
-    local block_depth=0
+    # Methode simplifiee : grep direct pour enabled dans le bloc du service
+    # Extraire le bloc du service et chercher enabled
+    local block_content
+    block_content=$(awk "/^[[:space:]]*${service}[[:space:]]*=/{found=1} found{print; if(/\}/)exit}" "$tfvars_file" 2>/dev/null)
 
-    while IFS= read -r line; do
-        # Detecter le debut du bloc du service
-        if [[ "$line" =~ ^[[:space:]]*${service}[[:space:]]*= ]]; then
-            in_block=true
-            block_depth=0
+    if [[ -n "$block_content" ]]; then
+        # Chercher enabled = true/false dans le bloc
+        if echo "$block_content" | grep -qE 'enabled[[:space:]]*=[[:space:]]*true'; then
+            echo "true"
+            return 0
+        elif echo "$block_content" | grep -qE 'enabled[[:space:]]*=[[:space:]]*false'; then
+            echo "false"
+            return 0
+        else
+            # Bloc existe mais pas d'enabled explicite = actif
+            echo "true"
+            return 0
         fi
-
-        if $in_block; then
-            # Compter les accolades
-            local open_count close_count
-            open_count=$(echo "$line" | grep -o '{' | wc -l)
-            close_count=$(echo "$line" | grep -o '}' | wc -l)
-            block_depth=$((block_depth + open_count - close_count))
-
-            # Chercher enabled = true/false
-            if [[ "$line" =~ enabled[[:space:]]*=[[:space:]]*(true|false) ]]; then
-                echo "${BASH_REMATCH[1]}"
-                return 0
-            fi
-
-            # Fin du bloc
-            if [[ $block_depth -le 0 ]] && [[ "$line" == *"}"* ]]; then
-                break
-            fi
-        fi
-    done < "$tfvars_file"
-
-    # Si le service existe sans enabled explicite, il est considere comme actif
-    if grep -q "^[[:space:]]*${service}[[:space:]]*=" "$tfvars_file" 2>/dev/null; then
-        echo "true"
-    else
-        echo "unknown"
     fi
+
+    echo "unknown"
 }
 
 # Verifie si un service est en cours d'execution
