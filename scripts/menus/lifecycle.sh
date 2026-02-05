@@ -942,7 +942,7 @@ menu_lifecycle() {
 
         local options=(
             "1. 📸 Gerer les snapshots d'une VM/LXC"
-            "2. 🔑 Gerer les cles SSH (US9)"
+            "2. 🔑 Gerer les cles SSH"
             "$(tui_back_option)"
         )
 
