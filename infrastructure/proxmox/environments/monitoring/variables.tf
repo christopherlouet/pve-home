@@ -114,3 +114,47 @@ variable "custom_scrape_configs" {
   type        = string
   default     = ""
 }
+
+# -----------------------------------------------------------------------------
+# Stack Tooling (Step-ca PKI + Harbor Registry + Authentik SSO)
+# -----------------------------------------------------------------------------
+
+variable "tooling" {
+  description = "Configuration de la stack tooling (PKI, Registry, SSO)"
+  type = object({
+    enabled = optional(bool, false)
+    node    = optional(string, null)
+    vm = object({
+      ip        = string
+      cores     = optional(number, 4)
+      memory    = optional(number, 8192)
+      disk      = optional(number, 50)
+      data_disk = optional(number, 200)
+    })
+    domain_suffix   = optional(string, "home.arpa")
+    traefik_enabled = optional(bool, true)
+    step_ca = optional(object({
+      enabled          = optional(bool, true)
+      password         = string
+      provisioner_name = optional(string, "acme")
+      cert_duration    = optional(string, "720h")
+    }), { enabled = false, password = "" })
+    harbor = optional(object({
+      enabled        = optional(bool, true)
+      admin_password = string
+      trivy_enabled  = optional(bool, true)
+    }), { enabled = false, admin_password = "" })
+    authentik = optional(object({
+      enabled            = optional(bool, true)
+      secret_key         = string
+      bootstrap_password = string
+      bootstrap_email    = optional(string, "admin@home.arpa")
+    }), { enabled = false, secret_key = "", bootstrap_password = "" })
+  })
+  default = {
+    enabled = false
+    vm = {
+      ip = ""
+    }
+  }
+}

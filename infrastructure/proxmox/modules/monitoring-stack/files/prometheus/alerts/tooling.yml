@@ -1,0 +1,276 @@
+# =============================================================================
+# Prometheus Alerting Rules - Tooling Stack
+# =============================================================================
+# Alerts for Step-ca (PKI), Harbor (Registry), Authentik (SSO)
+# =============================================================================
+
+groups:
+  # ---------------------------------------------------------------------------
+  # Step-ca (PKI) Alerts
+  # ---------------------------------------------------------------------------
+  - name: step-ca
+    rules:
+      - alert: StepCaDown
+        expr: up{job="step-ca"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: step-ca
+        annotations:
+          summary: "Step-ca PKI is down"
+          description: "Step-ca instance {{ $labels.instance }} has been down for more than 2 minutes."
+
+      - alert: StepCaRootCAExpiringSoon
+        expr: (step_ca_root_certificate_expiry_timestamp_seconds - time()) / 86400 < 90
+        for: 1h
+        labels:
+          severity: warning
+          service: step-ca
+        annotations:
+          summary: "Step-ca root CA certificate expiring soon"
+          description: "Root CA certificate on {{ $labels.instance }} expires in {{ $value | humanizeDuration }}."
+
+      - alert: StepCaRootCAExpiryCritical
+        expr: (step_ca_root_certificate_expiry_timestamp_seconds - time()) / 86400 < 30
+        for: 1h
+        labels:
+          severity: critical
+          service: step-ca
+        annotations:
+          summary: "Step-ca root CA certificate expiring critically soon"
+          description: "Root CA certificate on {{ $labels.instance }} expires in {{ $value | humanizeDuration }}. Immediate action required!"
+
+      - alert: StepCaHighSignErrorRate
+        expr: rate(step_ca_certificate_sign_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: step-ca
+        annotations:
+          summary: "Step-ca high certificate signing error rate"
+          description: "Step-ca {{ $labels.instance }} has {{ $value | printf \"%.2f\" }} certificate signing errors per second."
+
+      - alert: StepCaACMEChallengeFailures
+        expr: rate(step_ca_acme_challenge_failure_total[15m]) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          service: step-ca
+        annotations:
+          summary: "Step-ca ACME challenge failures detected"
+          description: "Step-ca {{ $labels.instance }} has high ACME challenge failure rate: {{ $value | printf \"%.2f\" }}/s."
+
+  # ---------------------------------------------------------------------------
+  # Harbor (Registry) Alerts
+  # ---------------------------------------------------------------------------
+  - name: harbor
+    rules:
+      - alert: HarborDown
+        expr: up{job="harbor"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: harbor
+        annotations:
+          summary: "Harbor registry is down"
+          description: "Harbor instance {{ $labels.instance }} has been down for more than 2 minutes."
+
+      - alert: HarborComponentUnhealthy
+        expr: harbor_component_health == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: harbor
+        annotations:
+          summary: "Harbor component unhealthy"
+          description: "Harbor component {{ $labels.component }} on {{ $labels.instance }} is unhealthy."
+
+      - alert: HarborStorageHigh
+        expr: (harbor_storage_usage_bytes / harbor_storage_total_bytes) > 0.8
+        for: 30m
+        labels:
+          severity: warning
+          service: harbor
+        annotations:
+          summary: "Harbor storage usage high"
+          description: "Harbor storage on {{ $labels.instance }} is {{ $value | printf \"%.1f\" }}% full. Consider running garbage collection."
+
+      - alert: HarborStorageCritical
+        expr: (harbor_storage_usage_bytes / harbor_storage_total_bytes) > 0.9
+        for: 15m
+        labels:
+          severity: critical
+          service: harbor
+        annotations:
+          summary: "Harbor storage usage critical"
+          description: "Harbor storage on {{ $labels.instance }} is {{ $value | printf \"%.1f\" }}% full. Immediate action required!"
+
+      - alert: HarborCriticalVulnerabilities
+        expr: sum(harbor_artifact_vulnerability_total{severity="Critical"}) > 0
+        for: 1h
+        labels:
+          severity: warning
+          service: harbor
+        annotations:
+          summary: "Critical vulnerabilities detected in Harbor images"
+          description: "{{ $value }} critical vulnerabilities found in Harbor images. Review and remediate."
+
+      - alert: HarborHighCriticalVulnerabilities
+        expr: sum(harbor_artifact_vulnerability_total{severity="Critical"}) > 10
+        for: 30m
+        labels:
+          severity: critical
+          service: harbor
+        annotations:
+          summary: "High number of critical vulnerabilities in Harbor"
+          description: "{{ $value }} critical vulnerabilities found in Harbor images. Immediate review required!"
+
+      - alert: HarborScanQueueBacklog
+        expr: harbor_task_queue_size{type="scan"} > 100
+        for: 30m
+        labels:
+          severity: warning
+          service: harbor
+        annotations:
+          summary: "Harbor scan queue backlog"
+          description: "Harbor scan queue on {{ $labels.instance }} has {{ $value }} pending items."
+
+      - alert: HarborDatabaseConnectionPoolExhausted
+        expr: harbor_core_db_pool_in_use / (harbor_core_db_pool_in_use + harbor_core_db_pool_idle) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          service: harbor
+        annotations:
+          summary: "Harbor database connection pool nearly exhausted"
+          description: "Harbor DB connection pool on {{ $labels.instance }} is {{ $value | printf \"%.1f\" }}% utilized."
+
+  # ---------------------------------------------------------------------------
+  # Authentik (SSO) Alerts
+  # ---------------------------------------------------------------------------
+  - name: authentik
+    rules:
+      - alert: AuthentikDown
+        expr: up{job="authentik"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: authentik
+        annotations:
+          summary: "Authentik SSO is down"
+          description: "Authentik instance {{ $labels.instance }} has been down for more than 2 minutes."
+
+      - alert: AuthentikHighLoginFailureRate
+        expr: rate(authentik_login_failed_total[15m]) / (rate(authentik_login_total[15m]) + rate(authentik_login_failed_total[15m])) > 0.2
+        for: 10m
+        labels:
+          severity: warning
+          service: authentik
+        annotations:
+          summary: "Authentik high login failure rate"
+          description: "Authentik {{ $labels.instance }} has {{ $value | printf \"%.1f\" }}% login failure rate. Possible attack or misconfiguration."
+
+      - alert: AuthentikLoginFailureSpike
+        expr: increase(authentik_login_failed_total[5m]) > 50
+        for: 5m
+        labels:
+          severity: warning
+          service: authentik
+        annotations:
+          summary: "Authentik login failure spike detected"
+          description: "{{ $value }} failed login attempts in the last 5 minutes on {{ $labels.instance }}. Possible brute force attack."
+
+      - alert: AuthentikOutpostDown
+        expr: authentik_outpost_health == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: authentik
+        annotations:
+          summary: "Authentik outpost is down"
+          description: "Authentik outpost {{ $labels.outpost }} on {{ $labels.instance }} is unhealthy."
+
+      - alert: AuthentikWorkerQueueBacklog
+        expr: authentik_worker_queue_length > 100
+        for: 15m
+        labels:
+          severity: warning
+          service: authentik
+        annotations:
+          summary: "Authentik worker queue backlog"
+          description: "Authentik worker queue on {{ $labels.instance }} has {{ $value }} pending tasks."
+
+      - alert: AuthentikSlowFlowExecution
+        expr: histogram_quantile(0.95, sum(rate(authentik_flow_execution_duration_seconds_bucket[5m])) by (le)) > 5
+        for: 10m
+        labels:
+          severity: warning
+          service: authentik
+        annotations:
+          summary: "Authentik slow authentication flow"
+          description: "Authentik authentication flow p95 latency is {{ $value | printf \"%.2f\" }}s. Users may experience slow logins."
+
+      - alert: AuthentikHighDatabaseQueryRate
+        expr: rate(authentik_database_queries_total[5m]) > 1000
+        for: 15m
+        labels:
+          severity: warning
+          service: authentik
+        annotations:
+          summary: "Authentik high database query rate"
+          description: "Authentik {{ $labels.instance }} has unusually high database query rate: {{ $value | printf \"%.0f\" }}/s."
+
+  # ---------------------------------------------------------------------------
+  # Traefik (Reverse Proxy) Alerts
+  # ---------------------------------------------------------------------------
+  - name: traefik-tooling
+    rules:
+      - alert: TraefikToolingDown
+        expr: up{job="traefik-tooling"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: traefik
+        annotations:
+          summary: "Traefik reverse proxy is down"
+          description: "Traefik instance {{ $labels.instance }} has been down for more than 2 minutes."
+
+      - alert: TraefikCertificateExpiringSoon
+        expr: traefik_tls_certs_not_after - time() < 86400 * 7
+        for: 1h
+        labels:
+          severity: warning
+          service: traefik
+        annotations:
+          summary: "Traefik TLS certificate expiring soon"
+          description: "TLS certificate for {{ $labels.cn }} expires in {{ $value | humanizeDuration }}."
+
+      - alert: TraefikCertificateExpiryCritical
+        expr: traefik_tls_certs_not_after - time() < 86400 * 2
+        for: 30m
+        labels:
+          severity: critical
+          service: traefik
+        annotations:
+          summary: "Traefik TLS certificate expiring critically soon"
+          description: "TLS certificate for {{ $labels.cn }} expires in {{ $value | humanizeDuration }}. ACME renewal may have failed!"
+
+      - alert: TraefikHighErrorRate
+        expr: sum(rate(traefik_service_requests_total{code=~"5.."}[5m])) / sum(rate(traefik_service_requests_total[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          service: traefik
+        annotations:
+          summary: "Traefik high error rate"
+          description: "Traefik has {{ $value | printf \"%.1f\" }}% 5xx error rate."
+
+      - alert: TraefikServiceDown
+        expr: traefik_service_server_up == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: traefik
+        annotations:
+          summary: "Traefik backend service down"
+          description: "Traefik service {{ $labels.service }} backend {{ $labels.url }} is down."
