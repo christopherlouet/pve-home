@@ -707,9 +707,9 @@ discover_hosts_from_tfvars() {
                 fi
             fi
 
-            # Extraire les IPs des VMs
+            # Extraire les IPs des VMs (ignorer les lignes commentees)
             local vm_ips
-            vm_ips=$(grep -oP 'ip\s*=\s*"\K[0-9.]+' "$tfvars" 2>/dev/null | sort -u) || true
+            vm_ips=$(grep -v '^\s*#' "$tfvars" 2>/dev/null | grep -oP 'ip\s*=\s*"\K[0-9.]+' | sort -u) || true
             for ip in $vm_ips; do
                 if [[ -n "$ip" ]] && [[ ! " ${hosts[*]} " =~ " ${ip} " ]]; then
                     hosts+=("$ip")
