@@ -199,18 +199,20 @@ _check_service_in_tfvars() {
 }
 
 # Cache des services par host (evite SSH multiples)
-# Utilise l'IP comme cle (extrait de user@ip)
-declare -A _SERVICES_CACHE=()
+# Format: "IP1:service1,service2;IP2:service3,service4"
+_SERVICES_CACHE_DATA=""
 
 # Recupere la liste des services running d'un host (docker + systemd, avec cache)
 _get_host_services() {
     local ssh_target="$1"
-    # Extraire l'IP pour la cle du cache (evite problemes avec @)
+    # Extraire l'IP pour la cle du cache
     local cache_key="${ssh_target##*@}"
 
-    # Utiliser le cache si disponible
-    if [[ -n "${_SERVICES_CACHE[$cache_key]:-}" ]]; then
-        echo "${_SERVICES_CACHE[$cache_key]}"
+    # Chercher dans le cache (format IP:services)
+    local cached
+    cached=$(echo "$_SERVICES_CACHE_DATA" | tr ';' '\n' | grep "^${cache_key}:" | cut -d: -f2-)
+    if [[ -n "$cached" ]]; then
+        echo "$cached" | tr ',' '\n'
         return 0
     fi
 
@@ -219,8 +221,15 @@ _get_host_services() {
     services=$(ssh -n -o ConnectTimeout=3 -o BatchMode=yes "${ssh_target}" \
         "{ docker ps --format '{{.Names}}' 2>/dev/null; systemctl list-units --type=service --state=running --no-legend 2>/dev/null | awk '{gsub(/\.service/,\"\"); print \$1}'; } | sort -u" 2>/dev/null || echo "")
 
-    # Mettre en cache
-    _SERVICES_CACHE[$cache_key]="$services"
+    # Mettre en cache (format IP:service1,service2)
+    local services_csv
+    services_csv=$(echo "$services" | tr '\n' ',' | sed 's/,$//')
+    if [[ -n "$_SERVICES_CACHE_DATA" ]]; then
+        _SERVICES_CACHE_DATA="${_SERVICES_CACHE_DATA};${cache_key}:${services_csv}"
+    else
+        _SERVICES_CACHE_DATA="${cache_key}:${services_csv}"
+    fi
+
     echo "$services"
 }
 
