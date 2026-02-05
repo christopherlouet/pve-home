@@ -54,12 +54,16 @@ pve-home/
 │       └── monitoring/          # PVE dedie monitoring
 ├── docs/
 │   ├── INSTALLATION-PROXMOX.md
+│   ├── PKI-INSTALLATION.md
+│   ├── ARCHITECTURE.md
 │   ├── BACKUP-RESTORE.md
 │   ├── DISASTER-RECOVERY.md
 │   ├── DRIFT-DETECTION.md
 │   ├── HEALTH-CHECKS.md
 │   ├── ALERTING.md
-│   └── VM-LIFECYCLE.md
+│   ├── VM-LIFECYCLE.md
+│   ├── TOOLING-STACK.md
+│   └── troubleshooting/        # Guides de depannage (e1000e, etc.)
 ├── scripts/
 │   ├── homelab                  # Point d'entree TUI principal
 │   ├── lib/                     # Bibliotheques (common.sh + tui/)
@@ -68,12 +72,15 @@ pve-home/
 │   ├── drift/                   # Detection de drift Terraform
 │   ├── health/                  # Health checks infrastructure
 │   ├── lifecycle/               # Cycle de vie VMs/LXC (snapshots, expiration, SSH)
+│   ├── tooling/                 # Scripts tooling (SSO, PKI, Harbor)
 │   └── systemd/                 # Timers et services systemd
 ├── tests/                       # Tests BATS pour les scripts
+│   ├── tui/                     # Tests interface TUI (439 tests)
 │   ├── restore/
-│   ├── drift/
+│   ├── scripts/
+│   ├── lifecycle/
 │   ├── health/
-│   └── lifecycle/
+│   └── drift/
 └── .github/workflows/           # CI/CD + Security + Terraform Tests
 ```
 
@@ -146,6 +153,9 @@ terraform apply
 | [Alertes Telegram](docs/ALERTING.md) | Configuration des notifications Telegram (création bot, chat_id, troubleshooting) |
 | [Cycle de vie VMs](docs/VM-LIFECYCLE.md) | Snapshots, expiration, mises à jour de sécurité, rotation SSH |
 | [Stack Tooling](docs/TOOLING-STACK.md) | PKI Step-ca, Registry Harbor, SSO Authentik avec Traefik |
+| [Installation PKI](docs/PKI-INSTALLATION.md) | Guide d'installation de l'infrastructure PKI Step-ca |
+| [Architecture](docs/ARCHITECTURE.md) | Diagrammes d'architecture Mermaid du projet |
+| [Troubleshooting](docs/troubleshooting/) | Guides de depannage (e1000e hardware hang, etc.) |
 | [Index des scripts](scripts/README.md) | Index complet de tous les scripts d'opération |
 
 ## Exemple de configuration
@@ -219,7 +229,7 @@ PVE Mon  (192.168.1.50)   ──┘              └─ Prometheus + Grafana + A
 
 ### Dashboards Grafana
 
-11 dashboards sont auto-provisionnés et organisés en 3 dossiers :
+14 dashboards sont auto-provisionnés et organisés en 4 dossiers :
 
 #### Infrastructure
 | Dashboard | Description |
@@ -244,11 +254,18 @@ PVE Mon  (192.168.1.50)   ──┘              └─ Prometheus + Grafana + A
 | **PostgreSQL** | Métriques base de données (connexions, transactions, cache) |
 | **Docker Containers** | Métriques cAdvisor (CPU, mémoire, I/O conteneurs) |
 
+#### Tooling
+| Dashboard | Description |
+|-----------|-------------|
+| **Step-ca** | PKI interne (certificats, ACME, erreurs de signature) |
+| **Harbor** | Registre Docker (stockage, vulnérabilités, composants) |
+| **Authentik** | SSO (logins, flows, outposts, workers) |
+
 Les dashboards sont stockés dans `infrastructure/proxmox/modules/monitoring-stack/files/grafana/dashboards/` et déployés via le provisioning Grafana. Les dashboards Applications utilisent les variables `$app` et `$environment` pour filtrer par application.
 
 ### Alertes Prometheus
 
-28 alertes reparties en 7 groupes supervisent l'infrastructure :
+53 alertes reparties en 11 groupes supervisent l'infrastructure :
 
 #### Node alerts (9)
 
@@ -313,7 +330,52 @@ Les dashboards sont stockés dans `infrastructure/proxmox/modules/monitoring-sta
 | `SnapshotOlderThanWeek` | Info | Snapshots anciens nettoyes |
 | `VMRebootRequired` | Warning | Reboot necessaire depuis > 24h |
 
-Les alertes sont configurées dans `infrastructure/proxmox/modules/monitoring-stack/files/prometheus/alerts/default.yml`.
+#### Step-ca alerts (5)
+
+| Alerte | Sévérité | Description |
+|--------|----------|-------------|
+| `StepCaDown` | Critical | Step-ca PKI injoignable depuis > 2 min |
+| `StepCaRootCAExpiringSoon` | Warning | Certificat root CA expire dans < 90 jours |
+| `StepCaRootCAExpiryCritical` | Critical | Certificat root CA expire dans < 30 jours |
+| `StepCaHighSignErrorRate` | Warning | Taux d'erreurs de signature > 0.1/s depuis 5 min |
+| `StepCaACMEChallengeFailures` | Warning | Echecs ACME challenge eleves depuis 10 min |
+
+#### Harbor alerts (8)
+
+| Alerte | Sévérité | Description |
+|--------|----------|-------------|
+| `HarborDown` | Critical | Harbor registry injoignable depuis > 2 min |
+| `HarborComponentUnhealthy` | Warning | Composant Harbor en echec depuis 5 min |
+| `HarborStorageHigh` | Warning | Stockage Harbor > 80% depuis 30 min |
+| `HarborStorageCritical` | Critical | Stockage Harbor > 90% depuis 15 min |
+| `HarborCriticalVulnerabilities` | Warning | Vulnerabilites critiques detectees dans les images |
+| `HarborHighCriticalVulnerabilities` | Critical | Nombre eleve de vulnerabilites critiques (> 10) |
+| `HarborScanQueueBacklog` | Warning | File d'attente de scan > 100 items depuis 30 min |
+| `HarborDatabaseConnectionPoolExhausted` | Warning | Pool de connexions DB > 90% depuis 10 min |
+
+#### Authentik alerts (7)
+
+| Alerte | Sévérité | Description |
+|--------|----------|-------------|
+| `AuthentikDown` | Critical | Authentik SSO injoignable depuis > 2 min |
+| `AuthentikHighLoginFailureRate` | Warning | Taux d'echec login > 20% depuis 10 min |
+| `AuthentikLoginFailureSpike` | Warning | Pic de > 50 echecs login en 5 min (brute force possible) |
+| `AuthentikOutpostDown` | Warning | Outpost Authentik en echec depuis 5 min |
+| `AuthentikWorkerQueueBacklog` | Warning | File d'attente workers > 100 taches depuis 15 min |
+| `AuthentikSlowFlowExecution` | Warning | Latence p95 des flows > 5s depuis 10 min |
+| `AuthentikHighDatabaseQueryRate` | Warning | Taux de requetes DB > 1000/s depuis 15 min |
+
+#### Traefik tooling alerts (5)
+
+| Alerte | Sévérité | Description |
+|--------|----------|-------------|
+| `TraefikToolingDown` | Critical | Traefik reverse proxy injoignable depuis > 2 min |
+| `TraefikCertificateExpiringSoon` | Warning | Certificat TLS expire dans < 7 jours |
+| `TraefikCertificateExpiryCritical` | Critical | Certificat TLS expire dans < 2 jours |
+| `TraefikHighErrorRate` | Warning | Taux d'erreurs 5xx > 5% depuis 10 min |
+| `TraefikServiceDown` | Warning | Service backend injoignable depuis 5 min |
+
+Les alertes infrastructure sont configurées dans `infrastructure/proxmox/modules/monitoring-stack/files/prometheus/alerts/default.yml` et les alertes tooling dans `tooling.yml`.
 
 Voir [environments/monitoring/terraform.tfvars.example](infrastructure/proxmox/environments/monitoring/terraform.tfvars.example) pour la configuration et [docs/ALERTING.md](docs/ALERTING.md) pour le guide de configuration Telegram.
 
@@ -419,6 +481,14 @@ Des scripts shell automatisent les opérations d'infrastructure depuis votre mac
 | **expire-lab-vms.sh** | Arrêter les VMs lab expirées | `./scripts/lifecycle/expire-lab-vms.sh --dry-run` |
 | **rotate-ssh-keys.sh** | Ajouter/révoquer des clés SSH | `./scripts/lifecycle/rotate-ssh-keys.sh --add-key ~/.ssh/key.pub --env prod` |
 
+### Tooling (PKI, Registry, SSO)
+
+| Script | Description | Usage |
+|--------|-------------|-------|
+| **configure-sso.sh** | Configurer Authentik SSO | `./scripts/tooling/configure-sso.sh` |
+| **export-ca.sh** | Exporter le certificat root CA Step-ca | `./scripts/tooling/export-ca.sh` |
+| **harbor-gc.sh** | Lancer le garbage collection Harbor | `./scripts/tooling/harbor-gc.sh` |
+
 Index complet : [scripts/README.md](scripts/README.md) | Disaster Recovery : [docs/DISASTER-RECOVERY.md](docs/DISASTER-RECOVERY.md)
 
 ### Interface TUI
@@ -443,7 +513,7 @@ Navigation avec les flèches ou vim-like (j/k), validation avec Entrée.
 
 ## Tests
 
-Le projet utilise deux frameworks de test complementaires totalisant **~411 tests Terraform** et **848 tests BATS** (dont 439 pour le TUI).
+Le projet utilise deux frameworks de test complementaires totalisant **422 tests Terraform** et **867 tests BATS** (dont 439 pour le TUI).
 
 ### Tests Terraform (modules)
 
@@ -467,16 +537,17 @@ done
 
 ### Tests BATS (scripts shell)
 
-Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (848 tests, 0 skipped) :
+Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (867 tests, 0 skipped) :
 
 | Domaine | Tests | Couverture |
 |---------|-------|------------|
-| **tui/** | 439 | Interface TUI complete (11 modules) |
-| **restore/** | 215 | Restauration VMs, tfstate, Minio, monitoring, verification |
-| **drift/** | 14 | Detection de drift Terraform |
-| **health/** | 14 | Health checks infrastructure |
+| **tui/** | 439 | Interface TUI complete (12 modules) |
+| **restore/** | 226 | Restauration VMs, tfstate, Minio, monitoring, tooling, verification |
+| **scripts/** | 55 | Scripts utilitaires (post-install Proxmox) |
 | **lifecycle/** | 74 | Snapshots, expiration, nettoyage, rotation SSH |
-| **root** | 92 | deploy.sh, post-install Proxmox |
+| **root** | 37 | deploy.sh, post-install Proxmox |
+| **health/** | 22 | Health checks infrastructure |
+| **drift/** | 14 | Detection de drift Terraform |
 
 ```bash
 # Tous les tests
@@ -485,9 +556,10 @@ bats tests/
 # Par domaine
 bats tests/tui/        # Interface TUI (439 tests)
 bats tests/restore/
-bats tests/drift/
-bats tests/health/
+bats tests/scripts/
 bats tests/lifecycle/
+bats tests/health/
+bats tests/drift/
 ```
 
 Les tests Terraform sont executes en CI via le job `terraform-test` dans `.github/workflows/ci.yml`.
