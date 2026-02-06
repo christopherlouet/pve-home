@@ -57,20 +57,10 @@ locals {
   # Packages necessaires
   packages = ["qemu-guest-agent", "ca-certificates", "curl", "gnupg"]
 
-  # Cloud-init runcmd
-  # NOTE: Docker install commands duplicated in vm/main.tf (docker_runcmd)
-  # Both modules need Docker but with different conditional logic (always vs var.install_docker)
-  docker_install_runcmd = [
-    "install -m 0755 -d /etc/apt/keyrings",
-    "curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc",
-    "chmod a+r /etc/apt/keyrings/docker.asc",
-    "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable\" > /etc/apt/sources.list.d/docker.list",
-    "apt-get update",
-    "apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
-    "systemctl enable --now docker",
-    "usermod -aG docker ${var.username}",
-    "systemctl enable --now qemu-guest-agent"
-  ]
+  # Docker install commands shared with vm module (see shared/docker-install-runcmd.json.tpl)
+  docker_install_runcmd = jsondecode(templatefile("${path.module}/../../shared/docker-install-runcmd.json.tpl", {
+    username = var.username
+  }))
 
   cloud_config = {
     users = [
@@ -202,6 +192,7 @@ locals {
     )
     runcmd = concat(
       local.docker_install_runcmd,
+      ["systemctl enable --now qemu-guest-agent"],
       ["/opt/setup-monitoring.sh"]
     )
   }

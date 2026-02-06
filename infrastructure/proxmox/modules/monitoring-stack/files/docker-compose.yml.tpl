@@ -9,6 +9,10 @@ services:
     image: traefik:v3.3
     container_name: traefik
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     ports:
       - "80:80"
       - "443:443"
@@ -35,6 +39,10 @@ services:
     image: prom/prometheus:v3.5.1
     container_name: prometheus
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     user: "65534:65534"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -69,6 +77,10 @@ services:
     image: grafana/grafana:12.1.1
     container_name: grafana
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     user: "472:472"
     volumes:
       - grafana_data:/var/lib/grafana
@@ -104,6 +116,10 @@ services:
     image: prom/alertmanager:v0.30.1
     container_name: alertmanager
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager_data:/alertmanager
@@ -135,6 +151,10 @@ services:
     image: grafana/loki:3.5.0
     container_name: loki
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     user: "10001:10001"
     volumes:
       - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
@@ -159,6 +179,10 @@ services:
     image: grafana/promtail:3.5.0
     container_name: promtail
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -181,6 +205,10 @@ services:
     image: louislam/uptime-kuma:1
     container_name: uptime-kuma
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - uptime_kuma_data:/app/data
     ports:
@@ -199,6 +227,10 @@ services:
     image: prompve/prometheus-pve-exporter:3.7.0
     container_name: pve-exporter
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - ./pve-exporter/pve.yml:/etc/prometheus/pve.yml:ro
     ports:
@@ -210,6 +242,10 @@ services:
     image: prom/node-exporter:v1.10.2
     container_name: node-exporter
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     command:
       - '--path.rootfs=/host'
       - '--path.procfs=/host/proc'

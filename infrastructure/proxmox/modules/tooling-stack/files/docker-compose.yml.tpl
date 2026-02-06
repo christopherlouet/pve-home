@@ -28,6 +28,10 @@ services:
     image: smallstep/step-ca:0.27.5
     container_name: step-ca
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       tooling:
         ipv4_address: 172.20.0.10
@@ -67,6 +71,10 @@ services:
     image: traefik:v3.0
     container_name: traefik
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       tooling:
         ipv4_address: 172.20.0.2
@@ -110,6 +118,15 @@ services:
     image: goharbor/harbor-db:v2.10.0
     container_name: harbor-db
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - FOWNER
     networks:
       - tooling
     environment:
@@ -127,6 +144,10 @@ services:
     image: goharbor/registry-photon:v2.10.0
     container_name: harbor-registry
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - tooling
     volumes:
@@ -139,6 +160,10 @@ services:
     image: goharbor/harbor-core:v2.10.0
     container_name: harbor-core
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       tooling:
         ipv4_address: 172.20.0.20
@@ -174,6 +199,10 @@ services:
     image: goharbor/harbor-portal:v2.10.0
     container_name: harbor-portal
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - tooling
     depends_on:
@@ -183,6 +212,10 @@ services:
     image: goharbor/harbor-jobservice:v2.10.0
     container_name: harbor-jobservice
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - tooling
     environment:
@@ -196,6 +229,10 @@ services:
     image: goharbor/trivy-adapter-photon:v2.10.0
     container_name: harbor-trivy
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - tooling
     environment:
@@ -215,6 +252,15 @@ services:
     image: postgres:15-alpine
     container_name: authentik-db
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - FOWNER
     networks:
       - tooling
     environment:
@@ -233,6 +279,13 @@ services:
     image: redis:7-alpine
     container_name: authentik-redis
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID
+      - SETGID
     networks:
       - tooling
     volumes:
@@ -247,6 +300,10 @@ services:
     image: ghcr.io/goauthentik/server:2024.2
     container_name: authentik-server
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       tooling:
         ipv4_address: 172.20.0.30
@@ -284,6 +341,10 @@ services:
     image: ghcr.io/goauthentik/server:2024.2
     container_name: authentik-worker
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - tooling
     command: worker
