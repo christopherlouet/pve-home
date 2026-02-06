@@ -125,7 +125,6 @@ jobs:
       - name: Run TFLint
         run: tflint --format=compact
         working-directory: ${{ matrix.directory }}
-        continue-on-error: true
 
   terraform-validate:
     name: Terraform Validate

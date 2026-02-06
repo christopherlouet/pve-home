@@ -26,3 +26,8 @@ output "node_name" {
   description = "Node Proxmox"
   value       = proxmox_virtual_environment_vm.this.node_name
 }
+
+output "ssh_command" {
+  description = "Commande SSH pour se connecter a la VM"
+  value       = "ssh ${var.username}@${split("/", var.ip_address)[0]}"
+}
