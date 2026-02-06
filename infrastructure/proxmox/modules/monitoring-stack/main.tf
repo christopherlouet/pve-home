@@ -301,6 +301,7 @@ resource "proxmox_virtual_environment_vm" "monitoring" {
   }
 
   lifecycle {
+    prevent_destroy = true
     ignore_changes = [
       initialization,
       disk[0].size,

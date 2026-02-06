@@ -61,6 +61,11 @@ variable "vm_config" {
     condition     = var.vm_config.data_disk >= 4 && var.vm_config.data_disk <= 4096
     error_message = "vm_config.data_disk doit etre entre 4 et 4096 (4 GB - 4 TB)."
   }
+
+  validation {
+    condition     = !var.loki_enabled || var.vm_config.data_disk >= 10
+    error_message = "vm_config.data_disk doit etre >= 10 quand Loki est active (stockage logs)."
+  }
 }
 
 variable "datastore" {

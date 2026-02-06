@@ -167,6 +167,7 @@ run "vm_config_data_disk_valid_minimum" {
   command = plan
 
   variables {
+    loki_enabled = false
     vm_config = {
       data_disk = 4
     }
@@ -179,6 +180,21 @@ run "vm_config_data_disk_invalid_too_small" {
   variables {
     vm_config = {
       data_disk = 3
+    }
+  }
+
+  expect_failures = [
+    var.vm_config,
+  ]
+}
+
+run "vm_config_data_disk_too_small_for_loki" {
+  command = plan
+
+  variables {
+    loki_enabled = true
+    vm_config = {
+      data_disk = 8
     }
   }
 

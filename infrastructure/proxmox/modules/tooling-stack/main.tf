@@ -184,6 +184,7 @@ resource "proxmox_virtual_environment_vm" "tooling" {
   }
 
   lifecycle {
+    prevent_destroy = true
     ignore_changes = [
       clone,
       initialization,

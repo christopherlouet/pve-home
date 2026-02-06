@@ -197,6 +197,21 @@ run "vm_config_data_disk_invalid_too_small" {
   ]
 }
 
+run "vm_config_data_disk_too_small_for_harbor" {
+  command = plan
+
+  variables {
+    harbor_enabled = true
+    vm_config = {
+      data_disk = 15
+    }
+  }
+
+  expect_failures = [
+    var.vm_config,
+  ]
+}
+
 # -----------------------------------------------------------------------------
 # ip_address validation (IPv4 without CIDR)
 # -----------------------------------------------------------------------------
