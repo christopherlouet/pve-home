@@ -4,8 +4,11 @@ set -euo pipefail
 # Installer Minio
 apt-get update && apt-get install -y curl ca-certificates
 
-# Telecharger le binaire Minio
+# Telecharger le binaire Minio avec verification d'integrite
 curl -fsSL https://dl.min.io/server/minio/release/linux-amd64/minio -o /usr/local/bin/minio
+curl -fsSL https://dl.min.io/server/minio/release/linux-amd64/minio.sha256sum -o /tmp/minio.sha256sum
+cd /usr/local/bin && sha256sum -c /tmp/minio.sha256sum
+rm -f /tmp/minio.sha256sum
 chmod +x /usr/local/bin/minio
 
 # Creer utilisateur minio
@@ -51,6 +54,9 @@ sleep 5
 
 # Installer mc (Minio Client) pour creer les buckets
 curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc
+curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc.sha256sum -o /tmp/mc.sha256sum
+cd /usr/local/bin && sha256sum -c /tmp/mc.sha256sum
+rm -f /tmp/mc.sha256sum
 chmod +x /usr/local/bin/mc
 
 # Configurer l'alias via variable d'environnement (evite les credentials en arguments CLI)

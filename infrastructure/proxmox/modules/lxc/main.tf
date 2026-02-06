@@ -7,9 +7,8 @@
 # -----------------------------------------------------------------------------
 
 locals {
-  # NOTE: Same expiration_tag pattern used in vm/main.tf
-  expiration_tag = var.expiration_days != null ? ["expires:${formatdate("YYYY-MM-DD", timeadd(timestamp(), "${var.expiration_days * 24}h"))}"] : []
-  container_ip   = split("/", var.ip_address)[0]
+  # Tag d'expiration : defini dans shared/expiration_locals.tf (symlinke)
+  container_ip = split("/", var.ip_address)[0]
 }
 
 resource "proxmox_virtual_environment_container" "this" {

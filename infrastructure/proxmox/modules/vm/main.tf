@@ -58,9 +58,7 @@ locals {
     }
   ] : []
 
-  # Tag d'expiration pour le lifecycle management
-  # NOTE: Same expiration_tag pattern used in lxc/main.tf
-  expiration_tag = var.expiration_days != null ? ["expires:${formatdate("YYYY-MM-DD", timeadd(timestamp(), "${var.expiration_days * 24}h"))}"] : []
+  # Tag d'expiration : defini dans shared/expiration_locals.tf (symlinke)
 
   cloud_config = {
     users = [
