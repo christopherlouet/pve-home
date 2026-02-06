@@ -92,6 +92,18 @@ run "cpu_cores_invalid_zero" {
   ]
 }
 
+run "cpu_cores_invalid_too_high" {
+  command = plan
+
+  variables {
+    cpu_cores = 65
+  }
+
+  expect_failures = [
+    var.cpu_cores,
+  ]
+}
+
 # -----------------------------------------------------------------------------
 # memory_mb validation (64-131072)
 # -----------------------------------------------------------------------------
@@ -124,6 +136,18 @@ run "memory_invalid_too_low" {
   ]
 }
 
+run "memory_invalid_too_high" {
+  command = plan
+
+  variables {
+    memory_mb = 131073
+  }
+
+  expect_failures = [
+    var.memory_mb,
+  ]
+}
+
 # -----------------------------------------------------------------------------
 # disk_size_gb validation (1-4096)
 # -----------------------------------------------------------------------------
@@ -141,6 +165,18 @@ run "disk_invalid_zero" {
 
   variables {
     disk_size_gb = 0
+  }
+
+  expect_failures = [
+    var.disk_size_gb,
+  ]
+}
+
+run "disk_invalid_too_large" {
+  command = plan
+
+  variables {
+    disk_size_gb = 4097
   }
 
   expect_failures = [
@@ -273,6 +309,18 @@ run "ip_address_invalid_no_cidr" {
 
   variables {
     ip_address = "192.168.1.200"
+  }
+
+  expect_failures = [
+    var.ip_address,
+  ]
+}
+
+run "ip_address_invalid_format" {
+  command = plan
+
+  variables {
+    ip_address = "not-an-ip"
   }
 
   expect_failures = [

@@ -414,3 +414,55 @@ run "loki_url_invalid_ftp" {
     var.loki_url,
   ]
 }
+
+# -----------------------------------------------------------------------------
+# expiration_days validation (null or > 0)
+# -----------------------------------------------------------------------------
+
+run "expiration_days_valid_null" {
+  command = plan
+
+  variables {
+    expiration_days = null
+  }
+}
+
+run "expiration_days_valid_one" {
+  command = plan
+
+  variables {
+    expiration_days = 1
+  }
+}
+
+run "expiration_days_valid_thirty" {
+  command = plan
+
+  variables {
+    expiration_days = 30
+  }
+}
+
+run "expiration_days_invalid_zero" {
+  command = plan
+
+  variables {
+    expiration_days = 0
+  }
+
+  expect_failures = [
+    var.expiration_days,
+  ]
+}
+
+run "expiration_days_invalid_negative" {
+  command = plan
+
+  variables {
+    expiration_days = -1
+  }
+
+  expect_failures = [
+    var.expiration_days,
+  ]
+}
