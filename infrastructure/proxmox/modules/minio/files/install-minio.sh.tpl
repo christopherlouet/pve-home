@@ -42,6 +42,13 @@ Restart=always
 RestartSec=10
 LimitNOFILE=65536
 
+# Securite
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+RestrictRealtime=yes
+
 [Install]
 WantedBy=multi-user.target
 EOF

@@ -566,7 +566,7 @@ Navigation avec les flèches ou vim-like (j/k), validation avec Entrée.
 
 ## Tests
 
-Le projet utilise deux frameworks de test complementaires totalisant **524 tests Terraform** et **1023 tests BATS** (dont 439 pour le TUI).
+Le projet utilise deux frameworks de test complementaires totalisant **524 tests Terraform** et **1038 tests BATS** (dont 439 pour le TUI).
 
 ### Tests Terraform (modules)
 
@@ -590,13 +590,13 @@ done
 
 ### Tests BATS (scripts shell)
 
-Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (1023 tests, 0 skipped) :
+Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (1038 tests, 0 skipped) :
 
 | Domaine | Tests | Couverture |
 |---------|-------|------------|
 | **tui/** | 439 | Interface TUI complete (12 modules) |
 | **restore/** | 226 | Restauration VMs, tfstate, Minio, monitoring, tooling, verification |
-| **scripts/** | 211 | Scripts utilitaires, install minio/node-exporter, docker-compose validation |
+| **scripts/** | 226 | Scripts utilitaires, install minio/node-exporter, docker-compose validation |
 | **lifecycle/** | 74 | Snapshots, expiration, nettoyage, rotation SSH |
 | **root** | 37 | deploy.sh, post-install Proxmox |
 | **health/** | 22 | Health checks infrastructure |

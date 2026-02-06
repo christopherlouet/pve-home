@@ -139,6 +139,22 @@ TEMPLATE_FILE="${BATS_TEST_DIRNAME}/../../infrastructure/proxmox/modules/tooling
     [ "$capdrop_count" -ge "$service_count" ]
 }
 
+@test "tooling docker-compose: step-ca a read_only true" {
+    sed -n '/step-ca:/,/^  [a-z%]/p' "$TEMPLATE_FILE" | grep -q 'read_only: true'
+}
+
+@test "tooling docker-compose: harbor-registry a read_only true" {
+    sed -n '/harbor-registry:/,/^  [a-z]/p' "$TEMPLATE_FILE" | grep -q 'read_only: true'
+}
+
+@test "tooling docker-compose: harbor-portal a read_only true" {
+    sed -n '/harbor-portal:/,/^  [a-z]/p' "$TEMPLATE_FILE" | grep -q 'read_only: true'
+}
+
+@test "tooling docker-compose: authentik-redis a read_only true" {
+    sed -n '/authentik-redis:/,/^  [a-z]/p' "$TEMPLATE_FILE" | grep -q 'read_only: true'
+}
+
 @test "tooling docker-compose: harbor-db a les cap_add necessaires" {
     # PostgreSQL a besoin de CHOWN, SETUID, SETGID pour fonctionner
     sed -n '/harbor-db:/,/^  [a-z]/p' "$TEMPLATE_FILE" | grep -q 'CHOWN'

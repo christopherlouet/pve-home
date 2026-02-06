@@ -28,6 +28,9 @@ services:
     image: smallstep/step-ca:0.27.5
     container_name: step-ca
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -144,6 +147,9 @@ services:
     image: goharbor/registry-photon:v2.10.0
     container_name: harbor-registry
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -199,6 +205,9 @@ services:
     image: goharbor/harbor-portal:v2.10.0
     container_name: harbor-portal
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -279,6 +288,9 @@ services:
     image: redis:7-alpine
     container_name: authentik-redis
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop:

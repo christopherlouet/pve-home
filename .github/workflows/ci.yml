@@ -217,7 +217,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y shellcheck bats
+        run: |
+          sudo mkdir -p /etc/apt/keyrings
+          curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
+          echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
+          sudo apt-get update && sudo apt-get install -y shellcheck bats gum
       - name: Shellcheck scripts
         run: find scripts -name "*.sh" -type f -print0 | xargs -0 shellcheck -x -S warning
       - name: Shellcheck module scripts
@@ -234,9 +238,8 @@ jobs:
       - name: BATS tests
         run: |
           # Run all test directories except:
-          # - tests/tui/ (requires gum)
           # - tests/drift/ (requires terraform environments)
-          bats tests/ tests/health/ tests/lifecycle/ tests/restore/ tests/scripts/
+          bats tests/ tests/health/ tests/lifecycle/ tests/restore/ tests/scripts/ tests/tui/
 
   markdown-lint:
     name: Markdown Lint

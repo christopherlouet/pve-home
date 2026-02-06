@@ -39,6 +39,9 @@ services:
     image: prom/prometheus:v3.5.1
     container_name: prometheus
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -116,6 +119,9 @@ services:
     image: prom/alertmanager:v0.30.1
     container_name: alertmanager
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -151,6 +157,9 @@ services:
     image: grafana/loki:3.5.0
     container_name: loki
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -179,6 +188,9 @@ services:
     image: grafana/promtail:3.5.0
     container_name: promtail
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -227,6 +239,9 @@ services:
     image: prompve/prometheus-pve-exporter:3.7.0
     container_name: pve-exporter
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -242,6 +257,7 @@ services:
     image: prom/node-exporter:v1.10.2
     container_name: node-exporter
     restart: unless-stopped
+    read_only: true
     security_opt:
       - no-new-privileges:true
     cap_drop:

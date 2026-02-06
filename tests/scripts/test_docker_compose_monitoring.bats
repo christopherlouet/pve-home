@@ -125,6 +125,34 @@ TEMPLATE_FILE="${BATS_TEST_DIRNAME}/../../infrastructure/proxmox/modules/monitor
 }
 
 # -----------------------------------------------------------------------------
+# Read-only filesystem hardening
+# -----------------------------------------------------------------------------
+
+@test "monitoring docker-compose: prometheus a read_only true" {
+    sed -n '/^  prometheus:/,/^  [a-z]/p' "$TEMPLATE_FILE" | grep -q 'read_only: true'
+}
+
+@test "monitoring docker-compose: alertmanager a read_only true" {
+    sed -n '/^  alertmanager:/,/^  [a-z%]/p' "$TEMPLATE_FILE" | grep -q 'read_only: true'
+}
+
+@test "monitoring docker-compose: loki a read_only true" {
+    sed -n '/^  loki:/,/^  [a-z]/p' "$TEMPLATE_FILE" | grep -q 'read_only: true'
+}
+
+@test "monitoring docker-compose: promtail a read_only true" {
+    sed -n '/^  promtail:/,/^  [a-z%]/p' "$TEMPLATE_FILE" | grep -q 'read_only: true'
+}
+
+@test "monitoring docker-compose: pve-exporter a read_only true" {
+    sed -n '/^  pve-exporter:/,/^  [a-z]/p' "$TEMPLATE_FILE" | grep -q 'read_only: true'
+}
+
+@test "monitoring docker-compose: node-exporter a read_only true" {
+    sed -n '/^  node-exporter:/,/^[a-z]/p' "$TEMPLATE_FILE" | grep -q 'read_only: true'
+}
+
+# -----------------------------------------------------------------------------
 # Configuration des services
 # -----------------------------------------------------------------------------
 

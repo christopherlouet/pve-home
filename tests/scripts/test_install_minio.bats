@@ -172,6 +172,26 @@ TEMPLATE_FILE="${BATS_TEST_DIRNAME}/../../infrastructure/proxmox/modules/minio/f
     [ "$checksum_line" -lt "$chmod_line" ]
 }
 
+@test "install-minio: service a NoNewPrivileges" {
+    grep -q 'NoNewPrivileges=yes' "$TEMPLATE_FILE"
+}
+
+@test "install-minio: service a PrivateTmp" {
+    grep -q 'PrivateTmp=yes' "$TEMPLATE_FILE"
+}
+
+@test "install-minio: service a ProtectKernelModules" {
+    grep -q 'ProtectKernelModules=yes' "$TEMPLATE_FILE"
+}
+
+@test "install-minio: service a ProtectKernelTunables" {
+    grep -q 'ProtectKernelTunables=yes' "$TEMPLATE_FILE"
+}
+
+@test "install-minio: service a RestrictRealtime" {
+    grep -q 'RestrictRealtime=yes' "$TEMPLATE_FILE"
+}
+
 @test "install-minio: telecharge depuis dl.min.io officiel" {
     grep -q 'https://dl.min.io/server/minio/release/' "$TEMPLATE_FILE"
     grep -q 'https://dl.min.io/client/mc/release/' "$TEMPLATE_FILE"
