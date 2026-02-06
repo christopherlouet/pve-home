@@ -237,9 +237,8 @@ jobs:
           done
       - name: BATS tests
         run: |
-          # Run all test directories except:
-          # - tests/drift/ (requires terraform environments)
-          bats tests/ tests/health/ tests/lifecycle/ tests/restore/ tests/scripts/ tests/tui/
+          # Run all tests recursively, excluding drift/ (requires live infrastructure)
+          find tests/ -name '*.bats' -not -path 'tests/drift/*' -print0 | xargs -0 bats
 
   markdown-lint:
     name: Markdown Lint

@@ -197,6 +197,7 @@ terraform apply
 
 | Document | Description |
 |----------|-------------|
+| [Onboarding](docs/ONBOARDING.md) | Guide de decouverte du projet en 30 minutes |
 | [Installation Proxmox](docs/INSTALLATION-PROXMOX.md) | Guide d'installation complet de Proxmox VE |
 | [Infrastructure README](infrastructure/proxmox/README.md) | Documentation Terraform détaillée (modules, environnements, tests) |
 | [Sauvegarde & Restauration](docs/BACKUP-RESTORE.md) | Procédures manuelles et automatisées pour restaurer VMs, state Terraform et composants |
@@ -208,6 +209,7 @@ terraform apply
 | [Stack Tooling](docs/TOOLING-STACK.md) | PKI Step-ca, Registry Harbor, SSO Authentik avec Traefik |
 | [Installation PKI](docs/PKI-INSTALLATION.md) | Guide d'installation de l'infrastructure PKI Step-ca |
 | [Architecture](docs/ARCHITECTURE.md) | Diagrammes d'architecture Mermaid du projet |
+| [ADRs](docs/adr/) | Architecture Decision Records (6 decisions documentees) |
 | [Troubleshooting](docs/troubleshooting/) | Guides de depannage (e1000e hardware hang, etc.) |
 | [Index des scripts](scripts/README.md) | Index complet de tous les scripts d'opération |
 

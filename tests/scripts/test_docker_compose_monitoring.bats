@@ -16,8 +16,8 @@ TEMPLATE_FILE="${BATS_TEST_DIRNAME}/../../infrastructure/proxmox/modules/monitor
     [ -f "$TEMPLATE_FILE" ]
 }
 
-@test "monitoring docker-compose: definit la version" {
-    grep -q 'version:' "$TEMPLATE_FILE"
+@test "monitoring docker-compose: pas de version deprecated" {
+    ! grep -q '^version:' "$TEMPLATE_FILE"
 }
 
 @test "monitoring docker-compose: definit le reseau monitoring" {

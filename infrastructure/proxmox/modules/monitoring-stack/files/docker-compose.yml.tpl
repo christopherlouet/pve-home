@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
 %{ if traefik_enabled }
   # -------------------------------------------------------------------------
@@ -214,7 +212,7 @@ services:
   # Uptime Kuma - Status Page
   # -------------------------------------------------------------------------
   uptime-kuma:
-    image: louislam/uptime-kuma:1
+    image: louislam/uptime-kuma:1.23.16
     container_name: uptime-kuma
     restart: unless-stopped
     security_opt:

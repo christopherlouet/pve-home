@@ -16,8 +16,8 @@ TEMPLATE_FILE="${BATS_TEST_DIRNAME}/../../infrastructure/proxmox/modules/tooling
     [ -f "$TEMPLATE_FILE" ]
 }
 
-@test "tooling docker-compose: definit la version" {
-    grep -q 'version:' "$TEMPLATE_FILE"
+@test "tooling docker-compose: pas de version deprecated" {
+    ! grep -q '^version:' "$TEMPLATE_FILE"
 }
 
 @test "tooling docker-compose: definit le reseau tooling" {
