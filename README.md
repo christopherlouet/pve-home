@@ -1,5 +1,10 @@
 # PVE Home - Infrastructure Proxmox Homelab
 
+[![CI](https://github.com/christopherlouet/pve-home/actions/workflows/ci.yml/badge.svg)](https://github.com/christopherlouet/pve-home/actions/workflows/ci.yml)
+[![Security](https://github.com/christopherlouet/pve-home/actions/workflows/codeql.yml/badge.svg)](https://github.com/christopherlouet/pve-home/actions/workflows/codeql.yml)
+[![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.9-blue?logo=terraform)](https://www.terraform.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Infrastructure as Code pour gérer un homelab Proxmox VE sur Intel NUC avec Terraform.
 
 ## Fonctionnalités
