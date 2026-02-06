@@ -130,6 +130,54 @@ graph TB
     TRAEFIK -->|"reverse proxy"| ALERT
 ```
 
+## Architecture réseau
+
+```mermaid
+graph LR
+    subgraph net["Réseau 192.168.1.0/24"]
+        subgraph prod["PVE Prod"]
+            P_VMS["VMs prod<br/>web, db, ..."]
+            P_LXC["LXC prod<br/>nginx, ..."]
+        end
+        subgraph lab["PVE Lab"]
+            L_VMS["VMs lab<br/>dev, test, ..."]
+        end
+        subgraph mon["PVE Monitoring"]
+            MINIO["Minio S3<br/>tfstate backend"]
+            subgraph monitoring["VM Monitoring"]
+                PROM["Prometheus :9090"]
+                GRAF["Grafana :3000"]
+                ALERT["Alertmanager :9093"]
+                LOKI["Loki :3100"]
+                TRAEFIK_M["Traefik :8080"]
+            end
+            subgraph tooling["VM Tooling"]
+                STEPCA["Step-ca PKI :8443"]
+                HARBOR["Harbor Registry :443"]
+                AUTHENTIK["Authentik SSO :9000"]
+                TRAEFIK_T["Traefik :80/:443"]
+            end
+        end
+    end
+
+    PROM -->|"scrape node_exporter<br/>:9100"| P_VMS
+    PROM -->|"scrape node_exporter<br/>:9100"| L_VMS
+    PROM -->|"scrape metrics"| STEPCA
+    PROM -->|"scrape metrics"| HARBOR
+    MINIO -.->|"tfstate S3"| prod
+    MINIO -.->|"tfstate S3"| lab
+    ALERT -->|"notifications"| TG["Telegram Bot"]
+    STEPCA -->|"TLS certs"| TRAEFIK_T
+    TRAEFIK_T -->|"reverse proxy"| HARBOR
+    TRAEFIK_T -->|"reverse proxy"| AUTHENTIK
+
+    style prod fill:#e8f5e9,stroke:#4caf50
+    style lab fill:#fff3e0,stroke:#ff9800
+    style mon fill:#e3f2fd,stroke:#2196f3
+    style monitoring fill:#e8eaf6,stroke:#3f51b5
+    style tooling fill:#fce4ec,stroke:#e91e63
+```
+
 ## Démarrage rapide
 
 ```bash
@@ -518,7 +566,7 @@ Navigation avec les flèches ou vim-like (j/k), validation avec Entrée.
 
 ## Tests
 
-Le projet utilise deux frameworks de test complementaires totalisant **422 tests Terraform** et **867 tests BATS** (dont 439 pour le TUI).
+Le projet utilise deux frameworks de test complementaires totalisant **524 tests Terraform** et **1023 tests BATS** (dont 439 pour le TUI).
 
 ### Tests Terraform (modules)
 
@@ -542,13 +590,13 @@ done
 
 ### Tests BATS (scripts shell)
 
-Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (867 tests, 0 skipped) :
+Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (1023 tests, 0 skipped) :
 
 | Domaine | Tests | Couverture |
 |---------|-------|------------|
 | **tui/** | 439 | Interface TUI complete (12 modules) |
 | **restore/** | 226 | Restauration VMs, tfstate, Minio, monitoring, tooling, verification |
-| **scripts/** | 55 | Scripts utilitaires (post-install Proxmox) |
+| **scripts/** | 211 | Scripts utilitaires, install minio/node-exporter, docker-compose validation |
 | **lifecycle/** | 74 | Snapshots, expiration, nettoyage, rotation SSH |
 | **root** | 37 | deploy.sh, post-install Proxmox |
 | **health/** | 22 | Health checks infrastructure |

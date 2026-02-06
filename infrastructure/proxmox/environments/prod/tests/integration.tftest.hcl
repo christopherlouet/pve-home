@@ -111,3 +111,62 @@ run "defaults_are_correct" {
     error_message = "Default proxmox_insecure should be true"
   }
 }
+
+# -----------------------------------------------------------------------------
+# Output structure - VMs
+# -----------------------------------------------------------------------------
+
+run "outputs_with_vms" {
+  command = plan
+
+  variables {
+    vms = {
+      web = {
+        ip     = "192.168.1.10"
+        cores  = 2
+        memory = 2048
+        disk   = 20
+        tags   = ["web"]
+      }
+    }
+    containers = {}
+  }
+
+  assert {
+    condition     = length(output.vms) == 1
+    error_message = "vms output should contain 1 VM"
+  }
+
+  assert {
+    condition     = length(output.ssh_commands) == 1
+    error_message = "ssh_commands should contain 1 entry"
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Output structure - Empty
+# -----------------------------------------------------------------------------
+
+run "outputs_empty_when_no_resources" {
+  command = plan
+
+  variables {
+    vms        = {}
+    containers = {}
+  }
+
+  assert {
+    condition     = length(output.vms) == 0
+    error_message = "vms output should be empty map"
+  }
+
+  assert {
+    condition     = length(output.containers) == 0
+    error_message = "containers output should be empty map"
+  }
+
+  assert {
+    condition     = length(output.ssh_commands) == 0
+    error_message = "ssh_commands output should be empty map"
+  }
+}

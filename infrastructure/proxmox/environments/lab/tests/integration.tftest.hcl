@@ -101,3 +101,57 @@ run "defaults_are_correct" {
     error_message = "Default datastore should be local-lvm"
   }
 }
+
+# -----------------------------------------------------------------------------
+# Output structure - VMs with expiration
+# -----------------------------------------------------------------------------
+
+run "outputs_with_lab_vm" {
+  command = plan
+
+  variables {
+    vms = {
+      dev = {
+        ip     = "192.168.1.10"
+        cores  = 1
+        memory = 1024
+        disk   = 10
+        tags   = ["dev"]
+      }
+    }
+    containers = {}
+  }
+
+  assert {
+    condition     = length(output.vms) == 1
+    error_message = "vms output should contain 1 VM"
+  }
+
+  assert {
+    condition     = length(output.ssh_commands) == 1
+    error_message = "ssh_commands should contain 1 entry"
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Output structure - Empty
+# -----------------------------------------------------------------------------
+
+run "outputs_empty_when_no_resources" {
+  command = plan
+
+  variables {
+    vms        = {}
+    containers = {}
+  }
+
+  assert {
+    condition     = length(output.vms) == 0
+    error_message = "vms output should be empty map"
+  }
+
+  assert {
+    condition     = length(output.containers) == 0
+    error_message = "containers output should be empty map"
+  }
+}

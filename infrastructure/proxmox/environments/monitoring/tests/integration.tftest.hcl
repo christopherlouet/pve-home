@@ -102,3 +102,78 @@ run "plan_without_tooling" {
     }
   }
 }
+
+# -----------------------------------------------------------------------------
+# Plan reussit avec tooling active
+# -----------------------------------------------------------------------------
+
+run "plan_with_tooling_enabled" {
+  command = plan
+
+  variables {
+    tooling = {
+      enabled = true
+      vm = {
+        ip = "192.168.1.60"
+      }
+      step_ca = {
+        enabled  = true
+        password = "test-ca-password123" # gitleaks:allow
+      }
+      harbor = {
+        enabled        = true
+        admin_password = "test-harbor-pass" # gitleaks:allow
+      }
+      authentik = {
+        enabled            = true
+        secret_key         = "test-authentik-secret-key-min24chars" # gitleaks:allow
+        bootstrap_password = "test-authentik-pass"                  # gitleaks:allow
+      }
+    }
+  }
+
+  assert {
+    condition     = output.tooling != null
+    error_message = "tooling output should not be null when enabled"
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Outputs coherence - tooling desactive
+# -----------------------------------------------------------------------------
+
+run "outputs_tooling_null_when_disabled" {
+  command = plan
+
+  variables {
+    tooling = {
+      enabled = false
+      vm = {
+        ip = ""
+      }
+    }
+  }
+
+  assert {
+    condition     = output.tooling == null
+    error_message = "tooling output should be null when disabled"
+  }
+
+  assert {
+    condition     = output.tooling_ca_instructions == null
+    error_message = "tooling_ca_instructions should be null when disabled"
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Outputs monitoring coherence
+# -----------------------------------------------------------------------------
+
+run "outputs_monitoring_structure" {
+  command = plan
+
+  assert {
+    condition     = output.health_check_ssh_public_key != null
+    error_message = "health_check_ssh_public_key should not be null"
+  }
+}

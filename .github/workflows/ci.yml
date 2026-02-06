@@ -32,6 +32,65 @@ jobs:
         run: terraform fmt -check -recursive -diff
         working-directory: infrastructure/proxmox
 
+  terraform-consistency:
+    name: Terraform Consistency
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Verify lock files exist
+        run: |
+          missing=0
+          for dir in \
+            infrastructure/proxmox/modules/vm \
+            infrastructure/proxmox/modules/lxc \
+            infrastructure/proxmox/modules/backup \
+            infrastructure/proxmox/modules/minio \
+            infrastructure/proxmox/modules/monitoring-stack \
+            infrastructure/proxmox/modules/tooling-stack \
+            infrastructure/proxmox/environments/prod \
+            infrastructure/proxmox/environments/lab \
+            infrastructure/proxmox/environments/monitoring; do
+            if [ ! -f "$dir/.terraform.lock.hcl" ]; then
+              echo "::error::Missing lock file: $dir/.terraform.lock.hcl"
+              missing=$((missing + 1))
+            fi
+          done
+          if [ "$missing" -gt 0 ]; then
+            echo "::error::$missing lock file(s) missing. Run 'terraform init' in each directory."
+            exit 1
+          fi
+          echo "All 9 lock files present."
+
+      - name: Verify provider version consistency
+        run: |
+          # Extract all proxmox provider versions from versions.tf
+          versions=$(grep -rh 'version.*=.*"~>' infrastructure/proxmox/*/versions.tf infrastructure/proxmox/*/*/versions.tf 2>/dev/null | grep -o '"~>[^"]*"' | sort -u)
+          count=$(echo "$versions" | wc -l)
+          if [ "$count" -gt 1 ]; then
+            echo "::error::Inconsistent provider versions found:"
+            grep -rn 'version.*=.*"~>' infrastructure/proxmox/*/versions.tf infrastructure/proxmox/*/*/versions.tf 2>/dev/null
+            exit 1
+          fi
+          echo "Provider version consistent across all modules: $versions"
+
+      - name: Verify shared symlinks
+        run: |
+          broken=0
+          for link in $(find infrastructure/proxmox/environments -type l 2>/dev/null); do
+            if [ ! -e "$link" ]; then
+              echo "::error::Broken symlink: $link -> $(readlink "$link")"
+              broken=$((broken + 1))
+            fi
+          done
+          if [ "$broken" -gt 0 ]; then
+            echo "::error::$broken broken symlink(s) found."
+            exit 1
+          fi
+          echo "All symlinks valid."
+
   terraform-validate:
     name: Terraform Validate
     runs-on: ubuntu-latest
