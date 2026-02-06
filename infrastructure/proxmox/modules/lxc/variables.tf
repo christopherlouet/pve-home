@@ -5,6 +5,11 @@
 variable "hostname" {
   description = "Hostname du conteneur"
   type        = string
+
+  validation {
+    condition     = can(regex("^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$", var.hostname))
+    error_message = "hostname doit etre conforme RFC-1123: minuscules, chiffres, tirets, 1-63 caracteres, ne peut commencer/finir par un tiret."
+  }
 }
 
 variable "description" {
@@ -199,13 +204,4 @@ variable "auto_security_updates" {
   default     = true
 }
 
-variable "expiration_days" {
-  description = "Nombre de jours avant expiration du conteneur (null = pas d'expiration)"
-  type        = number
-  default     = null
-
-  validation {
-    condition     = var.expiration_days == null ? true : var.expiration_days > 0
-    error_message = "expiration_days doit etre > 0 ou null."
-  }
-}
+# expiration_days: voir expiration_variables.tf (symlink vers shared/)

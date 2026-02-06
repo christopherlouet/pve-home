@@ -5,20 +5,6 @@
 # Deploye sur une VM dediee avec Docker Compose
 # =============================================================================
 
-terraform {
-  required_providers {
-    proxmox = {
-      source = "bpg/proxmox"
-    }
-    tls = {
-      source = "hashicorp/tls"
-    }
-    random = {
-      source = "hashicorp/random"
-    }
-  }
-}
-
 # -----------------------------------------------------------------------------
 # VM Configuration
 # -----------------------------------------------------------------------------

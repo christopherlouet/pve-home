@@ -5,6 +5,11 @@
 variable "name" {
   description = "Nom de la VM"
   type        = string
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$", var.name))
+    error_message = "name doit contenir uniquement lettres, chiffres, tirets (1-63 chars), ne peut commencer/finir par un tiret."
+  }
 }
 
 variable "description" {
@@ -180,16 +185,7 @@ variable "auto_security_updates" {
   default     = true
 }
 
-variable "expiration_days" {
-  description = "Nombre de jours avant expiration de la VM (null = pas d'expiration)"
-  type        = number
-  default     = null
-
-  validation {
-    condition     = var.expiration_days == null ? true : var.expiration_days > 0
-    error_message = "expiration_days doit etre > 0 ou null."
-  }
-}
+# expiration_days: voir expiration_variables.tf (symlink vers shared/)
 
 # -----------------------------------------------------------------------------
 # Promtail Configuration (Log Collection Agent)

@@ -414,3 +414,131 @@ run "loki_url_invalid_ftp" {
     var.loki_url,
   ]
 }
+
+# -----------------------------------------------------------------------------
+# expiration_days validation (null or > 0)
+# -----------------------------------------------------------------------------
+
+run "expiration_days_valid_null" {
+  command = plan
+
+  variables {
+    expiration_days = null
+  }
+}
+
+run "expiration_days_valid_one" {
+  command = plan
+
+  variables {
+    expiration_days = 1
+  }
+}
+
+run "expiration_days_valid_thirty" {
+  command = plan
+
+  variables {
+    expiration_days = 30
+  }
+}
+
+run "expiration_days_invalid_zero" {
+  command = plan
+
+  variables {
+    expiration_days = 0
+  }
+
+  expect_failures = [
+    var.expiration_days,
+  ]
+}
+
+run "expiration_days_invalid_negative" {
+  command = plan
+
+  variables {
+    expiration_days = -1
+  }
+
+  expect_failures = [
+    var.expiration_days,
+  ]
+}
+
+# -----------------------------------------------------------------------------
+# name validation (RFC-1123 compatible: letters, digits, hyphens, 1-63 chars)
+# -----------------------------------------------------------------------------
+
+run "name_valid_simple" {
+  command = plan
+
+  variables {
+    name = "web-server"
+  }
+}
+
+run "name_valid_single_char" {
+  command = plan
+
+  variables {
+    name = "a"
+  }
+}
+
+run "name_valid_with_digits" {
+  command = plan
+
+  variables {
+    name = "vm01-prod"
+  }
+}
+
+run "name_invalid_starts_with_hyphen" {
+  command = plan
+
+  variables {
+    name = "-invalid"
+  }
+
+  expect_failures = [
+    var.name,
+  ]
+}
+
+run "name_invalid_ends_with_hyphen" {
+  command = plan
+
+  variables {
+    name = "invalid-"
+  }
+
+  expect_failures = [
+    var.name,
+  ]
+}
+
+run "name_invalid_contains_underscore" {
+  command = plan
+
+  variables {
+    name = "my_vm"
+  }
+
+  expect_failures = [
+    var.name,
+  ]
+}
+
+run "name_invalid_empty" {
+  command = plan
+
+  variables {
+    name = ""
+  }
+
+  expect_failures = [
+    var.name,
+  ]
+}

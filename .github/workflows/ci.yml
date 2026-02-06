@@ -5,6 +5,7 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -20,10 +21,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
           terraform_version: '1.9.8'
 
@@ -31,10 +32,107 @@ jobs:
         run: terraform fmt -check -recursive -diff
         working-directory: infrastructure/proxmox
 
+  terraform-consistency:
+    name: Terraform Consistency
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Verify lock files exist
+        run: |
+          missing=0
+          for dir in \
+            infrastructure/proxmox/modules/vm \
+            infrastructure/proxmox/modules/lxc \
+            infrastructure/proxmox/modules/backup \
+            infrastructure/proxmox/modules/minio \
+            infrastructure/proxmox/modules/monitoring-stack \
+            infrastructure/proxmox/modules/tooling-stack \
+            infrastructure/proxmox/environments/prod \
+            infrastructure/proxmox/environments/lab \
+            infrastructure/proxmox/environments/monitoring; do
+            if [ ! -f "$dir/.terraform.lock.hcl" ]; then
+              echo "::error::Missing lock file: $dir/.terraform.lock.hcl"
+              missing=$((missing + 1))
+            fi
+          done
+          if [ "$missing" -gt 0 ]; then
+            echo "::error::$missing lock file(s) missing. Run 'terraform init' in each directory."
+            exit 1
+          fi
+          echo "All 9 lock files present."
+
+      - name: Verify provider version consistency
+        run: |
+          # Extract proxmox provider versions only (filter by bpg/proxmox context)
+          versions=$(grep -B1 -A1 'bpg/proxmox' infrastructure/proxmox/*/versions.tf infrastructure/proxmox/*/*/versions.tf 2>/dev/null | grep 'version' | grep -o '"~>[^"]*"' | sort -u)
+          count=$(echo "$versions" | wc -l)
+          if [ "$count" -gt 1 ]; then
+            echo "::error::Inconsistent proxmox provider versions found:"
+            grep -B1 -A1 'bpg/proxmox' infrastructure/proxmox/*/versions.tf infrastructure/proxmox/*/*/versions.tf 2>/dev/null | grep 'version'
+            exit 1
+          fi
+          echo "Proxmox provider version consistent across all modules: $versions"
+
+      - name: Verify shared symlinks
+        run: |
+          broken=0
+          for link in $(find infrastructure/proxmox/environments -type l 2>/dev/null); do
+            if [ ! -e "$link" ]; then
+              echo "::error::Broken symlink: $link -> $(readlink "$link")"
+              broken=$((broken + 1))
+            fi
+          done
+          if [ "$broken" -gt 0 ]; then
+            echo "::error::$broken broken symlink(s) found."
+            exit 1
+          fi
+          echo "All symlinks valid."
+
+  terraform-lint:
+    name: Terraform Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        directory:
+          - infrastructure/proxmox/modules/vm
+          - infrastructure/proxmox/modules/lxc
+          - infrastructure/proxmox/modules/backup
+          - infrastructure/proxmox/modules/minio
+          - infrastructure/proxmox/modules/monitoring-stack
+          - infrastructure/proxmox/modules/tooling-stack
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: '1.9.8'
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@90f302c255ef959cbfb4bd10581afecdb7ece3e6 # v4
+        with:
+          tflint_version: latest
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+        working-directory: ${{ matrix.directory }}
+
+      - name: Run TFLint
+        run: tflint --format=compact
+        working-directory: ${{ matrix.directory }}
+        continue-on-error: true
+
   terraform-validate:
     name: Terraform Validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      TF_PLUGIN_CACHE_DIR: ~/.terraform.d/plugin-cache
     strategy:
       matrix:
         directory:
@@ -49,10 +147,21 @@ jobs:
           - infrastructure/proxmox/environments/monitoring
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Create Terraform plugin cache dir
+        run: mkdir -p $TF_PLUGIN_CACHE_DIR
+
+      - name: Cache Terraform plugins
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: ${{ runner.os }}-terraform-plugins-${{ hashFiles('**/.terraform.lock.hcl') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-plugins-
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
           terraform_version: '1.9.8'
 
@@ -69,6 +178,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [terraform-validate]
+    env:
+      TF_PLUGIN_CACHE_DIR: ~/.terraform.d/plugin-cache
     strategy:
       matrix:
         module:
@@ -78,12 +189,26 @@ jobs:
           - infrastructure/proxmox/modules/minio
           - infrastructure/proxmox/modules/monitoring-stack
           - infrastructure/proxmox/modules/tooling-stack
+          - infrastructure/proxmox/environments/prod
+          - infrastructure/proxmox/environments/lab
+          - infrastructure/proxmox/environments/monitoring
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Create Terraform plugin cache dir
+        run: mkdir -p $TF_PLUGIN_CACHE_DIR
+
+      - name: Cache Terraform plugins
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: ${{ runner.os }}-terraform-plugins-${{ hashFiles('**/.terraform.lock.hcl') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-plugins-
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
           terraform_version: '1.9.8'
 
@@ -110,10 +235,10 @@ jobs:
           - infrastructure/proxmox/modules/tooling-stack
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Check terraform-docs is up to date
-        uses: terraform-docs/gh-actions@v1
+        uses: terraform-docs/gh-actions@6de6da0cefcc6b4b7a5cbea4d79d97060733093c # v1
         with:
           working-dir: ${{ matrix.module }}
           output-file: README.md
@@ -126,7 +251,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y shellcheck bats
       - name: Shellcheck scripts
@@ -155,10 +280,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Lint Markdown files
-        uses: DavidAnson/markdownlint-cli2-action@v22
+        uses: DavidAnson/markdownlint-cli2-action@07035fd053f7be764496c0f8d8f9f41f98305101 # v22
         with:
           globs: |
             **/*.md

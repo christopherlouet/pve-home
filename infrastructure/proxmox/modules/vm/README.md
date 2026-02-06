@@ -2,16 +2,43 @@
 
 Module Terraform pour deployer des VMs sur Proxmox VE via cloud-init.
 
+## Usage
+
+```hcl
+module "web_server" {
+  source = "../../modules/vm"
+
+  name        = "web-01"
+  target_node = "pve-prod"
+  template_id = 9000
+  ip_address  = "192.168.1.20/24"
+  gateway     = "192.168.1.1"
+  ssh_keys    = var.ssh_public_keys
+
+  cpu_cores  = 2
+  memory_mb  = 2048
+  disk_size  = 32
+
+  install_docker   = true
+  install_promtail = true
+  loki_url         = "http://192.168.1.51:3100"
+
+  tags = ["terraform", "docker", "monitored"]
+}
+```
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
-No requirements.
+| Name | Version |
+|------|---------|
+| <a name="requirement_proxmox"></a> [proxmox](#requirement\_proxmox) | ~> 0.94.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.93.1 |
+| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.94.0 |
 
 ## Modules
 
@@ -39,7 +66,7 @@ No modules.
 | <a name="input_description"></a> [description](#input\_description) | Description de la VM | `string` | `"Managed by Terraform"` | no |
 | <a name="input_disk_size_gb"></a> [disk\_size\_gb](#input\_disk\_size\_gb) | Taille du disque système en GB | `number` | `20` | no |
 | <a name="input_dns_servers"></a> [dns\_servers](#input\_dns\_servers) | Serveurs DNS | `list(string)` | <pre>[<br/>  "1.1.1.1",<br/>  "8.8.8.8"<br/>]</pre> | no |
-| <a name="input_expiration_days"></a> [expiration\_days](#input\_expiration\_days) | Nombre de jours avant expiration de la VM (null = pas d'expiration) | `number` | `null` | no |
+| <a name="input_expiration_days"></a> [expiration\_days](#input\_expiration\_days) | Nombre de jours avant expiration (null = pas d'expiration) | `number` | `null` | no |
 | <a name="input_gateway"></a> [gateway](#input\_gateway) | Passerelle par défaut | `string` | n/a | yes |
 | <a name="input_install_docker"></a> [install\_docker](#input\_install\_docker) | Installer Docker via cloud-init | `bool` | `false` | no |
 | <a name="input_install_promtail"></a> [install\_promtail](#input\_install\_promtail) | Installer Promtail pour envoyer les logs vers Loki | `bool` | `false` | no |
@@ -67,3 +94,11 @@ No modules.
 | <a name="output_node_name"></a> [node\_name](#output\_node\_name) | Node Proxmox |
 | <a name="output_vm_id"></a> [vm\_id](#output\_vm\_id) | ID de la VM |
 <!-- END_TF_DOCS -->
+
+## Documentation associee
+
+- [VM Lifecycle](../../../../docs/VM-LIFECYCLE.md) - Snapshots, expiration, rotation SSH
+- [Backup & Restore](../../../../docs/BACKUP-RESTORE.md) - Sauvegarde et restauration des VMs
+- [Health Checks](../../../../docs/HEALTH-CHECKS.md) - Verification de sante des VMs
+- [Disaster Recovery](../../../../docs/DISASTER-RECOVERY.md) - Procedures de reprise
+- [Testing](../../../../docs/TESTING.md) - Guide des tests Terraform et BATS

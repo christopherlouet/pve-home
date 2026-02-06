@@ -10,6 +10,8 @@
 # - Confirmations explicites pour les operations destructives
 # =============================================================================
 
+# Note: pas de set -euo pipefail ici, ce fichier est source par d'autres scripts
+
 # Charger les dependances si pas deja fait
 SCRIPT_DIR_LIFECYCLE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TUI_LIB_DIR_LIFECYCLE="$(cd "${SCRIPT_DIR_LIFECYCLE}/../lib" && pwd)"

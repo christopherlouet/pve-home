@@ -74,36 +74,24 @@ resource "proxmox_virtual_environment_firewall_options" "monitoring" {
   output_policy = "ACCEPT"
 }
 
-# SECURITY NOTE: Regles firewall sans filtrage IP source - accepte pour reseau homelab isole.
-# En production, ajouter "source" pour restreindre l'acces aux ports sensibles (3000, 9090, etc.).
+# Regles firewall: presets partages (shared/firewall_locals.tf) + services monitoring
 resource "proxmox_virtual_environment_firewall_rules" "monitoring" {
   node_name = module.monitoring.node_name
   vm_id     = module.monitoring.vm_id
 
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "22"
-    comment = "SSH"
+  # Regles de base partagees (SSH, HTTP, HTTPS, Node Exporter, Ping)
+  dynamic "rule" {
+    for_each = local.firewall_rules_base
+    content {
+      type    = "in"
+      action  = "ACCEPT"
+      proto   = rule.value.proto
+      dport   = rule.value.dport
+      comment = rule.value.comment
+    }
   }
 
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "80"
-    comment = "HTTP (Traefik)"
-  }
-
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "443"
-    comment = "HTTPS (Traefik)"
-  }
-
+  # Services monitoring specifiques
   rule {
     type    = "in"
     action  = "ACCEPT"
@@ -140,14 +128,6 @@ resource "proxmox_virtual_environment_firewall_rules" "monitoring" {
     type    = "in"
     action  = "ACCEPT"
     proto   = "tcp"
-    dport   = "9100"
-    comment = "Node Exporter"
-  }
-
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
     dport   = "9221"
     comment = "PVE Exporter"
   }
@@ -174,13 +154,6 @@ resource "proxmox_virtual_environment_firewall_rules" "monitoring" {
     proto   = "tcp"
     dport   = "3001"
     comment = "Uptime Kuma"
-  }
-
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "icmp"
-    comment = "Ping"
   }
 
   depends_on = [proxmox_virtual_environment_firewall_options.monitoring]

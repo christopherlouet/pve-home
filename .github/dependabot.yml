@@ -1,5 +1,7 @@
 version: 2
+
 updates:
+  # GitHub Actions - automated version updates
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -9,7 +11,14 @@ updates:
       prefix: "chore(deps)"
     labels:
       - "dependencies"
+      - "ci"
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
+  # Terraform providers - environments
   - package-ecosystem: "terraform"
     directory: "/infrastructure/proxmox/environments/prod"
     schedule:
@@ -19,6 +28,8 @@ updates:
       prefix: "chore(deps)"
     labels:
       - "dependencies"
+      - "terraform"
+    open-pull-requests-limit: 3
 
   - package-ecosystem: "terraform"
     directory: "/infrastructure/proxmox/environments/lab"
@@ -29,6 +40,8 @@ updates:
       prefix: "chore(deps)"
     labels:
       - "dependencies"
+      - "terraform"
+    open-pull-requests-limit: 3
 
   - package-ecosystem: "terraform"
     directory: "/infrastructure/proxmox/environments/monitoring"
@@ -39,3 +52,5 @@ updates:
       prefix: "chore(deps)"
     labels:
       - "dependencies"
+      - "terraform"
+    open-pull-requests-limit: 3

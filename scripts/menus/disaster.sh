@@ -7,6 +7,8 @@
 # Menu de disaster recovery : restauration VMs, tfstate, verification backups.
 # =============================================================================
 
+# Note: pas de set -euo pipefail ici, ce fichier est source par d'autres scripts
+
 # =============================================================================
 # Variables
 # =============================================================================

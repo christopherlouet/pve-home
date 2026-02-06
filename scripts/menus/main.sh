@@ -7,6 +7,8 @@
 # Menu principal avec les 7 categories de gestion du homelab.
 # =============================================================================
 
+# Note: pas de set -euo pipefail ici, ce fichier est source par d'autres scripts
+
 # =============================================================================
 # Menu principal
 # =============================================================================

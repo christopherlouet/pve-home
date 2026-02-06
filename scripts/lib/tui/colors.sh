@@ -7,6 +7,8 @@
 # Definit les couleurs et le theme pour gum et l'affichage terminal.
 # =============================================================================
 
+# Note: pas de set -euo pipefail ici, ce fichier est source par d'autres scripts
+
 # =============================================================================
 # Couleurs ANSI pour le terminal
 # =============================================================================

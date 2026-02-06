@@ -113,3 +113,23 @@ feat/fix/refactor/test/docs/chore/perf(module): short description
 4. Run `bats --recursive tests/` for shell changes
 5. Commit with Conventional Commits format
 6. Open a PR against `main`
+
+## Pull Request Process
+
+1. Ensure all CI checks pass (Terraform fmt/validate/test, shellcheck, BATS, tflint)
+2. Update documentation if you changed module interfaces (variables, outputs)
+3. Add an entry in `CHANGELOG.md` under `[Unreleased]`
+4. Fill in the PR template with description, type of change, and checklist
+5. Request a review
+6. Squash and merge once approved
+
+## Code Review Checklist
+
+Reviewers should verify:
+
+- [ ] Tests cover the change (Terraform tests for modules, BATS for scripts)
+- [ ] No hardcoded secrets or IPs in module code
+- [ ] Variables have validation blocks and descriptions
+- [ ] Shell scripts use `set -euo pipefail`
+- [ ] Docker images are pinned with SHA256 digests
+- [ ] Commit messages follow Conventional Commits

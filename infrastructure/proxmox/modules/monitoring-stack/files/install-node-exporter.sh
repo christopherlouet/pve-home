@@ -67,10 +67,21 @@ log_info "Telechargement de Node Exporter v${NODE_EXPORTER_VERSION}"
 TEMP_DIR=$(mktemp -d)
 cd "${TEMP_DIR}"
 
+CHECKSUM_URL="https://github.com/prometheus/node_exporter/releases/download/v${NODE_EXPORTER_VERSION}/sha256sums.txt"
+
 if ! wget -q "${DOWNLOAD_URL}" -O node_exporter.tar.gz; then
     log_error "Echec du telechargement"
     rm -rf "${TEMP_DIR}"
     exit 1
+fi
+
+# Verification d'integrite SHA256
+log_info "Verification du checksum SHA256"
+if wget -q "${CHECKSUM_URL}" -O sha256sums.txt; then
+    grep "node_exporter-${NODE_EXPORTER_VERSION}.linux-amd64.tar.gz" sha256sums.txt > expected.sha256
+    sha256sum -c expected.sha256
+else
+    log_warn "Checksum non disponible - verification ignoree"
 fi
 
 log_info "Extraction et installation"
@@ -112,6 +123,9 @@ ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
 PrivateDevices=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+RestrictRealtime=yes
 
 [Install]
 WantedBy=multi-user.target

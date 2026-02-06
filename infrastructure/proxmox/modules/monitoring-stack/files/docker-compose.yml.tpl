@@ -1,14 +1,16 @@
-version: "3.8"
-
 services:
 %{ if traefik_enabled }
   # -------------------------------------------------------------------------
   # Traefik - Reverse Proxy
   # -------------------------------------------------------------------------
   traefik:
-    image: traefik:v3.3
+    image: traefik:v3.3@sha256:2cd5cc75530c8d07ae0587c743d23eb30cae2436d07017a5ff78498b1a43d09f
     container_name: traefik
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     ports:
       - "80:80"
       - "443:443"
@@ -32,9 +34,16 @@ services:
   # Prometheus - Metrics Collection
   # -------------------------------------------------------------------------
   prometheus:
-    image: prom/prometheus:v3.5.1
+    image: prom/prometheus:v3.5.1@sha256:38c3b05c3bc744ff1b0b7b4eb82196026442845e62a1e2073795565da506d7a2
     container_name: prometheus
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     user: "65534:65534"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -58,6 +67,12 @@ services:
       - "9090:9090"
     networks:
       - monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 %{ if traefik_enabled }
     labels:
       - "traefik.enable=true"
@@ -66,9 +81,13 @@ services:
 %{ endif }
 
   grafana:
-    image: grafana/grafana:12.1.1
+    image: grafana/grafana:12.1.1@sha256:a1701c2180249361737a99a01bc770db39381640e4d631825d38ff4535efa47d
     container_name: grafana
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     user: "472:472"
     volumes:
       - grafana_data:/var/lib/grafana
@@ -90,6 +109,12 @@ services:
       - "3000:3000"
     networks:
       - monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 %{ if traefik_enabled }
     labels:
       - "traefik.enable=true"
@@ -97,13 +122,21 @@ services:
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
 %{ endif }
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_healthy
 
 %{ if telegram_enabled }
   alertmanager:
-    image: prom/alertmanager:v0.30.1
+    image: prom/alertmanager:v0.30.1@sha256:286ad8838533a5a01d89bd09643f43d2b68b65203123b5700e54a8f80ff9c1f4
     container_name: alertmanager
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager_data:/alertmanager
@@ -119,6 +152,12 @@ services:
       - "9093:9093"
     networks:
       - monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9093/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 %{ if traefik_enabled }
     labels:
       - "traefik.enable=true"
@@ -132,9 +171,16 @@ services:
   # Loki - Log Aggregation
   # -------------------------------------------------------------------------
   loki:
-    image: grafana/loki:3.5.0
+    image: grafana/loki:3.5.0@sha256:4c431d2e6b9b38718694b31c5d56be7c80dc69c513215fde1aeb5b02cd4e2665
     container_name: loki
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     user: "10001:10001"
     volumes:
       - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
@@ -145,6 +191,12 @@ services:
       - "3100:3100"
     networks:
       - monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3100/ready || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 %{ if traefik_enabled }
     labels:
       - "traefik.enable=true"
@@ -156,9 +208,16 @@ services:
   # Promtail - Log Collector (local)
   # -------------------------------------------------------------------------
   promtail:
-    image: grafana/promtail:3.5.0
+    image: grafana/promtail:3.5.0@sha256:507dfecd2f0949475d071c124bea1c26fc4f8c1cff0372eee57478d5b1c5fbff
     container_name: promtail
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -169,8 +228,15 @@ services:
       - "9080:9080"
     networks:
       - monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9080/ready || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
-      - loki
+      loki:
+        condition: service_healthy
 %{ endif }
 
 %{ if uptime_kuma_enabled }
@@ -178,9 +244,13 @@ services:
   # Uptime Kuma - Status Page
   # -------------------------------------------------------------------------
   uptime-kuma:
-    image: louislam/uptime-kuma:1
+    image: louislam/uptime-kuma:1.23.16@sha256:431fee3be822b04861cf0e35daf4beef6b7cb37391c5f26c3ad6e12ce280fe18
     container_name: uptime-kuma
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - uptime_kuma_data:/app/data
     ports:
@@ -196,9 +266,16 @@ services:
 %{ endif }
 
   pve-exporter:
-    image: prompve/prometheus-pve-exporter:3.7.0
+    image: prompve/prometheus-pve-exporter:3.7.0@sha256:f5266117e8b3db1fcf1cb3f9206cf7822d9db82fc1740b8f33f3140c9f24cca9
     container_name: pve-exporter
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - ./pve-exporter/pve.yml:/etc/prometheus/pve.yml:ro
     ports:
@@ -207,9 +284,14 @@ services:
       - monitoring
 
   node-exporter:
-    image: prom/node-exporter:v1.10.2
+    image: prom/node-exporter:v1.10.2@sha256:3ac34ce007accad95afed72149e0d2b927b7e42fd1c866149b945b84737c62c3
     container_name: node-exporter
     restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     command:
       - '--path.rootfs=/host'
       - '--path.procfs=/host/proc'

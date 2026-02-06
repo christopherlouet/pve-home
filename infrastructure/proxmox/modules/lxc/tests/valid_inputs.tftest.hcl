@@ -394,3 +394,143 @@ run "defaults_are_applied" {
     error_message = "Default backup_enabled should be true"
   }
 }
+
+# -----------------------------------------------------------------------------
+# expiration_days validation (null or > 0)
+# -----------------------------------------------------------------------------
+
+run "expiration_days_valid_null" {
+  command = plan
+
+  variables {
+    expiration_days = null
+  }
+}
+
+run "expiration_days_valid_one" {
+  command = plan
+
+  variables {
+    expiration_days = 1
+  }
+}
+
+run "expiration_days_valid_thirty" {
+  command = plan
+
+  variables {
+    expiration_days = 30
+  }
+}
+
+run "expiration_days_invalid_zero" {
+  command = plan
+
+  variables {
+    expiration_days = 0
+  }
+
+  expect_failures = [
+    var.expiration_days,
+  ]
+}
+
+run "expiration_days_invalid_negative" {
+  command = plan
+
+  variables {
+    expiration_days = -1
+  }
+
+  expect_failures = [
+    var.expiration_days,
+  ]
+}
+
+# -----------------------------------------------------------------------------
+# hostname validation (RFC-1123: lowercase, digits, hyphens, 1-63 chars)
+# -----------------------------------------------------------------------------
+
+run "hostname_valid_simple" {
+  command = plan
+
+  variables {
+    hostname = "web-server"
+  }
+}
+
+run "hostname_valid_single_char" {
+  command = plan
+
+  variables {
+    hostname = "a"
+  }
+}
+
+run "hostname_valid_with_digits" {
+  command = plan
+
+  variables {
+    hostname = "dns01"
+  }
+}
+
+run "hostname_invalid_starts_with_hyphen" {
+  command = plan
+
+  variables {
+    hostname = "-invalid"
+  }
+
+  expect_failures = [
+    var.hostname,
+  ]
+}
+
+run "hostname_invalid_ends_with_hyphen" {
+  command = plan
+
+  variables {
+    hostname = "invalid-"
+  }
+
+  expect_failures = [
+    var.hostname,
+  ]
+}
+
+run "hostname_invalid_uppercase" {
+  command = plan
+
+  variables {
+    hostname = "MyHost"
+  }
+
+  expect_failures = [
+    var.hostname,
+  ]
+}
+
+run "hostname_invalid_underscore" {
+  command = plan
+
+  variables {
+    hostname = "my_host"
+  }
+
+  expect_failures = [
+    var.hostname,
+  ]
+}
+
+run "hostname_invalid_empty" {
+  command = plan
+
+  variables {
+    hostname = ""
+  }
+
+  expect_failures = [
+    var.hostname,
+  ]
+}

@@ -16,6 +16,11 @@ variable "storage_id" {
     condition     = length(var.storage_id) > 0
     error_message = "storage_id ne peut pas etre vide."
   }
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9_-]+$", var.storage_id))
+    error_message = "storage_id doit contenir uniquement des caracteres alphanumeriques, tirets et underscores."
+  }
 }
 
 variable "schedule" {
@@ -97,12 +102,22 @@ variable "mail_to" {
   description = "Adresse email pour les notifications (vide = pas de mail)"
   type        = string
   default     = ""
+
+  validation {
+    condition     = var.mail_to == "" || can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.mail_to))
+    error_message = "mail_to doit etre une adresse email valide ou vide."
+  }
 }
 
 variable "notes_template" {
   description = "Template pour les notes de sauvegarde"
   type        = string
   default     = "{{guestname}} - Backup automatique"
+
+  validation {
+    condition     = !can(regex("[;`$\\\\|><&]", var.notes_template))
+    error_message = "notes_template ne doit pas contenir de metacaracteres shell (;`$\\|><&)."
+  }
 }
 
 variable "proxmox_endpoint" {

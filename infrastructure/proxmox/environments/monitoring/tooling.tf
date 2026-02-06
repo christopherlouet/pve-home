@@ -92,40 +92,25 @@ resource "proxmox_virtual_environment_firewall_options" "tooling" {
   output_policy = "ACCEPT"
 }
 
-# SECURITY NOTE: Regles firewall sans filtrage IP source - accepte pour reseau homelab isole.
-# En production, ajouter "source" pour restreindre l'acces aux ports sensibles.
+# Regles firewall: presets partages (shared/firewall_locals.tf) + services tooling
 resource "proxmox_virtual_environment_firewall_rules" "tooling" {
   count     = var.tooling.enabled ? 1 : 0
   node_name = module.tooling[0].node_name
   vm_id     = module.tooling[0].vm_id
 
-  # SSH
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "22"
-    comment = "SSH"
+  # Regles de base partagees (SSH, HTTP, HTTPS, Node Exporter, Ping)
+  dynamic "rule" {
+    for_each = local.firewall_rules_base
+    content {
+      type    = "in"
+      action  = "ACCEPT"
+      proto   = rule.value.proto
+      dport   = rule.value.dport
+      comment = rule.value.comment
+    }
   }
 
-  # HTTP/HTTPS (Traefik)
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "80"
-    comment = "HTTP (Traefik)"
-  }
-
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "443"
-    comment = "HTTPS (Traefik)"
-  }
-
-  # Traefik Dashboard
+  # Tooling-specific static rules
   rule {
     type    = "in"
     action  = "ACCEPT"
@@ -134,7 +119,15 @@ resource "proxmox_virtual_environment_firewall_rules" "tooling" {
     comment = "Traefik Dashboard"
   }
 
-  # Step-ca ACME
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "8080"
+    comment = "cAdvisor"
+  }
+
+  # Step-ca ACME (conditional)
   dynamic "rule" {
     for_each = var.tooling.step_ca.enabled ? [1] : []
     content {
@@ -157,7 +150,7 @@ resource "proxmox_virtual_environment_firewall_rules" "tooling" {
     }
   }
 
-  # Harbor Registry
+  # Harbor Registry (conditional)
   dynamic "rule" {
     for_each = var.tooling.harbor.enabled ? [1] : []
     content {
@@ -169,7 +162,7 @@ resource "proxmox_virtual_environment_firewall_rules" "tooling" {
     }
   }
 
-  # Authentik SSO
+  # Authentik SSO (conditional)
   dynamic "rule" {
     for_each = var.tooling.authentik.enabled ? [1] : []
     content {
@@ -190,32 +183,6 @@ resource "proxmox_virtual_environment_firewall_rules" "tooling" {
       dport   = "9300"
       comment = "Authentik Metrics"
     }
-  }
-
-  # Node Exporter
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "9100"
-    comment = "Node Exporter"
-  }
-
-  # cAdvisor
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "8080"
-    comment = "cAdvisor"
-  }
-
-  # Ping
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "icmp"
-    comment = "Ping"
   }
 
   depends_on = [proxmox_virtual_environment_firewall_options.tooling]

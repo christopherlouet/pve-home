@@ -60,91 +60,22 @@ resource "proxmox_virtual_environment_firewall_options" "vms" {
   output_policy = "ACCEPT"
 }
 
-# SECURITY NOTE: Regles firewall sans filtrage IP source - accepte pour reseau homelab isole.
-# En production, ajouter "source" pour restreindre l'acces aux ports sensibles (9100, etc.).
+# Regles firewall: presets partages (shared/firewall_locals.tf) + exporters prod
 resource "proxmox_virtual_environment_firewall_rules" "vms" {
   for_each = var.vms
 
   node_name = var.default_node
   vm_id     = module.vms[each.key].vm_id
 
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "22"
-    comment = "SSH"
-  }
-
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "80"
-    comment = "HTTP"
-  }
-
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "443"
-    comment = "HTTPS"
-  }
-
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "9080"
-    comment = "cAdvisor"
-  }
-
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "9100"
-    comment = "Node Exporter"
-  }
-
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "9113"
-    comment = "Nginx Exporter"
-  }
-
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "9115"
-    comment = "Blackbox Exporter"
-  }
-
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "9187"
-    comment = "PostgreSQL Exporter"
-  }
-
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "tcp"
-    dport   = "9256"
-    comment = "Process Exporter"
-  }
-
-  rule {
-    type    = "in"
-    action  = "ACCEPT"
-    proto   = "icmp"
-    comment = "Ping"
+  dynamic "rule" {
+    for_each = concat(local.firewall_rules_base, local.firewall_rules_prod_exporters)
+    content {
+      type    = "in"
+      action  = "ACCEPT"
+      proto   = rule.value.proto
+      dport   = rule.value.dport
+      comment = rule.value.comment
+    }
   }
 
   depends_on = [proxmox_virtual_environment_firewall_options.vms]
