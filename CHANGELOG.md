@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2026-02-06
+
+### Added
+
+- **`ssh_command` output** on VM module for quick SSH access
+- **PR summary CI job** posts changed modules/environments as comment on pull requests
+- **Trivy IaC security scan** in CI pipeline (SHA-pinned `aquasecurity/trivy-action`) with `.trivyignore`
+- **Cross-variable validations** (Terraform 1.9+):
+  - `tooling_ip` required when `tooling_enabled` is true (monitoring-stack)
+  - `data_disk >= 10` when Loki is enabled (monitoring-stack)
+  - `data_disk >= 20` when Harbor is enabled (tooling-stack)
+- **14 new Terraform tests**: for_each resources (additional_disks, mountpoints), cross-validation expect_failures, ssh_command outputs
+- **Test counts**: 544 Terraform tests (was 512), 1048 BATS tests — **1592 total**
+
+### Changed
+
+- **TFLint promoted to hard-fail** in CI (removed `continue-on-error: true`)
+- **`required_version = ">= 1.9.0"`** added to all 6 module `versions.tf` files (was only in environments)
+- **`tflint-ignore` annotations** on 13 intentional unused declarations (future scaffolding) across lxc, monitoring-stack, tooling-stack
+
+### Security
+
+- **`nullable = false`** on 35 required variables across all 6 modules (prevents null misconfigurations)
+- **`prevent_destroy = true`** on 4 critical resources: backup job, Minio container, monitoring VM, tooling VM
+- **Trivy IaC scanning** (HIGH/CRITICAL severity) added to CI pipeline
+
 ## [1.11.0] - 2026-02-06
 
 ### Added

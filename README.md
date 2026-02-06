@@ -570,7 +570,7 @@ Navigation avec les flèches ou vim-like (j/k), validation avec Entrée.
 
 ## Tests
 
-Le projet utilise deux frameworks de test complementaires totalisant **535 tests Terraform** et **1048 tests BATS** (dont 439 pour le TUI).
+Le projet utilise deux frameworks de test complementaires totalisant **544 tests Terraform** et **1048 tests BATS** (dont 439 pour le TUI).
 
 ### Tests Terraform (modules)
 

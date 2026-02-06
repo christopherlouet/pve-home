@@ -32,6 +32,7 @@ module "web_server" {
 
 | Name | Version |
 |------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.9.0 |
 | <a name="requirement_proxmox"></a> [proxmox](#requirement\_proxmox) | ~> 0.94.0 |
 
 ## Providers
@@ -92,6 +93,7 @@ No modules.
 | <a name="output_mac_address"></a> [mac\_address](#output\_mac\_address) | Adresse MAC |
 | <a name="output_name"></a> [name](#output\_name) | Nom de la VM |
 | <a name="output_node_name"></a> [node\_name](#output\_node\_name) | Node Proxmox |
+| <a name="output_ssh_command"></a> [ssh\_command](#output\_ssh\_command) | Commande SSH pour se connecter a la VM |
 | <a name="output_vm_id"></a> [vm\_id](#output\_vm\_id) | ID de la VM |
 <!-- END_TF_DOCS -->
 

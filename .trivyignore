@@ -1,0 +1,10 @@
+# =============================================================================
+# Trivy IaC Scan - Ignored findings
+# =============================================================================
+# Findings that are acceptable for a homelab environment.
+# Each entry should include a justification comment.
+# =============================================================================
+
+# SSH agent forwarding used for Proxmox API access (backup module provisioner)
+# Acceptable: homelab on isolated network, SSH agent required for pvesh commands
+AVD-GEN-0001

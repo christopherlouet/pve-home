@@ -5,6 +5,7 @@
 variable "hostname" {
   description = "Hostname du conteneur Minio"
   type        = string
+  nullable    = false
 }
 
 variable "description" {
@@ -16,6 +17,7 @@ variable "description" {
 variable "target_node" {
   description = "Node Proxmox cible"
   type        = string
+  nullable    = false
 }
 
 variable "container_id" {
@@ -105,6 +107,7 @@ variable "vlan_id" {
 variable "ip_address" {
   description = "Adresse IP en notation CIDR (ex: 192.168.1.200/24)"
   type        = string
+  nullable    = false
 
   validation {
     condition     = can(regex("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}$", var.ip_address))
@@ -115,6 +118,7 @@ variable "ip_address" {
 variable "gateway" {
   description = "Passerelle par defaut"
   type        = string
+  nullable    = false
 }
 
 variable "dns_servers" {
@@ -126,6 +130,7 @@ variable "dns_servers" {
 variable "ssh_keys" {
   description = "Cles SSH publiques"
   type        = list(string)
+  nullable    = false
 }
 
 variable "minio_root_user" {
@@ -138,6 +143,7 @@ variable "minio_root_password" {
   description = "Mot de passe root Minio"
   type        = string
   sensitive   = true
+  nullable    = false
 
   validation {
     condition     = length(var.minio_root_password) >= 8

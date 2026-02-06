@@ -17,7 +17,7 @@
 # -----------------------------------------------------------------------------
 
 locals {
-  # Services configuration for cloud-init
+  # tflint-ignore: terraform_unused_declarations
   services_config = {
     step_ca = {
       enabled          = var.step_ca_enabled
@@ -184,6 +184,7 @@ resource "proxmox_virtual_environment_vm" "tooling" {
   }
 
   lifecycle {
+    prevent_destroy = true
     ignore_changes = [
       clone,
       initialization,

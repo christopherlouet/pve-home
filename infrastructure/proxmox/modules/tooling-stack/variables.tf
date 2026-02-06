@@ -18,11 +18,13 @@ variable "name" {
 variable "target_node" {
   description = "Node Proxmox pour deployer la VM tooling"
   type        = string
+  nullable    = false
 }
 
 variable "template_id" {
   description = "ID du template VM cloud-init"
   type        = number
+  nullable    = false
 
   validation {
     condition     = var.template_id >= 100
@@ -59,6 +61,11 @@ variable "vm_config" {
     condition     = var.vm_config.data_disk >= 4 && var.vm_config.data_disk <= 4096
     error_message = "vm_config.data_disk doit etre entre 4 et 4096 (4 GB - 4 TB)."
   }
+
+  validation {
+    condition     = !var.harbor_enabled || var.vm_config.data_disk >= 20
+    error_message = "vm_config.data_disk doit etre >= 20 quand Harbor est active (stockage images)."
+  }
 }
 
 variable "datastore" {
@@ -74,6 +81,7 @@ variable "datastore" {
 variable "ip_address" {
   description = "Adresse IP de la VM tooling (sans CIDR)"
   type        = string
+  nullable    = false
 
   validation {
     condition     = can(regex("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$", var.ip_address))
@@ -95,6 +103,7 @@ variable "network_cidr" {
 variable "gateway" {
   description = "Passerelle reseau"
   type        = string
+  nullable    = false
 }
 
 variable "dns_servers" {
@@ -127,6 +136,7 @@ variable "domain_suffix" {
 variable "ssh_keys" {
   description = "Cles SSH publiques"
   type        = list(string)
+  nullable    = false
 }
 
 variable "username" {
@@ -149,6 +159,7 @@ variable "step_ca_password" {
   description = "Mot de passe pour la CA Step-ca"
   type        = string
   sensitive   = true
+  nullable    = false
 
   validation {
     condition     = length(var.step_ca_password) >= 8
@@ -188,6 +199,7 @@ variable "harbor_admin_password" {
   description = "Mot de passe admin Harbor"
   type        = string
   sensitive   = true
+  nullable    = false
 
   validation {
     condition     = length(var.harbor_admin_password) >= 8
@@ -195,6 +207,7 @@ variable "harbor_admin_password" {
   }
 }
 
+# tflint-ignore: terraform_unused_declarations
 variable "harbor_db_password" {
   description = "Mot de passe pour la base PostgreSQL Harbor"
   type        = string
@@ -228,6 +241,7 @@ variable "authentik_secret_key" {
   description = "Cle secrete pour Authentik (min 24 caracteres)"
   type        = string
   sensitive   = true
+  nullable    = false
 
   validation {
     condition     = length(var.authentik_secret_key) >= 24
@@ -239,6 +253,7 @@ variable "authentik_bootstrap_password" {
   description = "Mot de passe initial pour l'admin Authentik (akadmin)"
   type        = string
   sensitive   = true
+  nullable    = false
 
   validation {
     condition     = length(var.authentik_bootstrap_password) >= 8

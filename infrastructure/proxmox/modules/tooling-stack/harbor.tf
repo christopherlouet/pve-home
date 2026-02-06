@@ -37,6 +37,7 @@ resource "random_password" "harbor_jobservice_secret" {
 # -----------------------------------------------------------------------------
 
 locals {
+  # tflint-ignore: terraform_unused_declarations
   harbor_config = var.harbor_enabled ? {
     hostname          = "registry.${var.domain_suffix}"
     external_url      = var.traefik_enabled ? "https://registry.${var.domain_suffix}" : "http://${var.ip_address}:8080"

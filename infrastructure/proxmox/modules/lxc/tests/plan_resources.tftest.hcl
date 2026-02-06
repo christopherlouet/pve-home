@@ -261,3 +261,70 @@ run "privileged_container" {
     error_message = "Container should be privileged when unprivileged is false"
   }
 }
+
+# -----------------------------------------------------------------------------
+# Mountpoints (dynamic for_each)
+# -----------------------------------------------------------------------------
+
+run "mountpoint_single" {
+  command = plan
+
+  variables {
+    mountpoints = [
+      {
+        volume = "local-lvm:50"
+        path   = "/data"
+        size   = 50
+      }
+    ]
+  }
+
+  assert {
+    condition     = proxmox_virtual_environment_container.this.mount_point[0].path == "/data"
+    error_message = "Mountpoint path should be /data"
+  }
+
+  assert {
+    condition     = proxmox_virtual_environment_container.this.mount_point[0].volume == "local-lvm:50"
+    error_message = "Mountpoint volume should match"
+  }
+
+  assert {
+    condition     = proxmox_virtual_environment_container.this.mount_point[0].read_only == false
+    error_message = "Mountpoint should not be read-only by default"
+  }
+}
+
+run "mountpoint_read_only" {
+  command = plan
+
+  variables {
+    mountpoints = [
+      {
+        volume    = "local-lvm:10"
+        path      = "/config"
+        size      = 10
+        read_only = true
+      }
+    ]
+  }
+
+  assert {
+    condition     = proxmox_virtual_environment_container.this.mount_point[0].read_only == true
+    error_message = "Mountpoint should be read-only when specified"
+  }
+}
+
+run "no_mountpoints" {
+  command = plan
+
+  variables {
+    mountpoints = []
+  }
+
+  # Container should still be valid without mountpoints
+  assert {
+    condition     = proxmox_virtual_environment_container.this.node_name == "pve-test"
+    error_message = "Container should be created without mountpoints"
+  }
+}

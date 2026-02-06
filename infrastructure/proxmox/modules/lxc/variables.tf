@@ -5,6 +5,7 @@
 variable "hostname" {
   description = "Hostname du conteneur"
   type        = string
+  nullable    = false
 
   validation {
     condition     = can(regex("^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$", var.hostname))
@@ -21,11 +22,13 @@ variable "description" {
 variable "target_node" {
   description = "Node Proxmox cible"
   type        = string
+  nullable    = false
 }
 
 variable "template_file_id" {
   description = "ID du template LXC"
   type        = string
+  nullable    = false
 }
 
 variable "os_type" {
@@ -109,6 +112,7 @@ variable "vlan_id" {
 variable "ip_address" {
   description = "Adresse IP en notation CIDR"
   type        = string
+  nullable    = false
 
   validation {
     condition     = can(regex("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}$", var.ip_address))
@@ -119,6 +123,7 @@ variable "ip_address" {
 variable "gateway" {
   description = "Passerelle par défaut"
   type        = string
+  nullable    = false
 }
 
 variable "dns_servers" {
@@ -130,6 +135,7 @@ variable "dns_servers" {
 variable "ssh_keys" {
   description = "Clés SSH publiques"
   type        = list(string)
+  nullable    = false
 }
 
 variable "root_password" {
@@ -192,6 +198,7 @@ variable "mountpoints" {
   default = []
 }
 
+# tflint-ignore: terraform_unused_declarations
 variable "backup_enabled" {
   description = "Inclure ce conteneur dans les sauvegardes vzdump"
   type        = bool

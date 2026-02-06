@@ -296,4 +296,67 @@ run "additional_disks" {
     condition     = proxmox_virtual_environment_vm.this.disk[0].interface == "scsi0"
     error_message = "First disk should be scsi0"
   }
+
+  assert {
+    condition     = proxmox_virtual_environment_vm.this.disk[1].size == 50
+    error_message = "Additional disk size should be 50 GB"
+  }
+
+  assert {
+    condition     = proxmox_virtual_environment_vm.this.disk[1].interface == "scsi1"
+    error_message = "Additional disk interface should be scsi1"
+  }
+
+  assert {
+    condition     = proxmox_virtual_environment_vm.this.disk[1].iothread == true
+    error_message = "Additional disk should have iothread enabled"
+  }
+}
+
+run "multiple_additional_disks" {
+  command = plan
+
+  variables {
+    additional_disks = [
+      {
+        size         = 50
+        datastore_id = "local-lvm"
+        interface    = "scsi"
+      },
+      {
+        size         = 100
+        datastore_id = "ceph-pool"
+        interface    = "scsi"
+      }
+    ]
+  }
+
+  assert {
+    condition     = proxmox_virtual_environment_vm.this.disk[1].size == 50
+    error_message = "First additional disk should be 50 GB"
+  }
+
+  assert {
+    condition     = proxmox_virtual_environment_vm.this.disk[2].size == 100
+    error_message = "Second additional disk should be 100 GB"
+  }
+
+  assert {
+    condition     = proxmox_virtual_environment_vm.this.disk[2].datastore_id == "ceph-pool"
+    error_message = "Second additional disk should use ceph-pool datastore"
+  }
+}
+
+run "no_additional_disks" {
+  command = plan
+
+  variables {
+    additional_disks = []
+  }
+
+  # Seul le disque systeme doit exister
+  assert {
+    condition     = proxmox_virtual_environment_vm.this.disk[0].interface == "scsi0"
+    error_message = "System disk should still be present"
+  }
 }

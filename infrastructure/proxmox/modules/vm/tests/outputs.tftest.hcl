@@ -128,3 +128,29 @@ run "output_name_preserves_case" {
     error_message = "name output should preserve case"
   }
 }
+
+# -----------------------------------------------------------------------------
+# Output: ssh_command
+# -----------------------------------------------------------------------------
+
+run "output_ssh_command" {
+  command = plan
+
+  assert {
+    condition     = output.ssh_command == "ssh ubuntu@192.168.1.100"
+    error_message = "ssh_command should use default username and strip CIDR from ip_address"
+  }
+}
+
+run "output_ssh_command_custom_user" {
+  command = plan
+
+  variables {
+    username = "admin"
+  }
+
+  assert {
+    condition     = output.ssh_command == "ssh admin@192.168.1.100"
+    error_message = "ssh_command should use custom username"
+  }
+}
