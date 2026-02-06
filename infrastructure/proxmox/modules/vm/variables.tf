@@ -5,6 +5,11 @@
 variable "name" {
   description = "Nom de la VM"
   type        = string
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$", var.name))
+    error_message = "name doit contenir uniquement lettres, chiffres, tirets (1-63 chars), ne peut commencer/finir par un tiret."
+  }
 }
 
 variable "description" {

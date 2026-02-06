@@ -466,3 +466,79 @@ run "expiration_days_invalid_negative" {
     var.expiration_days,
   ]
 }
+
+# -----------------------------------------------------------------------------
+# name validation (RFC-1123 compatible: letters, digits, hyphens, 1-63 chars)
+# -----------------------------------------------------------------------------
+
+run "name_valid_simple" {
+  command = plan
+
+  variables {
+    name = "web-server"
+  }
+}
+
+run "name_valid_single_char" {
+  command = plan
+
+  variables {
+    name = "a"
+  }
+}
+
+run "name_valid_with_digits" {
+  command = plan
+
+  variables {
+    name = "vm01-prod"
+  }
+}
+
+run "name_invalid_starts_with_hyphen" {
+  command = plan
+
+  variables {
+    name = "-invalid"
+  }
+
+  expect_failures = [
+    var.name,
+  ]
+}
+
+run "name_invalid_ends_with_hyphen" {
+  command = plan
+
+  variables {
+    name = "invalid-"
+  }
+
+  expect_failures = [
+    var.name,
+  ]
+}
+
+run "name_invalid_contains_underscore" {
+  command = plan
+
+  variables {
+    name = "my_vm"
+  }
+
+  expect_failures = [
+    var.name,
+  ]
+}
+
+run "name_invalid_empty" {
+  command = plan
+
+  variables {
+    name = ""
+  }
+
+  expect_failures = [
+    var.name,
+  ]
+}

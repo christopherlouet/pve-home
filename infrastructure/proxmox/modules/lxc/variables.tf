@@ -5,6 +5,11 @@
 variable "hostname" {
   description = "Hostname du conteneur"
   type        = string
+
+  validation {
+    condition     = can(regex("^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$", var.hostname))
+    error_message = "hostname doit etre conforme RFC-1123: minuscules, chiffres, tirets, 1-63 caracteres, ne peut commencer/finir par un tiret."
+  }
 }
 
 variable "description" {

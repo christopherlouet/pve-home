@@ -494,9 +494,39 @@ Chaque module contient un repertoire `tests/` avec :
 | `plan_resources.tftest.hcl` | Verification des attributs dans le plan genere |
 | `regression.tftest.hcl` | Tests de non-regression pour bugs corriges |
 
+### Couverture des tests
+
+| Module | Fichiers test | Runs | Pattern |
+|--------|--------------|------|---------|
+| **vm** | 4 | ~65 | valid_inputs, plan_resources, regression, promtail |
+| **lxc** | 3 | ~60 | valid_inputs, plan_resources, regression |
+| **backup** | 3 | ~40 | valid_inputs, plan_resources, regression |
+| **minio** | 3 | ~50 | valid_inputs, plan_resources, regression |
+| **monitoring-stack** | 8 | ~100 | valid_inputs, plan_resources, regression + alertmanager, loki, traefik, uptime-kuma, tooling |
+| **tooling-stack** | 6 | ~140 | valid_inputs, plan_resources + authentik, harbor, services, templates |
+| **Environments** | 5 | ~25 | integration (prod, lab, monitoring) + multi-module (prod) |
+
+**Total** : ~32 fichiers .tftest.hcl, ~480 test runs, ~900 assertions
+
+Types de tests par module :
+
+- **valid_inputs** : Validation des bornes (min/max), formats (CIDR, URL, RFC-1123), valeurs par defaut
+- **plan_resources** : Verification des attributs dans le plan genere (cloud-init, disques, reseau)
+- **regression** : Non-regression pour bugs corriges (tags, descriptions, configurations)
+- **integration** : Coherence inter-modules (multi-VM, multi-LXC, outputs, backup)
+- **composants** : Tests specifiques par service (alertmanager, harbor, promtail, etc.)
+
+### Ajouter des tests pour une nouvelle variable
+
+1. Ajouter la validation dans `variables.tf` (condition + error_message)
+2. Ajouter dans `tests/valid_inputs.tftest.hcl` :
+   - Un test avec valeur valide minimale
+   - Un test avec valeur valide maximale (si applicable)
+   - Un test `expect_failures` par cas invalide (borne, format, null)
+
 ### CI
 
-Les tests sont executes automatiquement en CI via le job `terraform-test` dans `.github/workflows/ci.yml`. Le job s'execute apres la validation et teste les 5 modules en matrice parallele.
+Les tests sont executes automatiquement en CI via le job `terraform-test` dans `.github/workflows/ci.yml`. Le job s'execute apres la validation et teste les 6 modules + 3 environnements en matrice parallele (9 items).
 
 ## Documentation associee
 
