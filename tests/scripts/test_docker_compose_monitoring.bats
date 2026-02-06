@@ -181,6 +181,50 @@ TEMPLATE_FILE="${BATS_TEST_DIRNAME}/../../infrastructure/proxmox/modules/monitor
 }
 
 # -----------------------------------------------------------------------------
+# Healthchecks
+# -----------------------------------------------------------------------------
+
+@test "monitoring docker-compose: prometheus a un healthcheck" {
+    sed -n '/^  prometheus:/,/^  [a-z]/p' "$TEMPLATE_FILE" | grep -q 'healthcheck:'
+}
+
+@test "monitoring docker-compose: prometheus healthcheck sur /-/healthy" {
+    sed -n '/^  prometheus:/,/^  [a-z]/p' "$TEMPLATE_FILE" | grep -q '/-/healthy'
+}
+
+@test "monitoring docker-compose: grafana a un healthcheck" {
+    sed -n '/^  grafana:/,/^  [a-z]/p' "$TEMPLATE_FILE" | grep -q 'healthcheck:'
+}
+
+@test "monitoring docker-compose: grafana healthcheck sur /api/health" {
+    sed -n '/^  grafana:/,/^  [a-z]/p' "$TEMPLATE_FILE" | grep -q '/api/health'
+}
+
+@test "monitoring docker-compose: alertmanager a un healthcheck" {
+    sed -n '/^  alertmanager:/,/^  [a-z]/p' "$TEMPLATE_FILE" | grep -q 'healthcheck:'
+}
+
+@test "monitoring docker-compose: loki a un healthcheck" {
+    sed -n '/^  loki:/,/^  [a-z]/p' "$TEMPLATE_FILE" | grep -q 'healthcheck:'
+}
+
+@test "monitoring docker-compose: loki healthcheck sur /ready" {
+    sed -n '/^  loki:/,/^  [a-z]/p' "$TEMPLATE_FILE" | grep -q '/ready'
+}
+
+@test "monitoring docker-compose: promtail a un healthcheck" {
+    sed -n '/^  promtail:/,/^%/p' "$TEMPLATE_FILE" | grep -q 'healthcheck:'
+}
+
+@test "monitoring docker-compose: grafana depends_on prometheus healthy" {
+    sed -n '/^  grafana:/,/^  [a-z]/p' "$TEMPLATE_FILE" | grep -q 'service_healthy'
+}
+
+@test "monitoring docker-compose: promtail depends_on loki healthy" {
+    sed -n '/^  promtail:/,/^%/p' "$TEMPLATE_FILE" | grep -q 'service_healthy'
+}
+
+# -----------------------------------------------------------------------------
 # Volumes persistants
 # -----------------------------------------------------------------------------
 

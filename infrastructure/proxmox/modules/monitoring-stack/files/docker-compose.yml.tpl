@@ -67,6 +67,12 @@ services:
       - "9090:9090"
     networks:
       - monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 %{ if traefik_enabled }
     labels:
       - "traefik.enable=true"
@@ -103,6 +109,12 @@ services:
       - "3000:3000"
     networks:
       - monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 %{ if traefik_enabled }
     labels:
       - "traefik.enable=true"
@@ -110,7 +122,8 @@ services:
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
 %{ endif }
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_healthy
 
 %{ if telegram_enabled }
   alertmanager:
@@ -139,6 +152,12 @@ services:
       - "9093:9093"
     networks:
       - monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9093/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 %{ if traefik_enabled }
     labels:
       - "traefik.enable=true"
@@ -172,6 +191,12 @@ services:
       - "3100:3100"
     networks:
       - monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3100/ready || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 %{ if traefik_enabled }
     labels:
       - "traefik.enable=true"
@@ -203,8 +228,15 @@ services:
       - "9080:9080"
     networks:
       - monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9080/ready || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
-      - loki
+      loki:
+        condition: service_healthy
 %{ endif }
 
 %{ if uptime_kuma_enabled }

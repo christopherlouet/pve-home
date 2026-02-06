@@ -14,6 +14,24 @@ resource "random_password" "harbor_db" {
   special = false
 }
 
+resource "random_password" "harbor_csrf_key" {
+  count   = var.harbor_enabled ? 1 : 0
+  length  = 32
+  special = false
+}
+
+resource "random_password" "harbor_core_secret" {
+  count   = var.harbor_enabled ? 1 : 0
+  length  = 32
+  special = false
+}
+
+resource "random_password" "harbor_jobservice_secret" {
+  count   = var.harbor_enabled ? 1 : 0
+  length  = 32
+  special = false
+}
+
 # -----------------------------------------------------------------------------
 # Harbor Configuration
 # -----------------------------------------------------------------------------
@@ -32,8 +50,8 @@ locals {
     db_name           = "registry"
     db_username       = "postgres"
     trivy_enabled     = var.harbor_trivy_enabled
-    csrf_key          = var.harbor_enabled ? random_password.harbor_db[0].result : ""
-    core_secret       = var.harbor_enabled ? random_password.harbor_db[0].result : ""
-    jobservice_secret = var.harbor_enabled ? random_password.harbor_db[0].result : ""
+    csrf_key          = var.harbor_enabled ? random_password.harbor_csrf_key[0].result : ""
+    core_secret       = var.harbor_enabled ? random_password.harbor_core_secret[0].result : ""
+    jobservice_secret = var.harbor_enabled ? random_password.harbor_jobservice_secret[0].result : ""
   } : null
 }
