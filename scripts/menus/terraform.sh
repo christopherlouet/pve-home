@@ -12,7 +12,7 @@
 # - Init si necessaire
 # =============================================================================
 
-set -euo pipefail
+# Note: pas de set -euo pipefail ici, ce fichier est source par d'autres scripts
 
 # Charger les dependances si pas deja fait
 SCRIPT_DIR_TERRAFORM="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

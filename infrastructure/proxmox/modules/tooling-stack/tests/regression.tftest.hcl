@@ -87,9 +87,9 @@ run "urls_without_traefik_use_ip" {
   command = plan
 
   variables {
-    step_ca_enabled  = true
-    traefik_enabled  = false
-    harbor_enabled   = false
+    step_ca_enabled   = true
+    traefik_enabled   = false
+    harbor_enabled    = false
     authentik_enabled = false
   }
 
@@ -103,9 +103,9 @@ run "urls_with_traefik_use_domain" {
   command = plan
 
   variables {
-    step_ca_enabled  = true
-    traefik_enabled  = true
-    harbor_enabled   = false
+    step_ca_enabled   = true
+    traefik_enabled   = true
+    harbor_enabled    = false
     authentik_enabled = false
   }
 

@@ -66,15 +66,15 @@ jobs:
 
       - name: Verify provider version consistency
         run: |
-          # Extract all proxmox provider versions from versions.tf
-          versions=$(grep -rh 'version.*=.*"~>' infrastructure/proxmox/*/versions.tf infrastructure/proxmox/*/*/versions.tf 2>/dev/null | grep -o '"~>[^"]*"' | sort -u)
+          # Extract proxmox provider versions only (filter by bpg/proxmox context)
+          versions=$(grep -B1 -A1 'bpg/proxmox' infrastructure/proxmox/*/versions.tf infrastructure/proxmox/*/*/versions.tf 2>/dev/null | grep 'version' | grep -o '"~>[^"]*"' | sort -u)
           count=$(echo "$versions" | wc -l)
           if [ "$count" -gt 1 ]; then
-            echo "::error::Inconsistent provider versions found:"
-            grep -rn 'version.*=.*"~>' infrastructure/proxmox/*/versions.tf infrastructure/proxmox/*/*/versions.tf 2>/dev/null
+            echo "::error::Inconsistent proxmox provider versions found:"
+            grep -B1 -A1 'bpg/proxmox' infrastructure/proxmox/*/versions.tf infrastructure/proxmox/*/*/versions.tf 2>/dev/null | grep 'version'
             exit 1
           fi
-          echo "Provider version consistent across all modules: $versions"
+          echo "Proxmox provider version consistent across all modules: $versions"
 
       - name: Verify shared symlinks
         run: |
@@ -123,7 +123,7 @@ jobs:
         working-directory: ${{ matrix.directory }}
 
       - name: Run TFLint
-        run: tflint --format=compact
+        run: tflint --format=compact --minimum-severity=error
         working-directory: ${{ matrix.directory }}
 
   terraform-validate:

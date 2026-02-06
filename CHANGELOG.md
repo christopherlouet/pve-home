@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.11.0] - 2026-02-06
 
 ### Added
+
 - **TFLint CI job** for static analysis across all 6 modules (matrix strategy)
 - **Release workflow** (`.github/workflows/release.yml`) for automated GitHub releases
 - **Dependabot configuration** (`.github/dependabot.yml`) for automated dependency updates
@@ -33,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Cross-reference documentation links** in all module READMEs
 
 ### Changed
+
 - **CONTRIBUTING.md** enriched with PR process (6 steps) and code review checklist (6 items)
 - **Tooling-stack module** split `main.tf` into focused files: `authentik.tf`, `harbor.tf`, `stepca.tf`, `traefik.tf`, `docker.tf`
 - **DRY refactoring**: shared expiration locals/variables via symlinks, shared firewall locals, shared docker-install runcmd template
@@ -42,14 +44,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Test counts**: 512 Terraform tests (was 422), 1048 BATS tests (was 867) — **1560 total**
 
 ### Fixed
+
 - **Harbor secrets** separated from main config for better security isolation
 - **Monitoring healthchecks** added for service availability verification
 
 ### Security
+
 - **install-promtail.sh** rewritten with full hardening: `set -euo pipefail`, SHA256 checksum verification, version idempotency, root verification, colored logging, systemd hardening directives
 - **Docker images** pinned with SHA256 digests in monitoring-stack and tooling-stack compose files
 - **Systemd services** hardened with 11 security directives (ProtectSystem, ProtectHome, ProtectKernelTunables, ProtectKernelModules, ProtectControlGroups, ProtectKernelLogs, RestrictRealtime, RestrictNamespaces, PrivateTmp, NoNewPrivileges, ReadWritePaths)
-- **Shell scripts** hardened with `set -euo pipefail` across all TUI and menu scripts (13 files)
+- **Standalone scripts** hardened with `set -euo pipefail` (install-promtail.sh, install-node-exporter.sh)
 - **CI actions** SHA-pinned (setup-tflint@v4 with digest)
 - **Deprecated `version` field** removed from docker-compose files
 

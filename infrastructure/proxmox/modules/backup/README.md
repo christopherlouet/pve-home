@@ -71,7 +71,9 @@ A la destruction, les jobs associes sont supprimes.
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
-No requirements.
+| Name | Version |
+|------|---------|
+| <a name="requirement_proxmox"></a> [proxmox](#requirement\_proxmox) | ~> 0.94.0 |
 
 ## Providers
 

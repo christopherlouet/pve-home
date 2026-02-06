@@ -7,7 +7,7 @@
 # Menu de maintenance : drift detection, verifications infrastructure.
 # =============================================================================
 
-set -euo pipefail
+# Note: pas de set -euo pipefail ici, ce fichier est source par d'autres scripts
 
 # =============================================================================
 # Variables

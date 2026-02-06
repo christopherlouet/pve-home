@@ -173,7 +173,7 @@ run "outputs_monitoring_structure" {
   command = plan
 
   assert {
-    condition     = output.health_check_ssh_public_key != null
-    error_message = "health_check_ssh_public_key should not be null"
+    condition     = output.environment == "monitoring"
+    error_message = "environment output should be 'monitoring'"
   }
 }

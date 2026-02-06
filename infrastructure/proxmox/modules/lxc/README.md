@@ -27,13 +27,15 @@ module "dns_server" {
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
-No requirements.
+| Name | Version |
+|------|---------|
+| <a name="requirement_proxmox"></a> [proxmox](#requirement\_proxmox) | ~> 0.94.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.93.1 |
+| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.94.0 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
 ## Modules
@@ -58,7 +60,7 @@ No modules.
 | <a name="input_description"></a> [description](#input\_description) | Description du conteneur | `string` | `"Managed by Terraform"` | no |
 | <a name="input_disk_size_gb"></a> [disk\_size\_gb](#input\_disk\_size\_gb) | Taille du rootfs en GB | `number` | `8` | no |
 | <a name="input_dns_servers"></a> [dns\_servers](#input\_dns\_servers) | Serveurs DNS | `list(string)` | <pre>[<br/>  "1.1.1.1",<br/>  "8.8.8.8"<br/>]</pre> | no |
-| <a name="input_expiration_days"></a> [expiration\_days](#input\_expiration\_days) | Nombre de jours avant expiration du conteneur (null = pas d'expiration) | `number` | `null` | no |
+| <a name="input_expiration_days"></a> [expiration\_days](#input\_expiration\_days) | Nombre de jours avant expiration (null = pas d'expiration) | `number` | `null` | no |
 | <a name="input_fuse"></a> [fuse](#input\_fuse) | Activer FUSE | `bool` | `false` | no |
 | <a name="input_gateway"></a> [gateway](#input\_gateway) | Passerelle par défaut | `string` | n/a | yes |
 | <a name="input_hostname"></a> [hostname](#input\_hostname) | Hostname du conteneur | `string` | n/a | yes |

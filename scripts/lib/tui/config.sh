@@ -8,7 +8,7 @@
 # et configure les chemins dynamiquement.
 # =============================================================================
 
-set -euo pipefail
+# Note: pas de set -euo pipefail ici, ce fichier est source par d'autres scripts
 
 # =============================================================================
 # Detection du contexte d'execution

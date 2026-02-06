@@ -7,7 +7,7 @@
 # Menu de deploiement des scripts et timers sur la VM monitoring.
 # =============================================================================
 
-set -euo pipefail
+# Note: pas de set -euo pipefail ici, ce fichier est source par d'autres scripts
 
 # =============================================================================
 # Variables

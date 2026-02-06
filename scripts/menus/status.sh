@@ -12,7 +12,7 @@
 # - Resume persistant "X/Y composants sains"
 # =============================================================================
 
-set -euo pipefail
+# Note: pas de set -euo pipefail ici, ce fichier est source par d'autres scripts
 
 # Charger les dependances si pas deja fait
 SCRIPT_DIR_STATUS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

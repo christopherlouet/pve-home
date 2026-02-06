@@ -7,7 +7,7 @@
 # Menu de gestion des services : liste, activation/desactivation, demarrage/arret.
 # =============================================================================
 
-set -euo pipefail
+# Note: pas de set -euo pipefail ici, ce fichier est source par d'autres scripts
 
 # =============================================================================
 # Variables
