@@ -1,5 +1,5 @@
 # =============================================================================
-# Module Tooling Stack - Provider Requirements
+# Module VM - Provider Requirements
 # =============================================================================
 
 terraform {
@@ -7,14 +7,6 @@ terraform {
     proxmox = {
       source  = "bpg/proxmox"
       version = "~> 0.94"
-    }
-    tls = {
-      source  = "hashicorp/tls"
-      version = "~> 4.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.0"
     }
   }
 }

@@ -1,0 +1,1 @@
+../../shared/expiration_variables.tf

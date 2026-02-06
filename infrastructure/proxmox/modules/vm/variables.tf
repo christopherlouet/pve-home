@@ -180,16 +180,7 @@ variable "auto_security_updates" {
   default     = true
 }
 
-variable "expiration_days" {
-  description = "Nombre de jours avant expiration de la VM (null = pas d'expiration)"
-  type        = number
-  default     = null
-
-  validation {
-    condition     = var.expiration_days == null ? true : var.expiration_days > 0
-    error_message = "expiration_days doit etre > 0 ou null."
-  }
-}
+# expiration_days: voir expiration_variables.tf (symlink vers shared/)
 
 # -----------------------------------------------------------------------------
 # Promtail Configuration (Log Collection Agent)
