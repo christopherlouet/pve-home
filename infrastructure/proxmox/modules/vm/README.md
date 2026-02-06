@@ -2,6 +2,31 @@
 
 Module Terraform pour deployer des VMs sur Proxmox VE via cloud-init.
 
+## Usage
+
+```hcl
+module "web_server" {
+  source = "../../modules/vm"
+
+  name        = "web-01"
+  target_node = "pve-prod"
+  template_id = 9000
+  ip_address  = "192.168.1.20/24"
+  gateway     = "192.168.1.1"
+  ssh_keys    = var.ssh_public_keys
+
+  cpu_cores  = 2
+  memory_mb  = 2048
+  disk_size  = 32
+
+  install_docker   = true
+  install_promtail = true
+  loki_url         = "http://192.168.1.51:3100"
+
+  tags = ["terraform", "docker", "monitored"]
+}
+```
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
@@ -67,3 +92,11 @@ No modules.
 | <a name="output_node_name"></a> [node\_name](#output\_node\_name) | Node Proxmox |
 | <a name="output_vm_id"></a> [vm\_id](#output\_vm\_id) | ID de la VM |
 <!-- END_TF_DOCS -->
+
+## Documentation associee
+
+- [VM Lifecycle](../../../../docs/VM-LIFECYCLE.md) - Snapshots, expiration, rotation SSH
+- [Backup & Restore](../../../../docs/BACKUP-RESTORE.md) - Sauvegarde et restauration des VMs
+- [Health Checks](../../../../docs/HEALTH-CHECKS.md) - Verification de sante des VMs
+- [Disaster Recovery](../../../../docs/DISASTER-RECOVERY.md) - Procedures de reprise
+- [Testing](../../../../docs/TESTING.md) - Guide des tests Terraform et BATS

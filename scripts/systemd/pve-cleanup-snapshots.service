@@ -12,3 +12,16 @@ WorkingDirectory=/opt/pve-home
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=pve-cleanup-snapshots
+
+# Securite
+ProtectSystem=strict
+ReadWritePaths=/var/log
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectKernelLogs=true
+RestrictRealtime=true
+RestrictNamespaces=true

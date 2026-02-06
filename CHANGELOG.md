@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-02-06
+
+### Added
+- **TFLint CI job** for static analysis across all 6 modules (matrix strategy)
+- **Release workflow** (`.github/workflows/release.yml`) for automated GitHub releases
+- **Dependabot configuration** (`.github/dependabot.yml`) for automated dependency updates
+- **PR template** (`.github/PULL_REQUEST_TEMPLATE.md`) with type of change checkboxes and quality checklist
+- **ADR documentation** (Architecture Decision Records) for key design decisions
+  - 6 project-level ADRs: environment separation, shared variables, native tests, BATS static analysis, Docker hardening, SHA-pinned CI actions
+  - 5 infrastructure-level ADRs: multi-environment strategy, cloud-init provisioning, monitoring architecture, shared variables, native Terraform tests
+- **Onboarding guide** (`docs/ONBOARDING.md`) for new contributors
+- **Testing documentation** (`docs/TESTING.md`) with test strategy and conventions
+- **Environment READMEs** for prod, lab, and monitoring environments
+- **Output tests** for all 6 modules (vm, lxc, backup, minio, monitoring-stack, tooling-stack)
+- **Integration tests** for all 3 environments (prod, lab, monitoring)
+- **Multi-module integration tests** for prod environment (cross-module validation)
+- **Docker Compose BATS tests** for monitoring-stack (312 tests) and tooling-stack (281 tests)
+- **Install script BATS tests** for minio (198 tests) and node-exporter (193 tests)
+- **LXC validation tests** (140 tests) and output tests (68 tests)
+- **VM validation tests** (128 tests) expanded coverage
+- **Minio validation tests** (48 tests) and output tests (98 tests)
+- **Backup output tests** (141 tests) and versions.tf
+- **Monitoring-stack output tests** (245 tests)
+- **Tooling-stack output tests** (382 tests)
+- **versions.tf** extracted for all 6 modules (explicit provider constraints)
+- **Cross-reference documentation links** in all module READMEs
+
+### Changed
+- **CONTRIBUTING.md** enriched with PR process (6 steps) and code review checklist (6 items)
+- **Tooling-stack module** split `main.tf` into focused files: `authentik.tf`, `harbor.tf`, `stepca.tf`, `traefik.tf`, `docker.tf`
+- **DRY refactoring**: shared expiration locals/variables via symlinks, shared firewall locals, shared docker-install runcmd template
+- **Provider pinning**: explicit `versions.tf` in all modules with source-only constraints
+- **CI pipeline** improved with consistency checks, TUI tests, and parallel matrix jobs
+- **README** updated with accurate test counts (512 Terraform, 1048 BATS) and project structure
+- **Test counts**: 512 Terraform tests (was 422), 1048 BATS tests (was 867) — **1560 total**
+
+### Fixed
+- **Harbor secrets** separated from main config for better security isolation
+- **Monitoring healthchecks** added for service availability verification
+
+### Security
+- **install-promtail.sh** rewritten with full hardening: `set -euo pipefail`, SHA256 checksum verification, version idempotency, root verification, colored logging, systemd hardening directives
+- **Docker images** pinned with SHA256 digests in monitoring-stack and tooling-stack compose files
+- **Systemd services** hardened with 11 security directives (ProtectSystem, ProtectHome, ProtectKernelTunables, ProtectKernelModules, ProtectControlGroups, ProtectKernelLogs, RestrictRealtime, RestrictNamespaces, PrivateTmp, NoNewPrivileges, ReadWritePaths)
+- **Shell scripts** hardened with `set -euo pipefail` across all TUI and menu scripts (13 files)
+- **CI actions** SHA-pinned (setup-tflint@v4 with digest)
+- **Deprecated `version` field** removed from docker-compose files
+
 ## [1.10.0] - 2026-02-05
 
 ### Added
@@ -553,6 +601,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Environment-based configuration (home)
 - Installation guide for Proxmox VE on Intel NUC
 
+[1.11.0]: https://github.com/christopherlouet/pve-home/compare/v1.10.0...v1.11.0
 [1.10.0]: https://github.com/christopherlouet/pve-home/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/christopherlouet/pve-home/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/christopherlouet/pve-home/compare/v1.7.3...v1.8.0

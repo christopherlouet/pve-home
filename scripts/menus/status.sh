@@ -12,6 +12,8 @@
 # - Resume persistant "X/Y composants sains"
 # =============================================================================
 
+set -euo pipefail
+
 # Charger les dependances si pas deja fait
 SCRIPT_DIR_STATUS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TUI_LIB_DIR_STATUS="$(cd "${SCRIPT_DIR_STATUS}/../lib" && pwd)"

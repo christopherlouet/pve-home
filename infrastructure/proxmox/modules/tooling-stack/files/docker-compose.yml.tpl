@@ -23,7 +23,7 @@ services:
   # Step-ca - Internal PKI with ACME
   # ---------------------------------------------------------------------------
   step-ca:
-    image: smallstep/step-ca:0.27.5
+    image: smallstep/step-ca:0.27.5@sha256:8f63def1db44ef34daa2914f38161358e87a4b14a22cf942fbbbe2f0fe73bf30
     container_name: step-ca
     restart: unless-stopped
     read_only: true
@@ -69,7 +69,7 @@ services:
   # Traefik - Reverse Proxy with ACME
   # ---------------------------------------------------------------------------
   traefik:
-    image: traefik:v3.3
+    image: traefik:v3.3@sha256:2cd5cc75530c8d07ae0587c743d23eb30cae2436d07017a5ff78498b1a43d09f
     container_name: traefik
     restart: unless-stopped
     security_opt:
@@ -116,7 +116,7 @@ services:
   # Harbor - Docker Registry
   # ---------------------------------------------------------------------------
   harbor-db:
-    image: goharbor/harbor-db:v2.10.0
+    image: goharbor/harbor-db:v2.12.2@sha256:ccdab9b3aac14b5415fc2f379339ed02866f51bed994c3d6214aa7fd9f1d4c08
     container_name: harbor-db
     restart: unless-stopped
     security_opt:
@@ -142,7 +142,7 @@ services:
       retries: 5
 
   harbor-registry:
-    image: goharbor/registry-photon:v2.10.0
+    image: goharbor/registry-photon:v2.12.2@sha256:9709f31a872f1f1f425f36dd0c409b5d03272d166c5228f26e37d8a34af75a27
     container_name: harbor-registry
     restart: unless-stopped
     read_only: true
@@ -161,7 +161,7 @@ services:
         condition: service_healthy
 
   harbor-core:
-    image: goharbor/harbor-core:v2.10.0
+    image: goharbor/harbor-core:v2.12.2@sha256:bba1623fccd533eed292c367fe217a15424219a5b905264a1542cc8cf0bdce96
     container_name: harbor-core
     restart: unless-stopped
     security_opt:
@@ -200,7 +200,7 @@ services:
       - "traefik.http.services.harbor.loadbalancer.server.port=8080"
 
   harbor-portal:
-    image: goharbor/harbor-portal:v2.10.0
+    image: goharbor/harbor-portal:v2.12.2@sha256:edddb228f106735683b8d287e9db99a18ff06dbc6819b98e483365b58f7b4a99
     container_name: harbor-portal
     restart: unless-stopped
     read_only: true
@@ -216,7 +216,7 @@ services:
       - harbor-core
 
   harbor-jobservice:
-    image: goharbor/harbor-jobservice:v2.10.0
+    image: goharbor/harbor-jobservice:v2.12.2@sha256:6afc108c165604e64106058f8420c849496865a7afec6b5f3ac0312b9a692881
     container_name: harbor-jobservice
     restart: unless-stopped
     security_opt:
@@ -233,7 +233,7 @@ services:
 
 %{ if harbor_trivy_enabled ~}
   harbor-trivy:
-    image: goharbor/trivy-adapter-photon:v2.10.0
+    image: goharbor/trivy-adapter-photon:v2.12.2@sha256:7fb1a0356a6b420dc6e63e3b2b1a12bee298be5d6cb7ecd7299caf43ede996af
     container_name: harbor-trivy
     restart: unless-stopped
     security_opt:
@@ -256,7 +256,7 @@ services:
   # Authentik - SSO Provider
   # ---------------------------------------------------------------------------
   authentik-db:
-    image: postgres:15-alpine
+    image: postgres:15-alpine@sha256:1d1095b0503145be79c79239372aefadfacf6b7c33c9245bbf99ce4b6b89c737
     container_name: authentik-db
     restart: unless-stopped
     security_opt:
@@ -283,7 +283,7 @@ services:
       retries: 5
 
   authentik-redis:
-    image: redis:7-alpine
+    image: redis:7-alpine@sha256:02f2cc4882f8bf87c79a220ac958f58c700bdec0dfb9b9ea61b62fb0e8f1bfcf
     container_name: authentik-redis
     restart: unless-stopped
     read_only: true
@@ -307,7 +307,7 @@ services:
       retries: 5
 
   authentik-server:
-    image: ghcr.io/goauthentik/server:2024.2
+    image: ghcr.io/goauthentik/server:2025.2@sha256:36233579415aa2e2e52a6b0c45736cb871fe71460bfe0cf95d83f67528fb1182
     container_name: authentik-server
     restart: unless-stopped
     security_opt:
@@ -348,7 +348,7 @@ services:
       - "traefik.http.services.authentik.loadbalancer.server.port=9000"
 
   authentik-worker:
-    image: ghcr.io/goauthentik/server:2024.2
+    image: ghcr.io/goauthentik/server:2025.2@sha256:36233579415aa2e2e52a6b0c45736cb871fe71460bfe0cf95d83f67528fb1182
     container_name: authentik-worker
     restart: unless-stopped
     security_opt:

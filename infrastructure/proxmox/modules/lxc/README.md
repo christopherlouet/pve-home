@@ -2,6 +2,28 @@
 
 Module Terraform pour deployer des conteneurs LXC sur Proxmox VE.
 
+## Usage
+
+```hcl
+module "dns_server" {
+  source = "../../modules/lxc"
+
+  hostname    = "dns-01"
+  target_node = "pve-prod"
+  template    = "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
+
+  ip_address = "192.168.1.10/24"
+  gateway    = "192.168.1.1"
+  ssh_keys   = var.ssh_public_keys
+
+  cpu_cores = 1
+  memory_mb = 512
+  disk_size = 8
+
+  tags = ["terraform", "dns"]
+}
+```
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 

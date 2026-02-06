@@ -79,6 +79,33 @@ YAML
 
 > **Note** : Le YAML doit être indenté avec 2 espaces et commencer au niveau des jobs (tiret `-`).
 
+## Usage
+
+```hcl
+module "monitoring" {
+  source = "../../modules/monitoring-stack"
+
+  name        = "monitoring"
+  target_node = "pve-mon"
+  template_id = 9000
+  ip_address  = "192.168.1.51/24"
+  gateway     = "192.168.1.1"
+  ssh_keys    = var.ssh_public_keys
+
+  domain_suffix          = "home.arpa"
+  grafana_admin_password = var.grafana_password
+
+  traefik_enabled    = true
+  loki_enabled       = true
+  telegram_enabled   = true
+  telegram_bot_token = var.telegram_bot_token
+  telegram_chat_id   = var.telegram_chat_id
+
+  proxmox_endpoint  = var.proxmox_endpoint
+  proxmox_api_token = var.proxmox_api_token
+}
+```
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
@@ -168,3 +195,11 @@ No modules.
 | <a name="output_vm_id"></a> [vm\_id](#output\_vm\_id) | ID de la VM monitoring |
 | <a name="output_vm_name"></a> [vm\_name](#output\_vm\_name) | Nom de la VM monitoring |
 <!-- END_TF_DOCS -->
+
+## Documentation associee
+
+- [Alerting](../../../../docs/ALERTING.md) - Configuration des alertes et notifications
+- [Drift Detection](../../../../docs/DRIFT-DETECTION.md) - Detection de derive de configuration
+- [Health Checks](../../../../docs/HEALTH-CHECKS.md) - Verification de sante de l'infrastructure
+- [Architecture](../../../../docs/ARCHITECTURE.md) - Vue d'ensemble de l'architecture
+- [Testing](../../../../docs/TESTING.md) - Guide des tests Terraform et BATS

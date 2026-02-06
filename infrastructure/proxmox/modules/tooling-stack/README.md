@@ -1,3 +1,35 @@
+# Module Tooling Stack
+
+Deploie une VM avec les services d'outillage : Step-ca (PKI), Harbor (Registry), Authentik (SSO), Traefik (Proxy).
+
+## Usage
+
+```hcl
+module "tooling" {
+  source = "../../modules/tooling-stack"
+
+  target_node = "pve-mon"
+  template_id = 9000
+  ip_address  = "192.168.1.60"
+  gateway     = "192.168.1.1"
+  ssh_keys    = var.ssh_public_keys
+
+  domain_suffix = "home.arpa"
+
+  step_ca_enabled  = true
+  step_ca_password = var.step_ca_password
+
+  harbor_enabled        = true
+  harbor_admin_password = var.harbor_admin_password
+
+  authentik_enabled            = true
+  authentik_secret_key         = var.authentik_secret_key
+  authentik_bootstrap_password = var.authentik_bootstrap_password
+
+  traefik_enabled = true
+}
+```
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
@@ -85,3 +117,10 @@ No modules.
 | <a name="output_vm_id"></a> [vm\_id](#output\_vm\_id) | ID de la VM tooling dans Proxmox |
 | <a name="output_vm_name"></a> [vm\_name](#output\_vm\_name) | Nom de la VM tooling |
 <!-- END_TF_DOCS -->
+
+## Documentation associee
+
+- [Tooling Stack](../../../../docs/TOOLING-STACK.md) - Guide complet de la stack outillage
+- [PKI Installation](../../../../docs/PKI-INSTALLATION.md) - Installation du certificat racine CA
+- [Architecture](../../../../docs/ARCHITECTURE.md) - Vue d'ensemble de l'architecture
+- [Testing](../../../../docs/TESTING.md) - Guide des tests Terraform et BATS

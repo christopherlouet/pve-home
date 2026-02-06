@@ -13,6 +13,8 @@
 # - tui_banner : Banniere/titre
 # =============================================================================
 
+set -euo pipefail
+
 # Charger les dependances si pas deja fait
 SCRIPT_DIR_TUI_COMMON="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

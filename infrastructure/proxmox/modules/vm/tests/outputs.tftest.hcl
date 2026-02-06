@@ -2,6 +2,8 @@
 # Module VM - Tests des outputs
 # =============================================================================
 # Verifie que tous les outputs sont correctement generes.
+# Note: vm_id, ipv4_address et mac_address dependent du provider et ne sont
+# pas testables en plan avec mock_provider.
 # =============================================================================
 
 mock_provider "proxmox" {}
@@ -20,7 +22,7 @@ variables {
 }
 
 # -----------------------------------------------------------------------------
-# Outputs verification
+# Output: name
 # -----------------------------------------------------------------------------
 
 run "output_name" {
@@ -42,5 +44,87 @@ run "output_with_custom_name" {
   assert {
     condition     = output.name == "web-prod"
     error_message = "name output should reflect custom value"
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Output: node_name
+# -----------------------------------------------------------------------------
+
+run "output_node_name_default" {
+  command = plan
+
+  assert {
+    condition     = output.node_name == "pve-test"
+    error_message = "node_name output should match target_node input"
+  }
+}
+
+run "output_node_name_custom" {
+  command = plan
+
+  variables {
+    target_node = "pve-prod"
+  }
+
+  assert {
+    condition     = output.node_name == "pve-prod"
+    error_message = "node_name output should reflect custom target_node"
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Output: verification avec differents inputs
+# -----------------------------------------------------------------------------
+
+run "output_name_with_hyphen" {
+  command = plan
+
+  variables {
+    name = "my-web-server"
+  }
+
+  assert {
+    condition     = output.name == "my-web-server"
+    error_message = "name output should handle hyphens correctly"
+  }
+}
+
+run "output_name_with_numbers" {
+  command = plan
+
+  variables {
+    name = "vm01"
+  }
+
+  assert {
+    condition     = output.name == "vm01"
+    error_message = "name output should handle numbers correctly"
+  }
+}
+
+run "output_node_name_with_different_nodes" {
+  command = plan
+
+  variables {
+    target_node = "pve-lab"
+  }
+
+  assert {
+    condition     = output.node_name == "pve-lab"
+    error_message = "node_name should reflect the target node for lab environment"
+  }
+}
+
+run "output_name_preserves_case" {
+  command = plan
+
+  variables {
+    name = "MyVM"
+  }
+
+  assert {
+    condition     = output.name == "MyVM"
+    error_message = "name output should preserve case"
   }
 }

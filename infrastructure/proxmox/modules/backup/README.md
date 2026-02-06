@@ -117,3 +117,9 @@ No modules.
 | <a name="output_storage_id"></a> [storage\_id](#output\_storage\_id) | Storage utilise pour les sauvegardes |
 | <a name="output_target_node"></a> [target\_node](#output\_target\_node) | Node Proxmox cible |
 <!-- END_TF_DOCS -->
+
+## Documentation associee
+
+- [Backup & Restore](../../../../docs/BACKUP-RESTORE.md) - Procedures de sauvegarde et restauration
+- [Disaster Recovery](../../../../docs/DISASTER-RECOVERY.md) - Plan de reprise apres sinistre
+- [Testing](../../../../docs/TESTING.md) - Guide des tests Terraform et BATS

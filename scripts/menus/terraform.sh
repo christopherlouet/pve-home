@@ -12,6 +12,8 @@
 # - Init si necessaire
 # =============================================================================
 
+set -euo pipefail
+
 # Charger les dependances si pas deja fait
 SCRIPT_DIR_TERRAFORM="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TUI_LIB_DIR_TERRAFORM="$(cd "${SCRIPT_DIR_TERRAFORM}/../lib" && pwd)"
