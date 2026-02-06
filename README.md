@@ -3,7 +3,7 @@
 [![CI](https://github.com/christopherlouet/pve-home/actions/workflows/ci.yml/badge.svg)](https://github.com/christopherlouet/pve-home/actions/workflows/ci.yml)
 [![Security](https://github.com/christopherlouet/pve-home/actions/workflows/codeql.yml/badge.svg)](https://github.com/christopherlouet/pve-home/actions/workflows/codeql.yml)
 [![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.9-blue?logo=terraform)](https://www.terraform.io/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](LICENSE)
 
 Infrastructure as Code pour gérer un homelab Proxmox VE sur Intel NUC avec Terraform.
 
@@ -209,7 +209,9 @@ terraform apply
 | [Stack Tooling](docs/TOOLING-STACK.md) | PKI Step-ca, Registry Harbor, SSO Authentik avec Traefik |
 | [Installation PKI](docs/PKI-INSTALLATION.md) | Guide d'installation de l'infrastructure PKI Step-ca |
 | [Architecture](docs/ARCHITECTURE.md) | Diagrammes d'architecture Mermaid du projet |
-| [ADRs](docs/adr/) | Architecture Decision Records (6 decisions documentees) |
+| [Testing](docs/TESTING.md) | Strategie de tests et conventions (Terraform + BATS) |
+| [Contributing](CONTRIBUTING.md) | Guide de contribution, PR process et code review |
+| [ADRs](docs/adr/) | Architecture Decision Records (6 projet + 5 infrastructure) |
 | [Troubleshooting](docs/troubleshooting/) | Guides de depannage (e1000e hardware hang, etc.) |
 | [Index des scripts](scripts/README.md) | Index complet de tous les scripts d'opération |
 
@@ -568,7 +570,7 @@ Navigation avec les flèches ou vim-like (j/k), validation avec Entrée.
 
 ## Tests
 
-Le projet utilise deux frameworks de test complementaires totalisant **524 tests Terraform** et **1038 tests BATS** (dont 439 pour le TUI).
+Le projet utilise deux frameworks de test complementaires totalisant **535 tests Terraform** et **1048 tests BATS** (dont 439 pour le TUI).
 
 ### Tests Terraform (modules)
 
@@ -592,13 +594,13 @@ done
 
 ### Tests BATS (scripts shell)
 
-Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (1038 tests, 0 skipped) :
+Les scripts shell sont testes avec [BATS](https://github.com/bats-core/bats-core) (1048 tests, 0 skipped) :
 
 | Domaine | Tests | Couverture |
 |---------|-------|------------|
 | **tui/** | 439 | Interface TUI complete (12 modules) |
 | **restore/** | 226 | Restauration VMs, tfstate, Minio, monitoring, tooling, verification |
-| **scripts/** | 226 | Scripts utilitaires, install minio/node-exporter, docker-compose validation |
+| **scripts/** | 236 | Scripts utilitaires, install minio/node-exporter, docker-compose validation |
 | **lifecycle/** | 74 | Snapshots, expiration, nettoyage, rotation SSH |
 | **root** | 37 | deploy.sh, post-install Proxmox |
 | **health/** | 22 | Health checks infrastructure |
