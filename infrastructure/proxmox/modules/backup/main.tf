@@ -49,6 +49,10 @@ locals {
 # -----------------------------------------------------------------------------
 
 resource "terraform_data" "backup_job" {
+  lifecycle {
+    prevent_destroy = true
+  }
+
   triggers_replace = [
     var.schedule,
     var.storage_id,

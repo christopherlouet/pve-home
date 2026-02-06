@@ -18,11 +18,13 @@ variable "name" {
 variable "target_node" {
   description = "Node Proxmox pour deployer la VM monitoring"
   type        = string
+  nullable    = false
 }
 
 variable "template_id" {
   description = "ID du template VM cloud-init"
   type        = number
+  nullable    = false
 
   validation {
     condition     = var.template_id >= 100
@@ -74,6 +76,7 @@ variable "datastore" {
 variable "ip_address" {
   description = "Adresse IP de la VM monitoring (sans CIDR)"
   type        = string
+  nullable    = false
 
   validation {
     condition     = can(regex("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$", var.ip_address))
@@ -95,6 +98,7 @@ variable "network_cidr" {
 variable "gateway" {
   description = "Passerelle reseau"
   type        = string
+  nullable    = false
 }
 
 variable "dns_servers" {
@@ -116,6 +120,7 @@ variable "network_bridge" {
 variable "ssh_keys" {
   description = "Cles SSH publiques"
   type        = list(string)
+  nullable    = false
 }
 
 variable "username" {
@@ -216,6 +221,7 @@ variable "grafana_admin_password" {
   description = "Mot de passe admin Grafana"
   type        = string
   sensitive   = true
+  nullable    = false
 
   validation {
     condition     = length(var.grafana_admin_password) >= 8
@@ -332,6 +338,11 @@ variable "tooling_ip" {
   validation {
     condition     = var.tooling_ip == "" || can(regex("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$", var.tooling_ip))
     error_message = "tooling_ip doit être une adresse IPv4 valide (ex: 192.168.1.100) ou vide si tooling_enabled est false."
+  }
+
+  validation {
+    condition     = !var.tooling_enabled || var.tooling_ip != ""
+    error_message = "tooling_ip est requis quand tooling_enabled est true."
   }
 }
 

@@ -5,6 +5,7 @@
 variable "target_node" {
   description = "Node Proxmox cible pour les sauvegardes"
   type        = string
+  nullable    = false
 }
 
 variable "storage_id" {
@@ -123,5 +124,6 @@ variable "notes_template" {
 variable "proxmox_endpoint" {
   description = "URL de l'API Proxmox (ex: https://192.168.1.100:8006)"
   type        = string
+  nullable    = false
 }
 

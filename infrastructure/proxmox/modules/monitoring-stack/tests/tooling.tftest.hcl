@@ -91,9 +91,9 @@ run "tooling_ip_invalid" {
   expect_failures = [var.tooling_ip]
 }
 
-# Note: tooling_ip validation is conditional - empty string is allowed
-# The scrape config simply won't be generated if tooling_ip is empty
-run "tooling_ip_empty_generates_no_scrape_config" {
+# Note: tooling_ip is now required when tooling_enabled=true (cross-variable validation)
+# Empty string is rejected by validation
+run "tooling_ip_empty_rejected_when_enabled" {
   command = plan
 
   variables {
@@ -101,10 +101,7 @@ run "tooling_ip_empty_generates_no_scrape_config" {
     tooling_ip      = ""
   }
 
-  assert {
-    condition     = local.tooling_scrape_config == ""
-    error_message = "Tooling scrape config should be empty when tooling_ip is empty"
-  }
+  expect_failures = [var.tooling_ip]
 }
 
 # -----------------------------------------------------------------------------

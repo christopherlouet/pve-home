@@ -5,6 +5,7 @@
 variable "name" {
   description = "Nom de la VM"
   type        = string
+  nullable    = false
 
   validation {
     condition     = can(regex("^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$", var.name))
@@ -21,11 +22,13 @@ variable "description" {
 variable "target_node" {
   description = "Node Proxmox cible"
   type        = string
+  nullable    = false
 }
 
 variable "template_id" {
   description = "ID du template à cloner"
   type        = number
+  nullable    = false
 
   validation {
     condition     = var.template_id >= 100
@@ -98,6 +101,7 @@ variable "vlan_id" {
 variable "ip_address" {
   description = "Adresse IP en notation CIDR (ex: 192.168.1.10/24)"
   type        = string
+  nullable    = false
 
   validation {
     condition     = can(regex("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/\\d{1,2}$", var.ip_address))
@@ -108,6 +112,7 @@ variable "ip_address" {
 variable "gateway" {
   description = "Passerelle par défaut"
   type        = string
+  nullable    = false
 }
 
 variable "dns_servers" {
@@ -125,6 +130,7 @@ variable "username" {
 variable "ssh_keys" {
   description = "Clés SSH publiques"
   type        = list(string)
+  nullable    = false
 }
 
 variable "tags" {
