@@ -40,6 +40,7 @@ resource "tls_self_signed_cert" "root_ca" {
 # -----------------------------------------------------------------------------
 
 locals {
+  # tflint-ignore: terraform_unused_declarations
   step_ca_config = var.step_ca_enabled ? {
     ca_name          = "Homelab CA"
     dns_names        = ["pki.${var.domain_suffix}", var.ip_address, "localhost", "127.0.0.1"]

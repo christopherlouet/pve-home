@@ -19,6 +19,7 @@ resource "random_password" "authentik_pg" {
 # -----------------------------------------------------------------------------
 
 locals {
+  # tflint-ignore: terraform_unused_declarations
   authentik_config = var.authentik_enabled ? {
     hostname         = "auth.${var.domain_suffix}"
     external_url     = var.traefik_enabled ? "https://auth.${var.domain_suffix}" : "http://${var.ip_address}:9000"
@@ -39,7 +40,7 @@ locals {
     metrics_port     = 9300
   } : null
 
-  # Authentik OAuth/OIDC provider configurations for integrated services
+  # tflint-ignore: terraform_unused_declarations
   authentik_oauth_providers = var.authentik_enabled ? merge(
     # Grafana OAuth2 provider
     {

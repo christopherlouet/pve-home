@@ -17,7 +17,7 @@
 # -----------------------------------------------------------------------------
 
 locals {
-  # Services configuration for cloud-init
+  # tflint-ignore: terraform_unused_declarations
   services_config = {
     step_ca = {
       enabled          = var.step_ca_enabled

@@ -5,7 +5,7 @@
 # =============================================================================
 
 locals {
-  # Traefik configuration object
+  # tflint-ignore: terraform_unused_declarations
   traefik_config = var.traefik_enabled ? {
     acme_enabled  = var.step_ca_enabled
     acme_server   = "https://127.0.0.1:8443/acme/acme/directory"
@@ -18,7 +18,7 @@ locals {
     insecure_skip = true # Skip TLS verification for internal Step-ca
   } : null
 
-  # Traefik routes for each service
+  # tflint-ignore: terraform_unused_declarations
   traefik_routes = var.traefik_enabled ? merge(
     var.step_ca_enabled ? {
       pki = {

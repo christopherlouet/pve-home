@@ -207,6 +207,7 @@ variable "harbor_admin_password" {
   }
 }
 
+# tflint-ignore: terraform_unused_declarations
 variable "harbor_db_password" {
   description = "Mot de passe pour la base PostgreSQL Harbor"
   type        = string

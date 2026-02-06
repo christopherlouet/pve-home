@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **TFLint promoted to hard-fail** in CI (removed `continue-on-error: true`)
 - **`required_version = ">= 1.9.0"`** added to all 6 module `versions.tf` files (was only in environments)
+- **`tflint-ignore` annotations** on 13 intentional unused declarations (future scaffolding) across lxc, monitoring-stack, tooling-stack
 
 ### Security
 

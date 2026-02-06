@@ -5,7 +5,7 @@
 # =============================================================================
 
 locals {
-  # Docker Compose services list
+  # tflint-ignore: terraform_unused_declarations
   docker_compose_services = compact([
     var.step_ca_enabled ? "step-ca" : "",
     var.traefik_enabled ? "traefik" : "",
@@ -21,7 +21,7 @@ locals {
     var.authentik_enabled ? "authentik-redis" : "",
   ])
 
-  # Docker Compose volumes list
+  # tflint-ignore: terraform_unused_declarations
   docker_compose_volumes = compact([
     var.step_ca_enabled ? "step-ca-data" : "",
     var.traefik_enabled ? "traefik-certs" : "",

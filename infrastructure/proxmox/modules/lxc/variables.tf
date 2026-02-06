@@ -198,6 +198,7 @@ variable "mountpoints" {
   default = []
 }
 
+# tflint-ignore: terraform_unused_declarations
 variable "backup_enabled" {
   description = "Inclure ce conteneur dans les sauvegardes vzdump"
   type        = bool

@@ -261,6 +261,7 @@ variable "telegram_chat_id" {
 # Backup Alerting
 # -----------------------------------------------------------------------------
 
+# tflint-ignore: terraform_unused_declarations
 variable "backup_alerting_enabled" {
   description = "Activer les alertes de supervision des sauvegardes vzdump"
   type        = bool
@@ -304,6 +305,7 @@ variable "loki_enabled" {
   default     = true
 }
 
+# tflint-ignore: terraform_unused_declarations
 variable "loki_retention_days" {
   description = "Duree de retention des logs en jours"
   type        = number
